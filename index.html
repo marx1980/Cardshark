@@ -35,6 +35,22 @@ button{font:inherit;color:inherit}
 #app{height:100%;box-sizing:border-box;padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));
   background:radial-gradient(120% 80% at 50% 30%, var(--felt-hi), var(--felt) 45%, var(--felt-lo));}
 .svgc svg{display:block;width:100%;height:auto}
+.ci{display:block;width:100%;background-repeat:no-repeat}
+.ci.back{box-sizing:border-box;border-radius:7%/4.5%;border:2px solid #f3ecd9}
+.ci.back.b{background:radial-gradient(circle at 50% 50%,#f3ecd9 0 9%,transparent 10%),repeating-linear-gradient(45deg,#1b2e5c 0 5px,#2b4a8a 5px 6px),#1b2e5c}
+.ci.back.h{background:radial-gradient(circle at 50% 50%,#e8d7a8 0 9%,transparent 10%),repeating-linear-gradient(-45deg,#7a221d 0 5px,#9b2f27 5px 10px),#8e2a24}
+.set{display:flex;align-items:center;justify-content:center;gap:8px}
+.decks{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.deck{display:flex;flex-direction:column;gap:8px;align-items:center;background:#fff;border:1.5px solid var(--sheet-line);border-radius:12px;padding:10px 8px;cursor:pointer;color:var(--sheet-ink);font:inherit;text-align:center}
+.deck[aria-pressed="true"]{border-color:var(--felt);box-shadow:0 0 0 2px var(--felt)}
+.dk-cards{display:flex;justify-content:center;height:84px;align-items:flex-end}
+.dk-cards .svgc{width:44px;margin-left:-8px;filter:drop-shadow(0 2px 2px rgba(0,0,0,.25))}
+.dk-cards .svgc:first-child{margin-left:0}
+.dk-name{display:flex;flex-direction:column;line-height:1.2}
+.dk-name small{color:var(--sheet-muted);font-size:12.5px}
+.seg.dark button{background:#fff;border-color:var(--sheet-line);color:var(--sheet-ink)}
+.seg.dark button[aria-pressed="true"]{background:var(--felt);color:var(--ink);border-color:var(--felt)}
+.credit{font-size:12.5px;margin-top:16px}
 .ix{font:700 12px Georgia, "Times New Roman", serif} .ixr{font:700 12px Georgia, "Times New Roman", serif}
 .lbl{font:800 7.2px var(--display);text-anchor:middle;letter-spacing:.4px}
 
@@ -856,166 +872,38 @@ const Madjarice = (() => {
   return { card, back, SUIT, W, H };
 })();
 </script>
-<script>// ===================== CARD ART (original SVG drawings) =====================
+<script>// ===================== CARD FACES (real deck photos, one sprite per deck) =====================
+// Each sprite: rows = engine suits, cols = ranks in B_COLS / H_COLS order.
 const Cards = (() => {
-  const INK = '#2a1d14', RED = '#c4382b', GOLD = '#e2a92f', BLUE = '#3c6aa0', GREEN = '#4a8a3c', SKIN = '#f1c9a0', PAPER = '#fbf6ea';
-  // ---- suit symbols in a 100x100 box centred on 0,0 ----
-  const T_SUIT = [
-    // 0 Kupe (cups)
-    `<path d="M-34,-36H34C34,-6 18,10 0,12C-18,10 -34,-6 -34,-36Z" fill="${GOLD}" stroke="${INK}" stroke-width="3.5"/>
-     <ellipse cx="0" cy="-36" rx="34" ry="7" fill="${RED}" stroke="${INK}" stroke-width="3.5"/>
-     <path d="M-22,-20H22" stroke="${RED}" stroke-width="5"/>
-     <rect x="-5" y="11" width="10" height="20" fill="${BLUE}" stroke="${INK}" stroke-width="3"/>
-     <ellipse cx="0" cy="22" rx="10" ry="5" fill="${GOLD}" stroke="${INK}" stroke-width="3"/>
-     <path d="M-26,44Q0,26 26,44Z" fill="${GOLD}" stroke="${INK}" stroke-width="3.5"/>`,
-    // 1 Dinari (coins)
-    `<circle r="44" fill="${GOLD}" stroke="${INK}" stroke-width="4"/>
-     <circle r="33" fill="none" stroke="${INK}" stroke-width="2.5"/>
-     ${[0, 45, 90, 135].map(a => `<ellipse rx="6" ry="27" transform="rotate(${a})" fill="${RED}" stroke="${INK}" stroke-width="1.6"/>`).join('')}
-     <circle r="9" fill="${GREEN}" stroke="${INK}" stroke-width="2.5"/>`,
-    // 2 Špade (swords) - curved sabre
-    `<path d="M-3,-48Q18,-8 4,30L-6,30Q6,-8 -11,-44Z" fill="#c9d6e2" stroke="${INK}" stroke-width="3"/>
-     <path d="M-3,-40Q12,-8 0,26" fill="none" stroke="${BLUE}" stroke-width="2"/>
-     <path d="M-22,29H20Q22,36 14,36H-16Q-24,36 -22,29Z" fill="${GOLD}" stroke="${INK}" stroke-width="3"/>
-     <rect x="-5" y="36" width="10" height="10" fill="${RED}" stroke="${INK}" stroke-width="2.5"/>
-     <circle cx="0" cy="50" r="5" fill="${GOLD}" stroke="${INK}" stroke-width="2.5"/>`,
-    // 3 Baštoni (clubs) - knotted baton
-    `<path d="M-7,46L-12,-34Q0,-52 12,-34L7,46Q0,50 -7,46Z" fill="#6f9a3e" stroke="${INK}" stroke-width="3.5"/>
-     <path d="M-11,-22l-9,-6M11,-6l9,-6M-10,10l-9,-5M9,24l8,-5" stroke="${INK}" stroke-width="5" stroke-linecap="round"/>
-     <path d="M-11,-22l-9,-6M11,-6l9,-6M-10,10l-9,-5M9,24l8,-5" stroke="#9cc06a" stroke-width="2" stroke-linecap="round"/>
-     <path d="M-9,34H9" stroke="${RED}" stroke-width="5"/>`
-  ];
-  const H_SUIT = [
-    // 0 Herc (hearts)
-    `<path d="M0,40C-58,2 -42,-50 0,-22C42,-50 58,2 0,40Z" fill="${RED}" stroke="${INK}" stroke-width="3.5"/>
-     <path d="M-24,-22Q-30,-6 -14,6" fill="none" stroke="#f08a74" stroke-width="4" stroke-linecap="round"/>`,
-    // 1 Bundeva / zvono (bells)
-    `<circle cx="0" cy="-40" r="6" fill="none" stroke="${INK}" stroke-width="3.5"/>
-     <path d="M-30,22C-32,-8 -22,-34 0,-34C22,-34 32,-8 30,22Z" fill="${GOLD}" stroke="${INK}" stroke-width="3.5"/>
-     <rect x="-30" y="2" width="60" height="9" fill="${RED}" stroke="${INK}" stroke-width="2.5"/>
-     <path d="M-30,22H30" stroke="${INK}" stroke-width="3.5"/>
-     <path d="M-14,-18Q0,-24 14,-18" fill="none" stroke="#fbe28f" stroke-width="3" stroke-linecap="round"/>
-     <circle cx="0" cy="31" r="7" fill="${GOLD}" stroke="${INK}" stroke-width="3"/>`,
-    // 2 Zeleni / list (leaves)
-    `<path d="M0,-46C36,-30 42,10 4,38L2,48H-2L-4,38C-42,10 -36,-30 0,-46Z" fill="${GREEN}" stroke="${INK}" stroke-width="3.5"/>
-     <path d="M0,-38V38M0,-14L-18,-26M0,-14L18,-26M0,6L-22,-8M0,6L22,-8M0,24L-16,14M0,24L16,14" stroke="#b8dc8e" stroke-width="2.2" fill="none"/>`,
-    // 3 Žir (acorns)
-    `<rect x="-3" y="-46" width="6" height="12" fill="#6b4220" stroke="${INK}" stroke-width="2"/>
-     <ellipse cx="0" cy="12" rx="20" ry="28" fill="${GOLD}" stroke="${INK}" stroke-width="3.5"/>
-     <path d="M-27,-6Q-27,-36 0,-37Q27,-36 27,-6Q0,4 -27,-6Z" fill="#8a5a28" stroke="${INK}" stroke-width="3.5"/>
-     <path d="M-18,-26L14,-4M-6,-33L22,-14M-22,-14L4,4M18,-30L-14,-2M6,-34L-22,-12M24,-18L0,4" stroke="#5a3a18" stroke-width="2"/>
-     <path d="M-8,18Q-6,30 4,34" fill="none" stroke="#fbe28f" stroke-width="3" stroke-linecap="round"/>`
-  ];
-  const sym = (art, x, y, sc, rot = 0) => `<g transform="translate(${x},${y}) rotate(${rot}) scale(${sc})">${art}</g>`;
-
-  const W = 120, Hh = 190;
-  const frame = (fill, stroke) => `<rect x="1.5" y="1.5" width="${W - 3}" height="${Hh - 3}" rx="9" fill="${fill}" stroke="${stroke}" stroke-width="2"/>`;
-  const PIPS = {
-    1: [[60, 95]], 2: [[60, 52], [60, 138]], 3: [[60, 45], [60, 95], [60, 145]],
-    4: [[38, 55], [82, 55], [38, 135], [82, 135]], 5: [[38, 52], [82, 52], [60, 95], [38, 138], [82, 138]],
-    6: [[38, 45], [82, 45], [38, 95], [82, 95], [38, 145], [82, 145]],
-    7: [[38, 40], [82, 40], [60, 70], [38, 100], [82, 100], [38, 150], [82, 150]],
-    8: [[38, 40], [82, 40], [38, 78], [82, 78], [38, 116], [82, 116], [38, 154], [82, 154]],
-    9: [[38, 40], [82, 40], [38, 75], [82, 75], [60, 97], [38, 120], [82, 120], [38, 154], [82, 154]],
-    10: [[38, 38], [82, 38], [60, 58], [38, 80], [82, 80], [38, 112], [82, 112], [60, 134], [38, 154], [82, 154]]
+  const B_COLS = ['A', '2', '3', '4', '5', '6', '7', 'F', 'C', 'K'];
+  const H_COLS = ['7', '8', '9', '10', 'U', 'O', 'K', 'A'];
+  const DECKS = {
+    triestine: { game: 'b', w: 240, h: 440, name: { hr: 'Tršćanske', en: 'Triestine' }, maker: 'Modiano' },
+    trevisane: { game: 'b', w: 212, h: 416, name: { hr: 'Trevižanske', en: 'Trevisane' }, maker: 'Masenghini' },
+    trevisane2: { game: 'b', w: 94, h: 194, name: { hr: 'Trevižanske', en: 'Trevisane' }, maker: 'Dal Negro', low: true },
+    bergamasche: { game: 'b', w: 216, h: 345, name: { hr: 'Bergamaške', en: 'Bergamasche' }, maker: 'Masenghini' },
+    spanish: { game: 'b', w: 213, h: 342, name: { hr: 'Španjolske', en: 'Spanish' }, maker: 'Fournier' },
+    hungarian: { game: 'h', w: 154, h: 234, name: { hr: 'Mađarice', en: 'Hungarian' }, maker: 'Piatnik', low: true },
+    doppeldeutsche: { game: 'h', w: 240, h: 382, name: { hr: 'Dvostruke njemačke', en: 'Doppeldeutsche' }, maker: 'Piatnik' }
   };
-  const IT_SUIT = ['COPPE', 'DENARI', 'SPADE', 'BASTONI'];
-  const IT_COURT = { F: 'FANTE', C: 'CAVALLO', K: 'RE' };
-  const SUIT_COL = [RED, GOLD, BLUE, GREEN];
-
-  // a small stylised figure, drawn in the top half (y 12..88), mirrored for double-headed cards
-  function figure(rank, col, suitArt, hung) {
-    let hat = '';
-    if (rank === 'K') hat = `<path d="M44,24L47,10L54,19L60,7L66,19L73,10L76,24Z" fill="${GOLD}" stroke="${INK}" stroke-width="2"/>`;
-    else if (rank === 'C' || rank === 'O') hat = `<path d="M44,25Q60,8 76,25Z" fill="${col}" stroke="${INK}" stroke-width="2"/><path d="M70,14Q86,4 88,18" fill="none" stroke="${RED}" stroke-width="3"/>`;
-    else hat = `<path d="M45,25Q48,13 60,13Q74,13 78,22L72,25Z" fill="${col}" stroke="${INK}" stroke-width="2"/>`;
-    const horse = rank === 'C' ? `<path d="M14,86Q10,58 26,48Q30,40 38,44L36,52Q30,58 32,70L30,86Z" fill="#b07a46" stroke="${INK}" stroke-width="2"/><circle cx="31" cy="49" r="1.6" fill="${INK}"/>` : '';
-    return `${horse}
-      <path d="M38,88L42,48Q60,40 78,48L82,88Z" fill="${col}" stroke="${INK}" stroke-width="2.2"/>
-      <path d="M42,62H78M60,46V88" stroke="${PAPER}" stroke-width="2" opacity=".7"/>
-      <path d="M48,46Q60,54 72,46" fill="${PAPER}" stroke="${INK}" stroke-width="1.8"/>
-      <circle cx="60" cy="33" r="10" fill="${SKIN}" stroke="${INK}" stroke-width="2"/>
-      <path d="M55,36Q60,40 65,36" fill="none" stroke="${INK}" stroke-width="1.4"/>
-      <circle cx="56.5" cy="31" r="1.2" fill="${INK}"/><circle cx="63.5" cy="31" r="1.2" fill="${INK}"/>
-      ${hat}
-      ${sym(suitArt, hung ? 26 : 92, hung ? 66 : 64, 0.2)}`;
+  const sel = { b: 'triestine', h: 'hungarian' };
+  const BASE = 'cards/';
+  const setDeck = (game, key) => { if (DECKS[key] && DECKS[key].game === game) sel[game] = key; };
+  const deckOf = game => sel[game];
+  const list = game => Object.keys(DECKS).filter(k => DECKS[k].game === game);
+  function face(game, c, key) {
+    key = key || sel[game];
+    const d = DECKS[key], cols = game === 'b' ? B_COLS : H_COLS, C = cols.length;
+    const col = cols.indexOf(c.r), row = c.s;
+    return `<div class="ci" style="aspect-ratio:${d.w}/${d.h};background-image:url(${BASE}${key}.webp);background-size:${C * 100}% 400%;background-position:${(col / (C - 1) * 100).toFixed(3)}% ${(row / 3 * 100).toFixed(3)}%"></div>`;
   }
-
-  function triestine(c) {
-    const col = SUIT_COL[c.s], art = T_SUIT[c.s];
-    let body = frame(PAPER, '#8b7a5c');
-    body += `<rect x="7" y="7" width="${W - 14}" height="${Hh - 14}" rx="5" fill="none" stroke="${col}" stroke-width="1.2" opacity=".55"/>`;
-    const idx = (n) => `<text x="13" y="24" class="ix" fill="${INK}">${n}</text><text x="${W - 13}" y="${Hh - 12}" class="ix" fill="${INK}" transform="rotate(180 ${W - 13} ${Hh - 18})">${n}</text>`;
-    if (['F', 'C', 'K'].includes(c.r)) {
-      const top = figure(c.r, col, art, false);
-      body += `<g>${top}</g><g transform="rotate(180 60 95)">${top}</g>`;
-      body += `<rect x="12" y="86" width="96" height="18" fill="${PAPER}" stroke="${INK}" stroke-width="1.5"/>
-               <text x="60" y="98.5" class="lbl" fill="${INK}">${IT_COURT[c.r]} DI ${IT_SUIT[c.s]}</text>`;
-      body += idx(c.n);
-    } else {
-      const n = c.n;
-      if (n === 1) {
-        body += `<circle cx="60" cy="95" r="44" fill="${col}" opacity=".12"/>`;
-        body += sym(art, 60, 95, 0.78);
-        body += `<path d="M24,160Q60,148 96,160" fill="none" stroke="${col}" stroke-width="2"/>`;
-      } else {
-        const sc = c.s >= 2 ? 0.34 : 0.27;
-        PIPS[n].forEach(([x, y]) => { body += sym(art, x, y, sc, (c.s >= 2 && y > 95) ? 180 : 0); });
-      }
-      body += idx(n);
-    }
-    return `<svg viewBox="0 0 ${W} ${Hh}" xmlns="http://www.w3.org/2000/svg">${body}</svg>`;
+  function back(game, key) {
+    const d = DECKS[key || sel[game]];
+    return `<div class="ci back ${game}" style="aspect-ratio:${d.w}/${d.h}"></div>`;
   }
-
-  const ROMAN = { '7': 'VII', '8': 'VIII', '9': 'IX', '10': 'X' };
-  const SEASON = { hr: ['PROLJEĆE', 'ZIMA', 'LJETO', 'JESEN'], en: ['SPRING', 'WINTER', 'SUMMER', 'AUTUMN'] };
-  function madjarice(c, lang) {
-    const col = ['#c4382b', '#c98a1c', '#3f7f36', '#8a5a28'][c.s];
-    const art = H_SUIT[c.s];
-    let body = frame('#fffaf0', '#6f6250');
-    body += `<rect x="6" y="6" width="${W - 12}" height="${Hh - 12}" rx="6" fill="none" stroke="${INK}" stroke-width="1.2"/>`;
-    if (ROMAN[c.r]) {
-      PIPS[+c.r].forEach(([x, y]) => { body += sym(art, x, y, 0.25); });
-      body += `<text x="14" y="22" class="ixr" fill="${INK}">${ROMAN[c.r]}</text><text x="${W - 14}" y="22" class="ixr" fill="${INK}" text-anchor="end">${ROMAN[c.r]}</text>`;
-    } else if (c.r === 'A') {
-      body += `<rect x="14" y="20" width="92" height="118" rx="6" fill="${col}" opacity=".1"/>`;
-      body += sym(art, 60, 76, 0.72);
-      body += `<path d="M20,146H100L94,158H26Z" fill="${col}" stroke="${INK}" stroke-width="1.5"/>`;
-      body += `<text x="60" y="155" class="lbl" fill="#fff">${SEASON[lang][c.s]}</text>`;
-      body += sym(art, 22, 172, 0.15) + sym(art, 98, 172, 0.15);
-    } else {
-      // single-figure court: Ober has its suit sign high, Unter low (as on real William Tell cards)
-      const isU = c.r === 'U';
-      body += `<rect x="12" y="12" width="96" height="166" rx="4" fill="${col}" opacity=".08"/>`;
-      body += `<g transform="translate(0,22) scale(1,1.6) translate(0,-8)">${figure(c.r === 'K' ? 'K' : c.r === 'O' ? 'O' : 'F', col, '', false)}</g>`;
-      body += `<path d="M44,160H76" stroke="${INK}" stroke-width="2"/><path d="M47,148V160M73,148V160" stroke="${INK}" stroke-width="5" stroke-linecap="round"/>`;
-      body += sym(art, isU ? 26 : 24, isU ? 128 : 28, 0.22);
-      body += `<text x="${W - 14}" y="${Hh - 12}" class="ixr" fill="${INK}" text-anchor="end">${c.r === 'U' ? 'U' : c.r === 'O' ? 'O' : 'K'}</text>`;
-    }
-    return `<svg viewBox="0 0 ${W} ${Hh}" xmlns="http://www.w3.org/2000/svg">${body}</svg>`;
-  }
-
-  function back(deck) {
-    if (deck === 'b') return `<svg viewBox="0 0 ${W} ${Hh}" xmlns="http://www.w3.org/2000/svg">${frame('#24477a', '#0f2240')}
-      <rect x="8" y="8" width="${W - 16}" height="${Hh - 16}" rx="5" fill="url(#bkT)" stroke="#d9b45a" stroke-width="1.5"/>
-      <circle cx="60" cy="95" r="16" fill="#24477a" stroke="#d9b45a" stroke-width="1.5"/><circle cx="60" cy="95" r="7" fill="#d9b45a"/></svg>`;
-    return `<svg viewBox="0 0 ${W} ${Hh}" xmlns="http://www.w3.org/2000/svg">${frame('#8e2a24', '#4a120e')}
-      <rect x="8" y="8" width="${W - 16}" height="${Hh - 16}" rx="5" fill="url(#bkH)" stroke="#e8d7a8" stroke-width="1.5"/>
-      <rect x="40" y="75" width="40" height="40" rx="4" transform="rotate(45 60 95)" fill="#8e2a24" stroke="#e8d7a8" stroke-width="1.5"/></svg>`;
-  }
-  const DEFS = `<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
-    <pattern id="bkT" width="12" height="12" patternUnits="userSpaceOnUse"><rect width="12" height="12" fill="#24477a"/><path d="M6,0L12,6L6,12L0,6Z" fill="none" stroke="#5d84bd" stroke-width="1"/></pattern>
-    <pattern id="bkH" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="10" height="10" fill="#8e2a24"/><rect width="5" height="10" fill="#7a221d"/><circle cx="5" cy="5" r="1.4" fill="#3f7d3a"/></pattern>
-  </defs></svg>`;
+  const ratio = (game, key) => { const d = DECKS[key || sel[game]]; return d.h / d.w; };
   const suitIcon = (game, s, size = 18) => `<svg viewBox="-50 -50 100 100" width="${size}" height="${size}" aria-hidden="true">${(game === 'b' ? Triestine.SUIT : Madjarice.SUIT)[s]}</svg>`;
-  const DEFS2 = DEFS.replace(/<pattern id="bkT"[\s\S]*?<\/pattern>/, Triestine.PATTERN);
-  return {
-    triestine: c => Triestine.card(c),
-    madjarice: (c, lang) => Madjarice.card(c, lang),
-    back: deck => deck === 'b' ? Triestine.back() : Madjarice.back(),
-    DEFS: DEFS2, suitIcon,
-    ratio: game => game === 'b' ? Triestine.H / Triestine.W : Madjarice.H / Madjarice.W
-  };
+  return { DECKS, setDeck, deckOf, list, face, back, ratio, suitIcon, DEFS: '' };
 })();
 </script>
 <script>// ===================== APP (UI + game flow) =====================
@@ -1025,10 +913,12 @@ const $ = s => document.querySelector(s);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
 // ---------- settings ----------
-const DEF = { lang: (navigator.language || '').toLowerCase().startsWith('hr') ? 'hr' : 'en', bPlayers: 4, bDouble: false, bTarget: 3, bReveal: false, hTarget: 1001, speed: 'normal', tap: 2 };
+const DEF = { lang: (navigator.language || '').toLowerCase().startsWith('hr') ? 'hr' : 'en', bPlayers: 4, bDouble: false, bTarget: 3, bReveal: false, hTarget: 1001, speed: 'normal', tap: 2, bDeck: 'triestine', hDeck: 'hungarian' };
 let S = { ...DEF };
 try { Object.assign(S, JSON.parse(localStorage.getItem('stih.v1') || '{}')); } catch (e) { }
 const save = () => { try { localStorage.setItem('stih.v1', JSON.stringify(S)); } catch (e) { } };
+const applyDecks = () => { Cards.setDeck('b', S.bDeck); Cards.setDeck('h', S.hDeck); };
+applyDecks();
 const SPEED = () => S.speed === 'fast' ? { ai: 320, trick: 600, deal: 200 } : { ai: 700, trick: 1100, deal: 400 };
 
 // ---------- strings ----------
@@ -1044,6 +934,8 @@ const STR = {
     hTo: 'Igra se do', start: 'Igraj',
     speed: 'Brzina', normal: 'Normalno', fast: 'Brzo', tap: 'Igranje karte', tap1: 'Jedan dodir', tap2: 'Dva dodira',
     rules: 'Pravila', rulesB: 'Pravila briškule', rulesH: 'Pravila bele',
+    settings: 'Postavke', deckB: 'Karte za briškulu', deckH: 'Karte za belu', lowRes: 'niža rezolucija',
+    credit: 'Slike karata su fotografije pravih špilova (Modiano, Masenghini, Dal Negro, Fournier, Piatnik).',
     foot: 'Igra se protiv računala. Postavke se pamte na ovom uređaju.',
     names: { 0: 'Ti', 1: 'Ante', 2: 'Mare', 3: 'Jure' }, names2: { 0: 'Ti', 2: 'Ante' },
     we: 'Mi', they: 'Vi',
@@ -1079,6 +971,8 @@ const STR = {
     hTo: 'Play to', start: 'Play',
     speed: 'Speed', normal: 'Normal', fast: 'Fast', tap: 'Playing a card', tap1: 'One tap', tap2: 'Two taps',
     rules: 'Rules', rulesB: 'Briškula rules', rulesH: 'Bela rules',
+    settings: 'Settings', deckB: 'Briškula cards', deckH: 'Bela cards', lowRes: 'lower resolution',
+    credit: 'Card images are photographs of real decks (Modiano, Masenghini, Dal Negro, Fournier, Piatnik).',
     foot: 'You play against the computer. Settings are kept on this device.',
     names: { 0: 'You', 1: 'Ante', 2: 'Mare', 3: 'Jure' }, names2: { 0: 'You', 2: 'Ante' },
     we: 'Us', they: 'Them',
@@ -1181,7 +1075,7 @@ const RULES = {
 };
 
 // ---------- card rendering ----------
-function face(game, c) { return game === 'b' ? Cards.triestine(c) : Cards.madjarice(c, S.lang); }
+function face(game, c) { return Cards.face(game, c); }
 const cardHTML = (game, c, cls = '') => `<div class="svgc ${cls}">${face(game, c)}</div>`;
 const backHTML = (game, cls = '') => `<div class="svgc ${cls}">${Cards.back(game)}</div>`;
 const suitName = (game, s) => (game === 'b' ? L().sB : L().sH)[s];
@@ -1220,10 +1114,7 @@ function renderHome() {
       <p class="note">${t.yourTeam}</p>
       <button class="play" id="goH">${t.start}: Bela</button>
     </article>
-    <div class="prefs">
-      <div class="opt"><span>${t.speed}</span>${seg('speed', [['normal', t.normal], ['fast', t.fast]])}</div>
-      <div class="opt"><span>${t.tap}</span>${seg('tap', [[1, t.tap1], [2, t.tap2]])}</div>
-    </div>
+    <button class="ghost set" id="goSet"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>${t.settings}</button>
     <div class="prefs"><button class="ghost" id="rB">${t.rulesB}</button><button class="ghost" id="rH">${t.rulesH}</button></div>
     <p class="foot">${t.foot}</p>
   </div>`;
@@ -1236,6 +1127,7 @@ function renderHome() {
   const rv = $('#bReveal'); if (rv) rv.onchange = () => { S.bReveal = rv.checked; save(); };
   $('#goB').onclick = () => startGame('b');
   $('#goH').onclick = () => startGame('h');
+  $('#goSet').onclick = showSettings;
   $('#rB').onclick = () => showRules('b');
   $('#rH').onclick = () => showRules('h');
 }
@@ -1250,6 +1142,38 @@ function openSheet(html, onBind) {
   const first = veil.querySelector('button'); if (first) first.focus({ preventScroll: true });
 }
 function closeSheet() { $('#overlay').innerHTML = ''; }
+function showSettings() {
+  const t = L();
+  const D = E.bDeck(), H = E.hDeck();
+  const pickB = ['b1A', 'b0K', 'b27'].map(id => D.find(c => c.id === id));
+  const pickH = ['h0A', 'h1O', 'h28'].map(id => H.find(c => c.id === id));
+  const deckRow = (game, picks, key) => Cards.list(game).map(k => {
+    const d = Cards.DECKS[k];
+    return `<button class="deck" data-g="${game}" data-d="${k}" aria-pressed="${S[key] === k}">
+      <span class="dk-cards">${picks.map(c => `<span class="svgc">${Cards.face(game, c, k)}</span>`).join('')}</span>
+      <span class="dk-name"><b>${d.name[S.lang]}</b><small>${d.maker}${d.low ? ' · ' + t.lowRes : ''}</small></span></button>`;
+  }).join('');
+  const seg = (key, opts) => `<div class="seg dark">${opts.map(([v, lab]) => `<button data-k="${key}" data-v="${v}" aria-pressed="${S[key] === v}">${lab}</button>`).join('')}</div>`;
+  openSheet(`<h3>${t.settings}</h3>
+    <h4>${t.deckB}</h4><div class="decks">${deckRow('b', pickB, 'bDeck')}</div>
+    <h4>${t.deckH}</h4><div class="decks">${deckRow('h', pickH, 'hDeck')}</div>
+    <h4>${t.speed}</h4>${seg('speed', [['normal', t.normal], ['fast', t.fast]])}
+    <h4>${t.tap}</h4>${seg('tap', [[1, t.tap1], [2, t.tap2]])}
+    <p class="muted credit">${t.credit}</p>
+    <div class="btns"><button class="pri" id="sx">${t.close}</button></div>`, v => {
+    v.querySelector('#sx').onclick = () => { closeSheet(); if (G) renderAll(); else renderHome(); };
+    v.onclick = e => { if (e.target === v) { closeSheet(); if (G) renderAll(); else renderHome(); } };
+    v.querySelectorAll('.deck').forEach(b => b.onclick = () => {
+      S[b.dataset.g === 'b' ? 'bDeck' : 'hDeck'] = b.dataset.d; save(); applyDecks();
+      v.querySelectorAll(`.deck[data-g="${b.dataset.g}"]`).forEach(x => x.setAttribute('aria-pressed', x === b));
+      if (G) { renderAll(); [...$('#center').children].forEach(el => { const tc = G.trick.find(x => x.card.id === el.dataset.id); if (tc) el.innerHTML = face(G.game, tc.card); }); }
+    });
+    v.querySelectorAll('.seg button').forEach(b => b.onclick = () => {
+      let val = b.dataset.v; val = isNaN(+val) ? val : +val; S[b.dataset.k] = val; save();
+      b.parentNode.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b));
+    });
+  });
+}
 function showRules(game) {
   openSheet(RULES[S.lang][game] + `<div class="btns"><button class="pri" id="sx">${L().close}</button></div>`, v => {
     v.querySelector('#sx').onclick = closeSheet; v.onclick = e => { if (e.target === v) closeSheet(); };
