@@ -137,7 +137,8 @@ button{font:inherit;color:inherit}
 .hc.sel{transform:translateY(-22%)}
 .hc.off{filter:brightness(.55) saturate(.6);cursor:default}
 .hc.talon{filter:brightness(.8)}
-.hand.live .hc:not(.off):not(.sel):hover{transform:translateY(-8%)}
+@media (hover:hover) and (pointer:fine){.hand.live .hc:not(.off):not(.sel):hover{transform:translateY(-8%)}}
+.hc{touch-action:manipulation;-webkit-user-select:none;user-select:none}
 
 /* ---------- SHEET (overlays) ---------- */
 .veil{position:fixed;inset:0;z-index:20;background:rgba(6,16,12,.6);display:flex;align-items:flex-end;justify-content:center;animation:fade .2s}
@@ -1316,14 +1317,18 @@ async function collectTrick(winner) {
 function humanPick(legalIds) {
   return new Promise(res => { pending = { legal: new Set(legalIds), res }; sel = null; renderHand(); });
 }
-$('#hand').addEventListener('click', e => {
+function playFromHand(e) {
   const b = e.target.closest('.hc'); if (!b || !pending || !b.dataset.id) return;
   const id = b.dataset.id;
   if (!pending.legal.has(id)) return;
+  e.preventDefault();
   const card = G.hands[0].find(c => c.id === id);
   const p = pending; pending = null; sel = null;
   p.res(card);
-});
+}
+// pointerup plays on the first touch (iOS otherwise spends the first tap on hover); click covers keyboard
+$('#hand').addEventListener('pointerup', e => { if (e.pointerType !== 'mouse' || e.button === 0) playFromHand(e); });
+$('#hand').addEventListener('click', playFromHand);
 $('#center').addEventListener('click', () => { });
 
 // ================= GAME START =================
