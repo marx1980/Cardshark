@@ -35,7 +35,7 @@ button{font:inherit;color:inherit}
 #app{height:100%;box-sizing:border-box;padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));
   background:radial-gradient(120% 80% at 50% 30%, var(--felt-hi), var(--felt) 45%, var(--felt-lo));}
 .svgc svg{display:block;width:100%;height:auto}
-.ix{font:700 15px var(--display)} .ixr{font:700 12.5px var(--display)}
+.ix{font:700 12px Georgia, "Times New Roman", serif} .ixr{font:700 12px Georgia, "Times New Roman", serif}
 .lbl{font:800 7.2px var(--display);text-anchor:middle;letter-spacing:.4px}
 
 /* ---------- HOME ---------- */
@@ -102,7 +102,7 @@ button{font:inherit;color:inherit}
 .mini.open{height:56px}
 #center{position:absolute;inset:0;z-index:1}
 .tc{position:absolute;width:var(--tw);transform:translate(-50%,-50%) rotate(var(--r,0deg));filter:drop-shadow(0 4px 6px rgba(0,0,0,.45));pointer-events:none}
-.stock{position:absolute;left:12px;bottom:12px;width:calc(var(--tw)*1.75);height:calc(var(--tw)*1.15);z-index:1}
+.stock{position:absolute;left:12px;bottom:12px;width:calc(var(--tw)*1.75);height:calc(var(--tw)*1.5);z-index:1}
 .stock .tr{position:absolute;width:calc(var(--tw)*.8);left:calc(var(--tw)*.55);top:50%;transform:translateY(-50%) rotate(90deg)}
 .stock .pile{position:absolute;width:calc(var(--tw)*.8);left:0;top:0;filter:drop-shadow(2px 3px 0 #0f2a20)}
 .stock .cnt{position:absolute;left:calc(var(--tw)*.4);top:50%;transform:translate(-50%,-50%);font:800 15px var(--display);background:rgba(0,0,0,.6);border-radius:8px;padding:1px 7px;font-variant-numeric:tabular-nums}
@@ -518,6 +518,344 @@ const Engine = (() => {
 })();
 
 </script>
+<script>// ===================== TRIESTINE DECK (traditional pattern, redrawn) =====================
+// Narrow double-headed cards (53 x 98 mm ~ 104 x 192), three-colour palette (yellow, red, blue)
+// with black outlines, Arabic indices (1-7, 11-13), labelled court cards ("RE DI DANARI").
+const Triestine = (() => {
+  const W = 104, H = 192;
+  const K = '#1a1a1a', Y = '#f2c230', R = '#d22f27', B = '#2a5aa8', S = '#9fc0e6', P = '#fdfbf3', SKIN = '#f6d7b8', GRN = '#3d8b3a';
+  const sw = 'stroke="#1a1a1a" stroke-linejoin="round"';
+
+  // ---- suit symbols, drawn in a box of about -50..50 ----
+  const coinArt = `<circle r="46" fill="${Y}" ${sw} stroke-width="4"/>
+    <circle r="36" fill="${R}" ${sw} stroke-width="3"/>
+    ${Array.from({ length: 12 }, (_, i) => `<circle cx="${(31 * Math.sin(i * Math.PI / 6)).toFixed(1)}" cy="${(-31 * Math.cos(i * Math.PI / 6)).toFixed(1)}" r="2.6" fill="${Y}"/>`).join('')}
+    <circle r="25" fill="${Y}" ${sw} stroke-width="2.5"/>
+    ${[0, 45, 90, 135, 180, 225, 270, 315].map(a => `<ellipse cy="-12" rx="5.5" ry="10" transform="rotate(${a})" fill="${B}" ${sw} stroke-width="1.6"/>`).join('')}
+    <circle r="6" fill="${R}" ${sw} stroke-width="1.8"/>`;
+  const cupArt = `<path d="M-30,46Q0,26 30,46Z" fill="${Y}" ${sw} stroke-width="3.5"/>
+    <path d="M-30,46H30" stroke="${R}" stroke-width="3"/>
+    <rect x="-5" y="6" width="10" height="26" fill="${Y}" ${sw} stroke-width="3"/>
+    <ellipse cy="30" rx="12" ry="5" fill="${B}" ${sw} stroke-width="3"/>
+    <ellipse cy="14" rx="9" ry="6" fill="${R}" ${sw} stroke-width="3"/>
+    <path d="M-34,-40H34C34,-10 20,6 0,8C-20,6 -34,-10 -34,-40Z" fill="${Y}" ${sw} stroke-width="4"/>
+    <path d="M-30,-22H30" stroke="${R}" stroke-width="6"/><path d="M-30,-22H30" stroke="${K}" stroke-width="1" transform="translate(0,-3.5)"/>
+    <path d="M-16,-4V3M-6,-6V6M6,-6V6M16,-4V3" stroke="${B}" stroke-width="4" stroke-linecap="round"/>
+    <rect x="-38" y="-48" width="76" height="9" rx="3" fill="${R}" ${sw} stroke-width="3"/>`;
+  const swordArt = `<path d="M-6,30L-6,-36L0,-50L6,-36L6,30Z" fill="${S}" ${sw} stroke-width="3"/>
+    <path d="M0,-42V28" stroke="${B}" stroke-width="2"/>
+    <path d="M-26,28Q0,20 26,28L26,36Q0,28 -26,36Z" fill="${Y}" ${sw} stroke-width="3"/>
+    <rect x="-4.5" y="35" width="9" height="12" fill="${R}" ${sw} stroke-width="2.5"/>
+    <circle cy="51" r="5.5" fill="${Y}" ${sw} stroke-width="2.5"/>`;
+  const batonArt = `<path d="M-5,46L-9,-38Q0,-52 9,-38L5,46Q0,50 -5,46Z" fill="${Y}" ${sw} stroke-width="3.5"/>
+    <path d="M-8,-30L-14,-36M8,-16L14,-22M-7,0L-13,-6M7,16L13,10M-6,30L-11,25" stroke="${K}" stroke-width="5" stroke-linecap="round"/>
+    <path d="M-8,-30L-14,-36M8,-16L14,-22M-7,0L-13,-6M7,16L13,10M-6,30L-11,25" stroke="${Y}" stroke-width="2.5" stroke-linecap="round"/>
+    <path d="M-8,-22H8M-7,38H7" stroke="${R}" stroke-width="4"/>
+    <ellipse cy="-41" rx="6" ry="4" fill="${B}" ${sw} stroke-width="2"/>`;
+  const SUIT = [cupArt, coinArt, swordArt, batonArt];
+  const g = (art, x, y, sc, rot = 0) => `<g transform="translate(${x} ${y}) rotate(${rot}) scale(${sc})">${art}</g>`;
+
+  // ---- curved sword along a quadratic path (for interlaced pips) ----
+  function curvedSword(x1, y1, cx, cy, x2, y2) {
+    // hilt at (x1,y1), tip at (x2,y2)
+    const d = `M${x1},${y1}Q${cx},${cy} ${x2},${y2}`;
+    const ang = Math.atan2(cy - y1, cx - x1) * 180 / Math.PI + 90;
+    return `<path d="${d}" fill="none" stroke="${K}" stroke-width="7" stroke-linecap="round"/>
+      <path d="${d}" fill="none" stroke="${S}" stroke-width="4.4" stroke-linecap="round"/>
+      <path d="${d}" fill="none" stroke="${B}" stroke-width="1" />
+      <g transform="translate(${x1} ${y1}) rotate(${ang})"><rect x="-10" y="-2.5" width="20" height="5" rx="2" fill="${Y}" ${sw} stroke-width="1.6"/><rect x="-2.5" y="2.5" width="5" height="7" fill="${R}" ${sw} stroke-width="1.4"/><circle cy="12" r="3" fill="${Y}" ${sw} stroke-width="1.4"/></g>`;
+  }
+  function swordPips(n) {
+    const cx = W / 2, top = 30, bot = 162, mid = (top + bot) / 2;
+    const pairs = Math.floor(n / 2), widths = { 1: [22], 2: [30, 15], 3: [33, 22, 11] }[pairs] || [];
+    let out = '';
+    widths.forEach((w, i) => {
+      const inset = i * 4;
+      out += curvedSword(cx - 4, bot - inset, cx - w * 2, mid, cx + 3, top + inset);
+      out += curvedSword(cx + 4, top + inset, cx + w * 2, mid, cx - 3, bot - inset);
+    });
+    if (n % 2) out += g(swordArt, cx, mid, n === 1 ? 1 : 0.62);
+    return out;
+  }
+  function batonPips(n) {
+    const cx = W / 2, cy = 96, k = Math.floor(n / 2);
+    const offs = { 1: [0], 2: [-11, 11], 3: [-15, 0, 15] }[k] || [];
+    let out = '';
+    const one = (x, rot) => `<g transform="translate(${x} ${cy}) rotate(${rot}) scale(.36 1.42)"><path d="M-6,46L-10,-40Q0,-52 10,-40L6,46Q0,50 -6,46Z" fill="${Y}" ${sw} stroke-width="3.2"/><path d="M-9,-24H9M-8,8H8M-7,34H7" stroke="${R}" stroke-width="3.5"/><ellipse cy="-42" rx="7" ry="3" fill="${B}" ${sw} stroke-width="2"/></g>`;
+    offs.forEach(o => { out += one(cx + o, -17); });
+    offs.forEach(o => { out += one(cx + o, 17); });
+    if (n % 2) out += one(cx, 0);
+    return out;
+  }
+  const P2 = {
+    2: [[52, 56], [52, 136]], 3: [[52, 44], [52, 96], [52, 148]],
+    4: [[32, 56], [72, 56], [32, 136], [72, 136]], 5: [[32, 52], [72, 52], [52, 96], [32, 140], [72, 140]],
+    6: [[32, 46], [72, 46], [32, 96], [72, 96], [32, 146], [72, 146]],
+    7: [[32, 42], [72, 42], [52, 70], [32, 98], [72, 98], [32, 150], [72, 150]]
+  };
+  function sprig(x, y, rot) { return `<g transform="translate(${x} ${y}) rotate(${rot})"><path d="M0,0C4,-6 10,-8 14,-6C10,-3 6,-1 0,0Z" fill="${B}" ${sw} stroke-width=".8"/><path d="M0,0C-4,-6 -10,-8 -14,-6C-10,-3 -6,-1 0,0Z" fill="${R}" ${sw} stroke-width=".8"/></g>`; }
+
+  // ---- court figures: top half (y 8..88), mirrored for the bottom ----
+  const COURT_COL = [[R, B], [B, R], [R, Y], [B, Y]]; // [main, secondary] per suit
+  function face(cx, cy, beard) {
+    return `<path d="M${cx - 11},${cy - 4}Q${cx - 13},${cy + 10} ${cx - 8},${cy + 16}L${cx + 8},${cy + 16}Q${cx + 13},${cy + 10} ${cx + 11},${cy - 4}Z" fill="#7a4a24" ${sw} stroke-width="1.2"/>
+      <ellipse cx="${cx}" cy="${cy}" rx="9.5" ry="11.5" fill="${SKIN}" ${sw} stroke-width="1.6"/>
+      <path d="M${cx - 5},${cy - 2}h3.5M${cx + 1.5},${cy - 2}h3.5" stroke="${K}" stroke-width="1.4" stroke-linecap="round"/>
+      <path d="M${cx},${cy - 1}l-1.6,5h2.6" fill="none" stroke="${K}" stroke-width="1"/>
+      <path d="M${cx - 3},${cy + 7}q3,1.6 6,0" fill="none" stroke="${R}" stroke-width="1.3" stroke-linecap="round"/>
+      ${beard ? `<path d="M${cx - 9},${cy + 3}Q${cx - 8},${cy + 18} ${cx},${cy + 20}Q${cx + 8},${cy + 18} ${cx + 9},${cy + 3}Q${cx + 5},${cy + 10} ${cx},${cy + 10}Q${cx - 5},${cy + 10} ${cx - 9},${cy + 3}Z" fill="#8c6a4a" ${sw} stroke-width="1.2"/>` : ''}`;
+  }
+  function courtTop(c) {
+    const [m, s2] = COURT_COL[c.s], sym = SUIT[c.s];
+    const holdSc = c.s === 2 || c.s === 3 ? 0.3 : 0.2;
+    if (c.r === 'K') return `
+      <path d="M8,88L14,58Q26,48 42,50L52,62L62,50Q78,48 90,58L96,88Z" fill="${m}" ${sw} stroke-width="1.8"/>
+      <path d="M36,88L40,58L52,64L64,58L68,88Z" fill="${s2}" ${sw} stroke-width="1.6"/>
+      <path d="M40,70H64M39,79H65" stroke="${Y}" stroke-width="2.4"/>
+      <path d="M28,56Q52,70 76,56L74,50Q52,62 30,50Z" fill="#fff" ${sw} stroke-width="1.4"/>
+      ${[34, 44, 52, 60, 70].map(x => `<circle cx="${x}" cy="${57 + (x === 52 ? 4 : x === 44 || x === 60 ? 2.5 : 0)}" r="1" fill="${K}"/>`).join('')}
+      <path d="M22,88L28,44" stroke="${K}" stroke-width="4.4" stroke-linecap="round"/><path d="M22,88L28,44" stroke="${Y}" stroke-width="2.4" stroke-linecap="round"/><circle cx="28.5" cy="41" r="4" fill="${Y}" ${sw} stroke-width="1.4"/>
+      ${face(52, 34, true)}
+      <path d="M40,26L37,10L45,18L52,6L59,18L67,10L64,26Z" fill="${Y}" ${sw} stroke-width="1.6"/>
+      <rect x="39" y="22" width="26" height="6" fill="${R}" ${sw} stroke-width="1.4"/>
+      <circle cx="52" cy="13" r="1.8" fill="${B}"/><circle cx="45" cy="25" r="1.4" fill="${Y}"/><circle cx="59" cy="25" r="1.4" fill="${Y}"/>
+      <ellipse cx="78" cy="70" rx="5" ry="4" fill="${SKIN}" ${sw} stroke-width="1.2"/>
+      ${g(sym, 80, 60, holdSc)}`;
+    if (c.r === 'F') return `
+      <path d="M14,88L20,58Q36,48 52,50Q68,48 84,58L90,88Z" fill="${m}" ${sw} stroke-width="1.8"/>
+      <path d="M30,88V56M44,88V51M60,88V51M74,88V56" stroke="${s2}" stroke-width="5"/>
+      <path d="M30,88V56M44,88V51M60,88V51M74,88V56" stroke="${K}" stroke-width=".8" transform="translate(2.5 0)"/>
+      <path d="M36,52Q52,62 68,52L66,48Q52,56 38,48Z" fill="#fff" ${sw} stroke-width="1.3"/>
+      ${face(52, 36, false)}
+      <path d="M38,30Q38,14 54,14Q70,15 70,28Q60,22 50,23Q42,24 38,30Z" fill="${s2}" ${sw} stroke-width="1.6"/>
+      <path d="M66,20C76,10 84,12 88,6C86,16 78,22 68,24Z" fill="${Y}" ${sw} stroke-width="1.2"/>
+      <ellipse cx="24" cy="74" rx="5" ry="4" fill="${SKIN}" ${sw} stroke-width="1.2"/>
+      ${g(sym, 22, 62, holdSc)}`;
+    // Cavallo: horse head and neck on the left, rider on the right
+    return `
+      <path d="M6,88C8,66 12,52 24,46C26,38 30,32 36,34L40,44C36,48 33,54 35,62C37,72 40,80 41,88Z" fill="#f4ecd8" ${sw} stroke-width="1.8"/>
+      <path d="M24,46C20,40 14,38 10,40C8,46 10,52 16,54C20,54 23,51 24,46Z" fill="#f4ecd8" ${sw} stroke-width="1.6"/>
+      <circle cx="15" cy="45" r="1.6" fill="${K}"/>
+      <path d="M36,34C42,40 44,50 42,60C44,68 44,78 46,88" fill="none" stroke="${R}" stroke-width="5"/>
+      <path d="M12,49L24,48L32,40" fill="none" stroke="${B}" stroke-width="2"/>
+      <path d="M44,88L48,60Q64,50 82,58L90,88Z" fill="${m}" ${sw} stroke-width="1.8"/>
+      <path d="M50,72H86" stroke="${s2}" stroke-width="5"/>
+      ${face(66, 36, false)}
+      <path d="M54,30Q54,16 66,15Q79,15 80,30Z" fill="${s2}" ${sw} stroke-width="1.6"/>
+      <path d="M72,16C80,6 90,8 94,4C92,14 84,18 76,20Z" fill="${R}" ${sw} stroke-width="1.2"/>
+      <ellipse cx="88" cy="70" rx="4.5" ry="3.6" fill="${SKIN}" ${sw} stroke-width="1.2"/>
+      ${g(sym, 88, 60, holdSc * 0.9)}`;
+  }
+
+  const IT_SUIT = ['COPPE', 'DANARI', 'SPADE', 'BASTONI'];
+  const IT_COURT = { F: 'FANTE', C: 'CAVAL.', K: 'RE' };
+  const idx = n => `<text x="8" y="17" class="ix" fill="${K}">${n}</text><text x="8" y="17" class="ix" fill="${K}" transform="rotate(180 ${W / 2} ${H / 2})">${n}</text>`;
+  function ribbon(y, text, size = 6.4) {
+    return `<path d="M10,${y - 7}H94L90,${y}L94,${y + 7}H10L14,${y}Z" fill="${P}" ${sw} stroke-width="1.2"/>
+      <text x="${W / 2}" y="${y + 2.3}" text-anchor="middle" font-family="Georgia, serif" font-weight="700" font-size="${size}" letter-spacing=".3" fill="${K}">${text}</text>`;
+  }
+
+  function card(c) {
+    let b = `<rect x="1" y="1" width="${W - 2}" height="${H - 2}" rx="7" fill="${P}" stroke="#9a9384" stroke-width="1.5"/>`;
+    if (['F', 'C', 'K'].includes(c.r)) {
+      const top = courtTop(c);
+      b += `<rect x="5" y="5" width="${W - 10}" height="${H - 10}" rx="3" fill="none" stroke="${K}" stroke-width="1.4"/>`;
+      b += `<g>${top}</g><g transform="rotate(180 ${W / 2} ${H / 2})">${top}</g>`;
+      b += `<rect x="5" y="87" width="${W - 10}" height="18" fill="${P}" stroke="${K}" stroke-width="1.4"/>`;
+      b += `<text x="${W / 2}" y="98.6" text-anchor="middle" font-family="Georgia, serif" font-weight="700" font-size="7.6" letter-spacing=".4" fill="${K}">${IT_COURT[c.r]} DI ${IT_SUIT[c.s]}</text>`;
+      b += `<rect x="5" y="5" width="16" height="16" fill="${P}" stroke="${K}" stroke-width="1"/><rect x="${W - 21}" y="${H - 21}" width="16" height="16" fill="${P}" stroke="${K}" stroke-width="1"/>`;
+      b += `<text x="13" y="17" text-anchor="middle" class="ix" fill="${K}">${c.n}</text><text x="13" y="17" text-anchor="middle" class="ix" fill="${K}" transform="rotate(180 ${W / 2} ${H / 2})">${c.n}</text>`;
+    } else if (c.n === 1) {
+      if (c.s === 1) {
+        b += [30, 90, 150, 210, 270, 330].map(a => `<g transform="rotate(${a} 52 86)"><path d="M52,50C58,42 66,42 70,47C65,49 60,52 52,50Z" fill="${GRN}" ${sw} stroke-width="1.1"/></g>`).join('');
+        b += g(coinArt, 52, 86, 0.66);
+        b += ribbon(160, 'ASSO DI DANARI');
+      } else if (c.s === 0) {
+        b += g(cupArt, 52, 82, 0.86);
+        b += sprig(30, 140, 0) + sprig(74, 140, 0);
+        b += ribbon(160, 'ASSO DI COPPE');
+      } else if (c.s === 2) {
+        b += g(swordArt, 52, 88, 1.18);
+        b += `<path d="M30,60C44,52 60,70 74,60" fill="none" stroke="${R}" stroke-width="3"/>`;
+        b += ribbon(166, 'ASSO DI SPADE');
+      } else {
+        b += g(batonArt, 52, 80, 1.08);
+        b += `<path d="M10,146H94L90,154L94,162H10L14,154Z" fill="${P}" ${sw} stroke-width="1.2"/>`;
+        b += `<text x="52" y="152.6" text-anchor="middle" font-family="Georgia, serif" font-weight="700" font-size="5.6" fill="${K}">AVERE UN BEL BASTON</text>`;
+        b += `<text x="52" y="159.6" text-anchor="middle" font-family="Georgia, serif" font-weight="700" font-size="5.6" fill="${K}">IN MANE SEMPRE BON</text>`;
+      }
+      b += idx(1);
+    } else {
+      if (c.s === 2) b += swordPips(c.n);
+      else if (c.s === 3) b += batonPips(c.n);
+      else {
+        const art = c.s === 1 ? coinArt : cupArt;
+        const sc = c.n <= 3 ? 0.3 : 0.24;
+        P2[c.n].forEach(([x, y]) => { b += g(art, x, y, sc); });
+        if (c.s === 1 && c.n >= 4) b += sprig(52, 96, 0);
+        if (c.s === 1 && c.n === 4) b += `<path d="M44,90L46,84L49,88L52,82L55,88L58,84L60,90Z" fill="${Y}" ${sw} stroke-width="1"/>`;
+      }
+      b += idx(c.n);
+    }
+    return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">${b}</svg>`;
+  }
+  const back = () => `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
+    <rect x="1" y="1" width="${W - 2}" height="${H - 2}" rx="7" fill="${P}" stroke="#9a9384" stroke-width="1.5"/>
+    <rect x="6" y="6" width="${W - 12}" height="${H - 12}" rx="3" fill="url(#bkT)" stroke="#16244a" stroke-width="1.5"/>
+    <rect x="${W / 2 - 18}" y="${H / 2 - 18}" width="36" height="36" transform="rotate(45 ${W / 2} ${H / 2})" fill="#1b2e5c" stroke="${P}" stroke-width="1.5"/>
+    <circle cx="${W / 2}" cy="${H / 2}" r="7" fill="${P}"/></svg>`;
+  const PATTERN = `<pattern id="bkT" width="10" height="10" patternUnits="userSpaceOnUse"><rect width="10" height="10" fill="#1b2e5c"/><path d="M5,0L10,5L5,10L0,5Z" fill="none" stroke="#4d6fae" stroke-width=".9"/><circle cx="5" cy="5" r="1" fill="#8aa4d6"/></pattern>`;
+  return { card, back, SUIT, PATTERN, W, H };
+})();
+</script>
+<script>// ===================== MAĐARICE (William Tell pattern, redrawn) =====================
+// 59 x 91 mm cards, double-headed, Roman numerals in both top corners (repeated upside down),
+// two-tone suit signs, landscape vignettes on VII/VIII/X, king on horseback, seasons on the aces.
+const Madjarice = (() => {
+  const W = 118, H = 182, CX = 59;
+  const K = '#1a1a1a', R = '#d8262b', Y = '#f4c51f', G = '#3f9a3a', BL = '#2a5aa8', BR = '#8a5a2b', P = '#fffdf6', SKIN = '#f6d7b8';
+  const sw = 'stroke="#1a1a1a" stroke-linejoin="round"';
+
+  const heart = `<path d="M0,42C-56,4 -44,-50 0,-22C44,-50 56,4 0,42Z" fill="${R}"/>
+    <path d="M-4,-19C-18,-36 -38,-27 -36,-8C-34,4 -24,15 -11,24C-19,9 -19,-6 -4,-19Z" fill="${Y}"/>
+    <path d="M0,42C-56,4 -44,-50 0,-22C44,-50 56,4 0,42Z" fill="none" ${sw} stroke-width="3.5"/>`;
+  const bell = `<circle cy="-41" r="6" fill="none" ${sw} stroke-width="3.5"/>
+    <path d="M-30,20C-32,-8 -22,-35 0,-35C22,-35 32,-8 30,20Z" fill="${Y}" ${sw} stroke-width="3.5"/>
+    <path d="M-31.5,-1H31.5V9H-31.5Z" fill="${R}" ${sw} stroke-width="2"/>
+    <path d="M-31,9H31L30,20H-30Z" fill="${G}" ${sw} stroke-width="2"/>
+    <path d="M-12,-26C-4,-30 6,-30 12,-26" fill="none" stroke="#fff3b8" stroke-width="3" stroke-linecap="round"/>
+    <path d="M0,-35V-1" stroke="${K}" stroke-width="2"/>
+    <circle cy="28" r="7" fill="${Y}" ${sw} stroke-width="3"/>`;
+  const leaf = `<path d="M0,-46C-34,-30 -40,10 -4,38L0,40Z" fill="${Y}"/>
+    <path d="M0,-46C34,-30 40,10 4,38L0,40Z" fill="${G}"/>
+    <path d="M0,-46C34,-30 40,10 4,38L2,48H-2L-4,38C-40,10 -34,-30 0,-46Z" fill="none" ${sw} stroke-width="3.5"/>
+    <path d="M0,-40V40" stroke="${R}" stroke-width="3"/>
+    <path d="M0,-18L-16,-28M0,-18L16,-28M0,2L-22,-10M0,2L22,-10M0,20L-16,10M0,20L16,10" stroke="${K}" stroke-width="1.6"/>`;
+  const acorn = `<rect x="-3" y="-47" width="6" height="12" fill="${BR}" ${sw} stroke-width="2"/>
+    <path d="M0,-8C-27,-8 -25,40 0,42Z" fill="${Y}"/><path d="M0,-8C27,-8 25,40 0,42Z" fill="${R}"/>
+    <path d="M0,-8C-27,-8 -25,40 0,42C25,40 27,-8 0,-8Z" fill="none" ${sw} stroke-width="3.5"/>
+    <path d="M-27,-6Q-27,-36 0,-37Q27,-36 27,-6Q0,4 -27,-6Z" fill="#7d8f2c" ${sw} stroke-width="3.5"/>
+    <path d="M-18,-26L14,-4M-6,-33L22,-14M-22,-14L4,4M18,-30L-14,-2M6,-34L-22,-12M24,-18L0,4" stroke="#4d5a18" stroke-width="2"/>`;
+  const SUIT = [heart, bell, leaf, acorn];
+  const g = (art, x, y, sc, rot = 0) => `<g transform="translate(${x} ${y}) rotate(${rot}) scale(${sc})">${art}</g>`;
+
+  // small landscape vignette, drawn fully inside its rect
+  function scene(x, y, w, h, kind = 'spring') {
+    const sky = { spring: '#cfe6f5', summer: '#bfe0f7', autumn: '#f3dcb0', winter: '#dfe5ea' }[kind];
+    const ground = { spring: '#7cc06a', summer: '#e9c84a', autumn: '#b88a3c', winter: '#ffffff' }[kind];
+    const tree = { spring: '#f2a7b8', summer: '#3f9a3a', autumn: '#e0782c', winter: 'none' }[kind];
+    const r = Math.min(8, h / 4);
+    const x2 = x + w, y2 = y + h, hz = y + h * 0.58;
+    return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${r}" fill="${sky}" ${sw} stroke-width="1.2"/>
+      <path d="M${x + 1},${hz}Q${x + w * 0.3},${hz - h * 0.18} ${x + w * 0.55},${hz}T${x2 - 1},${hz - h * 0.06}V${y2 - r}Q${x2 - 1},${y2 - 1} ${x2 - r},${y2 - 1}H${x + r}Q${x + 1},${y2 - 1} ${x + 1},${y2 - r}Z" fill="${ground}" stroke="${K}" stroke-width=".8"/>
+      <rect x="${x + w * 0.62}" y="${hz - h * 0.2}" width="${w * 0.14}" height="${h * 0.16}" fill="#fff6e0" stroke="${K}" stroke-width=".8"/>
+      <path d="M${x + w * 0.6},${hz - h * 0.2}L${x + w * 0.69},${hz - h * 0.34}L${x + w * 0.78},${hz - h * 0.2}Z" fill="${R}" stroke="${K}" stroke-width=".8"/>
+      <rect x="${x + w * 0.24}" y="${hz - h * 0.24}" width="${w * 0.03}" height="${h * 0.26}" fill="${BR}"/>
+      ${tree === 'none' ? `<path d="M${x + w * 0.255},${hz - h * 0.2}l-${w * 0.06},-${h * 0.14}M${x + w * 0.255},${hz - h * 0.14}l${w * 0.07},-${h * 0.12}" stroke="${BR}" stroke-width="1.2"/>` : `<circle cx="${x + w * 0.255}" cy="${hz - h * 0.3}" r="${Math.min(w, h) * 0.16}" fill="${tree}" stroke="${K}" stroke-width=".8"/>`}
+      ${kind === 'summer' ? `<circle cx="${x + w * 0.85}" cy="${y + h * 0.22}" r="${h * 0.1}" fill="${Y}" stroke="${K}" stroke-width=".8"/>` : ''}`;
+  }
+
+  // ---- pips ----
+  const COLS = [35, 83];
+  function layout(n) {
+    const sideY = [28, 54, 128, 154];
+    const pts = [];
+    if (n >= 8) COLS.forEach(x => sideY.forEach(y => pts.push([x, y])));
+    if (n === 10) pts.push([CX, 41], [CX, 141]);
+    if (n === 9) pts.push([CX, 91]);
+    if (n === 7) { COLS.forEach(x => [28, 54].forEach(y => pts.push([x, y]))); pts.push([35, 154], [83, 154], [CX, 134]); }
+    return pts;
+  }
+  function pips(c) {
+    const n = +c.r, art = SUIT[c.s], pts = layout(n);
+    let out = '';
+    if (n === 8 || n === 7) out += scene(14, 74, 90, 34, ['spring', 'summer', 'autumn', 'winter'][c.s]);
+    if (n === 10) out += scene(38, 78, 42, 26, ['spring', 'summer', 'autumn', 'winter'][c.s]);
+    if (c.s >= 2) {
+      // leaves and acorns grow on a red vine
+      const segs = pts.map(([x, y]) => `M${CX},${y < 91 ? y + 8 : y - 8}L${x},${y}`).join('');
+      out += `<path d="M${CX},20V${n === 8 || n === 7 ? 72 : 162}${n === 8 || n === 7 ? `M${CX},110V162` : ''}${segs}" stroke="${R}" stroke-width="2.4" fill="none" stroke-linecap="round"/>`;
+    }
+    pts.forEach(([x, y]) => { out += g(art, x, y, 0.23, y > 91 ? 180 : 0); });
+    return out;
+  }
+
+  // ---- court figures (top half, y 6..91, mirrored) ----
+  const COURT_COL = [[R, G], [G, R], [BL, Y], [BR, R]];
+  function face(cx, cy, beard) {
+    return `<ellipse cx="${cx}" cy="${cy}" rx="9.5" ry="11.5" fill="${SKIN}" ${sw} stroke-width="1.6"/>
+      <path d="M${cx - 5},${cy - 2}h3.5M${cx + 1.5},${cy - 2}h3.5" stroke="${K}" stroke-width="1.4" stroke-linecap="round"/>
+      <path d="M${cx},${cy - 1}l-1.6,5h2.6" fill="none" stroke="${K}" stroke-width="1"/>
+      <path d="M${cx - 3},${cy + 7}q3,1.6 6,0" fill="none" stroke="${R}" stroke-width="1.3" stroke-linecap="round"/>
+      ${beard ? `<path d="M${cx - 9},${cy + 3}Q${cx - 8},${cy + 18} ${cx},${cy + 20}Q${cx + 8},${cy + 18} ${cx + 9},${cy + 3}Q${cx + 5},${cy + 10} ${cx},${cy + 10}Q${cx - 5},${cy + 10} ${cx - 9},${cy + 3}Z" fill="#8c6a4a" ${sw} stroke-width="1.2"/>` : `<path d="M${cx - 9.5},${cy - 2}q-2,10 1,14M${cx + 9.5},${cy - 2}q2,10 -1,14" stroke="#7a4a24" stroke-width="3" fill="none"/>`}`;
+  }
+  function hatFeather(cx, cy, col) {
+    return `<path d="M${cx - 16},${cy - 8}Q${cx - 14},${cy - 22} ${cx},${cy - 22}Q${cx + 16},${cy - 22} ${cx + 18},${cy - 8}Q${cx},${cy - 13} ${cx - 16},${cy - 8}Z" fill="${col}" ${sw} stroke-width="1.6"/>
+      <path d="M${cx + 10},${cy - 18}C${cx + 22},${cy - 30} ${cx + 30},${cy - 26} ${cx + 36},${cy - 32}C${cx + 32},${cy - 20} ${cx + 22},${cy - 14} ${cx + 12},${cy - 14}Z" fill="#fff" ${sw} stroke-width="1.2"/>`;
+  }
+  function courtTop(c) {
+    const [m, s2] = COURT_COL[c.s], sym = SUIT[c.s];
+    if (c.r === 'K') return `
+      <path d="M8,91C8,72 12,58 24,52C25,44 30,38 36,40L40,50C36,54 34,60 36,68C38,76 40,84 41,91Z" fill="#f4ecd8" ${sw} stroke-width="1.8"/>
+      <path d="M24,52C20,46 14,44 10,46C8,52 10,58 16,60C20,60 23,57 24,52Z" fill="#f4ecd8" ${sw} stroke-width="1.6"/>
+      <circle cx="15" cy="51" r="1.6" fill="${K}"/>
+      <path d="M36,40C42,46 44,56 42,66C44,74 44,82 46,91" fill="none" stroke="${R}" stroke-width="5"/>
+      <path d="M12,55L24,54L32,46" fill="none" stroke="${BR}" stroke-width="2"/>
+      <path d="M44,91L48,62Q66,52 86,60L96,91Z" fill="${m}" ${sw} stroke-width="1.8"/>
+      <path d="M52,62Q70,72 88,62L86,56Q70,66 54,56Z" fill="#fff" ${sw} stroke-width="1.3"/>
+      ${face(70, 40, true)}
+      <path d="M58,32L55,16L63,24L70,12L77,24L85,16L82,32Z" fill="${Y}" ${sw} stroke-width="1.6"/>
+      <rect x="57" y="28" width="26" height="6" fill="${R}" ${sw} stroke-width="1.4"/>
+      ${g(sym, 104, 18, 0.16)}`;
+    const isU = c.r === 'U';
+    return `
+      <path d="M16,91L22,62Q40,52 59,54Q78,52 96,62L102,91Z" fill="${m}" ${sw} stroke-width="1.8"/>
+      <path d="M44,91L46,60Q59,64 72,60L74,91Z" fill="${s2}" ${sw} stroke-width="1.5"/>
+      <path d="M46,72H72M46,82H74" stroke="${Y}" stroke-width="2.2"/>
+      <path d="M42,58Q59,68 76,58L74,52Q59,62 44,52Z" fill="#fff" ${sw} stroke-width="1.3"/>
+      ${face(59, 38, !isU)}
+      ${hatFeather(59, 34, s2)}
+      ${isU
+        ? `<ellipse cx="88" cy="80" rx="5" ry="4" fill="${SKIN}" ${sw} stroke-width="1.2"/>${g(sym, 16, 78, 0.18)}`
+        : `<ellipse cx="94" cy="58" rx="5" ry="4" fill="${SKIN}" ${sw} stroke-width="1.2"/>${g(sym, 16, 18, 0.18)}`}`;
+  }
+
+  const SEASON = { hr: ['PROLJEĆE', 'LJETO', 'JESEN', 'ZIMA'], en: ['SPRING', 'SUMMER', 'AUTUMN', 'WINTER'] };
+  const SEASON_KIND = ['spring', 'summer', 'autumn', 'winter'];
+  const ROMAN = { '7': 'VII', '8': 'VIII', '9': 'IX', '10': 'X' };
+
+  function card(c, lang = 'hr') {
+    let b = `<rect x="1" y="1" width="${W - 2}" height="${H - 2}" rx="7" fill="${P}" stroke="#9a9384" stroke-width="1.5"/>`;
+    if (ROMAN[c.r]) {
+      b += pips(c);
+      const t = ROMAN[c.r];
+      const ix = `<text x="9" y="16" class="ixr" fill="${K}">${t}</text><text x="${W - 9}" y="16" class="ixr" text-anchor="end" fill="${K}">${t}</text>`;
+      b += ix + `<g transform="rotate(180 ${W / 2} ${H / 2})">${ix}</g>`;
+    } else if (c.r === 'A') {
+      const top = `${scene(8, 8, W - 16, 74, SEASON_KIND[c.s])}`;
+      b += top + `<g transform="rotate(180 ${W / 2} ${H / 2})">${top}</g>`;
+      b += g(SUIT[c.s], CX, 91, 0.3);
+      b += `<path d="M6,84H112L108,91L112,98H6L10,91Z" fill="${P}" ${sw} stroke-width="1.2" opacity=".0"/>`;
+      b += `<rect x="6" y="84" width="22" height="14" rx="3" fill="${P}" ${sw} stroke-width="1"/><rect x="${W - 28}" y="84" width="22" height="14" rx="3" fill="${P}" ${sw} stroke-width="1"/>`;
+      b += `<text x="17" y="94" text-anchor="middle" font-family="Georgia, serif" font-weight="700" font-size="7" fill="${K}">A</text><text x="${W - 17}" y="94" text-anchor="middle" font-family="Georgia, serif" font-weight="700" font-size="7" fill="${K}">A</text>`;
+      b += `<text x="${CX}" y="20" text-anchor="middle" font-family="Georgia, serif" font-weight="700" font-size="7.5" letter-spacing=".6" fill="${K}">${SEASON[lang][c.s]}</text>`;
+      b += `<text x="${CX}" y="20" text-anchor="middle" font-family="Georgia, serif" font-weight="700" font-size="7.5" letter-spacing=".6" fill="${K}" transform="rotate(180 ${W / 2} ${H / 2})">${SEASON[lang][c.s]}</text>`;
+    } else {
+      const top = courtTop(c);
+      b += `<rect x="5" y="5" width="${W - 10}" height="${H - 10}" rx="4" fill="none" stroke="${K}" stroke-width="1.2"/>`;
+      b += `<g>${top}</g><g transform="rotate(180 ${W / 2} ${H / 2})">${top}</g>`;
+      b += `<path d="M5,91H${W - 5}" stroke="${K}" stroke-width="1.2"/>`;
+    }
+    return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">${b}</svg>`;
+  }
+  const back = () => `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
+    <rect x="1" y="1" width="${W - 2}" height="${H - 2}" rx="7" fill="${P}" stroke="#9a9384" stroke-width="1.5"/>
+    <rect x="6" y="6" width="${W - 12}" height="${H - 12}" rx="4" fill="url(#bkH)" stroke="#4a120e" stroke-width="1.5"/>
+    <rect x="${W / 2 - 20}" y="${H / 2 - 20}" width="40" height="40" rx="4" transform="rotate(45 ${W / 2} ${H / 2})" fill="#8e2a24" stroke="#e8d7a8" stroke-width="1.5"/>
+    ${g(heart, W / 2, H / 2, 0.2)}</svg>`;
+  return { card, back, SUIT, W, H };
+})();
+</script>
 <script>// ===================== CARD ART (original SVG drawings) =====================
 const Cards = (() => {
   const INK = '#2a1d14', RED = '#c4382b', GOLD = '#e2a92f', BLUE = '#3c6aa0', GREEN = '#4a8a3c', SKIN = '#f1c9a0', PAPER = '#fbf6ea';
@@ -669,8 +1007,15 @@ const Cards = (() => {
     <pattern id="bkT" width="12" height="12" patternUnits="userSpaceOnUse"><rect width="12" height="12" fill="#24477a"/><path d="M6,0L12,6L6,12L0,6Z" fill="none" stroke="#5d84bd" stroke-width="1"/></pattern>
     <pattern id="bkH" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="10" height="10" fill="#8e2a24"/><rect width="5" height="10" fill="#7a221d"/><circle cx="5" cy="5" r="1.4" fill="#3f7d3a"/></pattern>
   </defs></svg>`;
-  const suitIcon = (game, s, size = 18) => `<svg viewBox="-50 -50 100 100" width="${size}" height="${size}" aria-hidden="true">${(game === 'b' ? T_SUIT : H_SUIT)[s]}</svg>`;
-  return { triestine, madjarice, back, DEFS, suitIcon };
+  const suitIcon = (game, s, size = 18) => `<svg viewBox="-50 -50 100 100" width="${size}" height="${size}" aria-hidden="true">${(game === 'b' ? Triestine.SUIT : Madjarice.SUIT)[s]}</svg>`;
+  const DEFS2 = DEFS.replace(/<pattern id="bkT"[\s\S]*?<\/pattern>/, Triestine.PATTERN);
+  return {
+    triestine: c => Triestine.card(c),
+    madjarice: (c, lang) => Madjarice.card(c, lang),
+    back: deck => deck === 'b' ? Triestine.back() : Madjarice.back(),
+    DEFS: DEFS2, suitIcon,
+    ratio: game => game === 'b' ? Triestine.H / Triestine.W : Madjarice.H / Madjarice.W
+  };
 })();
 </script>
 <script>// ===================== APP (UI + game flow) =====================
@@ -999,7 +1344,7 @@ function renderHand() {
   const total = cw + step * (n - 1);
   const x0 = (W - total) / 2;
   el.style.setProperty('--cw', cw + 'px');
-  el.style.height = (cw * 190 / 120 + 6) + 'px';
+  el.style.height = (cw * Cards.ratio(G.game) + 6) + 'px';
   const legal = pending ? pending.legal : null;
   el.classList.toggle('live', !!pending);
   let html = cards.map((c, i) => {
