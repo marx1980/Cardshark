@@ -1158,7 +1158,6 @@ function showSettings() {
     <h4>${t.deckB}</h4><div class="decks">${deckRow('b', pickB, 'bDeck')}</div>
     <h4>${t.deckH}</h4><div class="decks">${deckRow('h', pickH, 'hDeck')}</div>
     <h4>${t.speed}</h4>${seg('speed', [['normal', t.normal], ['fast', t.fast]])}
-    <h4>${t.tap}</h4>${seg('tap', [[1, t.tap1], [2, t.tap2]])}
     <p class="muted credit">${t.credit}</p>
     <div class="btns"><button class="pri" id="sx">${t.close}</button></div>`, v => {
     v.querySelector('#sx').onclick = () => { closeSheet(); if (G) renderAll(); else renderHome(); };
@@ -1321,7 +1320,6 @@ $('#hand').addEventListener('click', e => {
   const b = e.target.closest('.hc'); if (!b || !pending || !b.dataset.id) return;
   const id = b.dataset.id;
   if (!pending.legal.has(id)) return;
-  if (S.tap === 2 && sel !== id) { sel = id; renderHand(); status(L().tapAgain); return; }
   const card = G.hands[0].find(c => c.id === id);
   const p = pending; pending = null; sel = null;
   p.res(card);
