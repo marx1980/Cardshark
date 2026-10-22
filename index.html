@@ -1117,7 +1117,7 @@ function renderHome() {
     </article>
     <button class="ghost set" id="goSet"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>${t.settings}</button>
     <div class="prefs"><button class="ghost" id="rB">${t.rulesB}</button><button class="ghost" id="rH">${t.rulesH}</button></div>
-    <p class="foot">${t.foot}</p>
+    <p class="foot">${t.foot} · v7</p>
   </div>`;
   $('#home').querySelectorAll('.seg button').forEach(b => b.onclick = () => {
     const k = b.dataset.k; let v = b.dataset.v;
@@ -1327,7 +1327,8 @@ function playFromHand(e) {
   p.res(card);
 }
 // pointerup plays on the first touch (iOS otherwise spends the first tap on hover); click covers keyboard
-$('#hand').addEventListener('pointerup', e => { if (e.pointerType !== 'mouse' || e.button === 0) playFromHand(e); });
+$('#hand').addEventListener('pointerdown', e => { if (e.pointerType !== 'mouse') playFromHand(e); });
+$('#hand').addEventListener('touchstart', e => playFromHand(e), { passive: false });
 $('#hand').addEventListener('click', playFromHand);
 $('#center').addEventListener('click', () => { });
 
