@@ -1,0 +1,1269 @@
+<!doctype html>
+<html lang="hr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Cardshark">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="icon" type="image/svg+xml" href="icons/mark.svg">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);box-sizing:border-box}[hidden]{display:none!important}img{max-width:100%}</style>
+<title>Cardshark</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="theme-color" content="#173b2f">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya+SC:wght@500;700;800&family=Alegreya+Sans:wght@400;500;700&display=swap">
+<style>
+/* Layout: one-screen card table on baize, walnut rail, brass accents; home is a scrolling menu of two games */
+:root{
+  --felt:#1c4a3a; --felt-hi:#24604b; --felt-lo:#123228;
+  --rail:#3a2416; --rail-hi:#5c3a24;
+  --ink:#f3ecd9; --muted:#a8c0b2; --faint:rgba(243,236,217,.14);
+  --brass:#d6ab52; --brass-ink:#2b1b08; --alert:#e9876a; --good:#9fd49a;
+  --sheet:#f6efdd; --sheet-ink:#2a2118; --sheet-line:#c9bb98; --sheet-muted:#7a6a52;
+  --display:"Alegreya SC", "Palatino Linotype", Georgia, serif;
+  --body:"Alegreya Sans", "Segoe UI", system-ui, sans-serif;
+  color-scheme: dark;
+}
+html,body{height:100%}
+body{margin:0;background:var(--felt-lo);color:var(--ink);font-family:var(--body);font-size:16px;-webkit-tap-highlight-color:transparent;overscroll-behavior:none}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+#app{height:100%;box-sizing:border-box;padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));
+  background:radial-gradient(120% 80% at 50% 30%, var(--felt-hi), var(--felt) 45%, var(--felt-lo));}
+.svgc svg{display:block;width:100%;height:auto}
+.ix{font:700 15px var(--display)} .ixr{font:700 12.5px var(--display)}
+.lbl{font:800 7.2px var(--display);text-anchor:middle;letter-spacing:.4px}
+
+/* ---------- HOME ---------- */
+#home{height:100%;overflow-y:auto;padding-block:20px 32px;box-sizing:border-box}
+.wrap{max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:22px}
+.brand{display:flex;flex-direction:column-reverse;gap:10px;padding-top:2px}
+.brand .lang{align-self:flex-end}
+.bl{display:flex;align-items:flex-end;gap:12px;min-width:0}
+.logo{width:clamp(64px,19vw,92px);aspect-ratio:1;flex:none;border-radius:22%;background:var(--felt);overflow:hidden;display:flex;align-items:flex-end;justify-content:center;box-shadow:inset 0 0 0 1px var(--faint)}
+.logo svg{width:88%;margin-bottom:-2px}
+.brand h1{font:800 clamp(36px,11vw,60px)/.9 var(--display);margin:0;color:var(--ink)}
+.brand h1 span{color:var(--brass)}
+.brand p{margin:6px 0 0;color:var(--muted);font-size:14px;max-width:26ch}
+.lang{display:flex;border:1px solid var(--faint);border-radius:99px;overflow:hidden;flex:none}
+.lang button{background:none;border:0;padding:7px 12px;font-weight:700;font-size:13px;letter-spacing:.06em;color:var(--muted);cursor:pointer}
+.lang button[aria-pressed="true"]{background:var(--brass);color:var(--brass-ink)}
+.game{background:linear-gradient(180deg, rgba(0,0,0,.18), rgba(0,0,0,.28));border:1px solid var(--faint);border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:14px;box-shadow:inset 0 1px 0 rgba(255,255,255,.05)}
+.game-top{display:flex;gap:14px;align-items:center}
+.fan{position:relative;width:118px;height:96px;flex:none}
+.fan .svgc{position:absolute;width:52px;bottom:4px;left:30px;filter:drop-shadow(0 3px 4px rgba(0,0,0,.4));transform-origin:50% 120%}
+.game h2{font:800 30px/1 var(--display);margin:0}
+.game .sub{color:var(--muted);font-size:14px;margin:4px 0 0;line-height:1.35}
+.opt{display:flex;flex-direction:column;gap:6px}
+.opt>span{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button{flex:1 1 auto;min-width:64px;background:rgba(0,0,0,.22);border:1px solid var(--faint);border-radius:10px;padding:9px 10px;cursor:pointer;font-size:15px;color:var(--ink)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--felt-lo);border-color:var(--ink);font-weight:700}
+.note{font-size:13px;color:var(--muted);margin:0}
+.check{display:flex;gap:10px;align-items:flex-start;font-size:14px;color:var(--ink);cursor:pointer}
+.check input{width:20px;height:20px;accent-color:var(--brass);margin:0;flex:none}
+.play{background:var(--brass);color:var(--brass-ink);border:0;border-radius:12px;padding:13px 16px;font:800 20px var(--display);letter-spacing:.04em;cursor:pointer;box-shadow:0 3px 0 #8a6a28}
+.play:active{transform:translateY(2px);box-shadow:0 1px 0 #8a6a28}
+.prefs{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.ghost{background:none;border:1px solid var(--faint);border-radius:12px;padding:11px;color:var(--ink);cursor:pointer;font-weight:700}
+.foot{color:var(--muted);font-size:12.5px;text-align:center;margin:0}
+@media (max-width:420px){.prefs{grid-template-columns:1fr}}
+
+/* ---------- TABLE ---------- */
+#table{height:100%;display:flex;flex-direction:column;max-width:760px;margin:0 auto}
+.bar{display:flex;align-items:center;gap:8px;padding-block:8px 6px}
+.ib{width:38px;height:38px;border-radius:10px;border:1px solid var(--faint);background:rgba(0,0,0,.2);display:grid;place-items:center;cursor:pointer;flex:none}
+.ib svg{width:20px;height:20px}
+.chip{display:flex;align-items:center;gap:6px;background:rgba(0,0,0,.25);border:1px solid var(--faint);border-radius:99px;padding:5px 11px;font-size:14px;white-space:nowrap;min-width:0}
+.chip b{font-family:var(--display);font-size:16px}
+.chip.score{font-variant-numeric:tabular-nums;margin-left:auto}
+.chip .k{color:var(--muted);font-size:12px;letter-spacing:.08em;text-transform:uppercase}
+.felt{position:relative;flex:1;min-height:0;border-radius:26px;border:7px solid var(--rail);
+  background:radial-gradient(90% 70% at 50% 45%, var(--felt-hi), var(--felt) 60%, #17402f);
+  box-shadow:inset 0 0 0 2px var(--rail-hi), inset 0 10px 30px rgba(0,0,0,.35), 0 6px 18px rgba(0,0,0,.35);overflow:hidden}
+.seat{position:absolute;display:flex;flex-direction:column;align-items:center;gap:4px;z-index:2;transition:opacity .2s}
+.seat.s2{top:8px;left:50%;transform:translateX(-50%)}
+.seat.s1{right:6px;top:21%;align-items:flex-end}
+.seat.s3{left:6px;top:21%;align-items:flex-start}
+.who{display:flex;align-items:center;gap:6px;font-weight:700;font-size:13.5px;background:rgba(0,0,0,.28);border-radius:99px;padding:3px 9px 3px 3px;border:1px solid transparent;white-space:nowrap}
+.av{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font:800 13px var(--display);background:var(--ink);color:var(--felt-lo)}
+.seat.mate .av{background:var(--brass);color:var(--brass-ink)}
+.seat.turn .who{border-color:var(--brass);box-shadow:0 0 0 3px rgba(214,171,82,.25)}
+.tag{font-size:10.5px;font-weight:800;letter-spacing:.06em;border-radius:5px;padding:1px 5px;background:var(--ink);color:var(--felt-lo)}
+.tag.call{background:var(--brass);color:var(--brass-ink)}
+.mini{display:flex;height:34px}
+.mini .svgc{width:22px;margin-left:-14px;filter:drop-shadow(0 1px 1px rgba(0,0,0,.4))}
+.mini .svgc:first-child{margin-left:0}
+.mini.open .svgc{width:34px;margin-left:-12px}
+.mini.open{height:56px}
+#center{position:absolute;inset:0;z-index:1}
+.tc{position:absolute;width:var(--tw);transform:translate(-50%,-50%) rotate(var(--r,0deg));filter:drop-shadow(0 4px 6px rgba(0,0,0,.45));pointer-events:none}
+.stock{position:absolute;left:12px;bottom:12px;width:calc(var(--tw)*1.75);height:calc(var(--tw)*1.15);z-index:1}
+.stock .tr{position:absolute;width:calc(var(--tw)*.8);left:calc(var(--tw)*.55);top:50%;transform:translateY(-50%) rotate(90deg)}
+.stock .pile{position:absolute;width:calc(var(--tw)*.8);left:0;top:0;filter:drop-shadow(2px 3px 0 #0f2a20)}
+.stock .cnt{position:absolute;left:calc(var(--tw)*.4);top:50%;transform:translate(-50%,-50%);font:800 15px var(--display);background:rgba(0,0,0,.6);border-radius:8px;padding:1px 7px;font-variant-numeric:tabular-nums}
+.bubble{position:absolute;z-index:5;background:var(--sheet);color:var(--sheet-ink);font-weight:700;font-size:14px;border-radius:12px;padding:6px 11px;box-shadow:0 4px 12px rgba(0,0,0,.35);white-space:nowrap;transform:translate(-50%,-50%);animation:pop .22s ease-out;display:flex;align-items:center;gap:6px}
+.bubble.gold{background:var(--brass);color:var(--brass-ink)}
+@keyframes pop{from{transform:translate(-50%,-50%) scale(.7);opacity:0}}
+.action{min-height:52px;display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;padding-block:8px 4px;text-align:center}
+.msg{font-size:15px;color:var(--ink)}
+.msg .m{color:var(--muted)}
+.bid{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;width:100%}
+.bid button{display:flex;align-items:center;gap:6px;background:var(--sheet);color:var(--sheet-ink);border:0;border-radius:10px;padding:8px 11px;font-weight:700;font-size:15px;cursor:pointer;box-shadow:0 2px 0 rgba(0,0,0,.35)}
+.bid button.pass{background:rgba(0,0,0,.3);color:var(--ink);border:1px solid var(--faint);box-shadow:none}
+.bid button:disabled{opacity:.35;cursor:not-allowed}
+.hand{position:relative;flex:none;margin-bottom:10px}
+.hc{position:absolute;bottom:0;width:var(--cw);transition:transform .16s ease, filter .16s;cursor:pointer;filter:drop-shadow(0 3px 5px rgba(0,0,0,.45));border:0;background:none;padding:0}
+.hc.sel{transform:translateY(-22%)}
+.hc.off{filter:brightness(.55) saturate(.6);cursor:default}
+.hc.talon{filter:brightness(.8)}
+.hand.live .hc:not(.off):not(.sel):hover{transform:translateY(-8%)}
+
+/* ---------- SHEET (overlays) ---------- */
+.veil{position:fixed;inset:0;z-index:20;background:rgba(6,16,12,.6);display:flex;align-items:flex-end;justify-content:center;animation:fade .2s}
+@keyframes fade{from{opacity:0}}
+.sheet{background:var(--sheet);color:var(--sheet-ink);width:100%;max-width:520px;max-height:88%;overflow-y:auto;border-radius:20px 20px 0 0;box-sizing:border-box;
+  padding-block:20px calc(20px + env(safe-area-inset-bottom, 0px));padding-left:max(18px, env(safe-area-inset-left, 0px));padding-right:max(18px, env(safe-area-inset-right, 0px));
+  box-shadow:0 -8px 30px rgba(0,0,0,.4);animation:up .25s ease-out}
+@keyframes up{from{transform:translateY(30px);opacity:.4}}
+@media (min-width:640px){.veil{align-items:center}.sheet{border-radius:20px}}
+.sheet h3{font:800 28px/1.05 var(--display);margin:0 0 6px;text-wrap:balance}
+.sheet h4{font:800 19px var(--display);margin:18px 0 6px}
+.sheet p,.sheet li{line-height:1.45;font-size:15.5px}
+.sheet ul{padding-left:20px;margin:6px 0}
+.sheet .muted{color:var(--sheet-muted)}
+.big{display:flex;align-items:baseline;justify-content:center;gap:14px;font:800 52px/1 var(--display);margin:14px 0 4px;font-variant-numeric:tabular-nums}
+.big small{font:700 14px var(--body);color:var(--sheet-muted);letter-spacing:.1em;text-transform:uppercase;display:block;text-align:center}
+.big .sep{color:var(--sheet-line)}
+.verdict{text-align:center;font-weight:700;font-size:17px;margin:4px 0 14px}
+.tally{display:flex;justify-content:center;gap:24px;margin:8px 0 16px;font-variant-numeric:tabular-nums}
+.tally div{text-align:center}
+.tally b{display:block;font:800 26px var(--display)}
+.marks{font:700 22px var(--display);letter-spacing:2px;color:var(--sheet-ink)}
+.btns{display:flex;gap:10px;margin-top:16px}
+.btns button{flex:1;border-radius:12px;padding:13px;font:800 18px var(--display);cursor:pointer;border:0}
+.btns .pri{background:var(--felt);color:var(--ink)}
+.btns .sec{background:transparent;border:1.5px solid var(--sheet-line);color:var(--sheet-ink)}
+table.pis{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;margin-top:8px}
+.pis th{font:800 20px var(--display);border-bottom:2px solid var(--sheet-ink);padding:4px 6px}
+.pis td{padding:6px;border-bottom:1px dashed var(--sheet-line);text-align:center;font-size:17px}
+.pis td.n{color:var(--sheet-muted);font-size:13px;width:28px;text-align:left}
+.pis td.note{font-size:12.5px;color:var(--sheet-muted);text-align:left;line-height:1.25}
+.pis tr.tot td{border-bottom:0;border-top:2px solid var(--sheet-ink);font:800 22px var(--display)}
+.pis .x{color:#b4432c;font-weight:700}
+.pisw{overflow-x:auto}
+.trickview{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:12px 0}
+.trickview figure{margin:0;width:68px;text-align:center;font-size:12px;color:var(--sheet-muted)}
+.trickview figure.w{color:var(--sheet-ink);font-weight:800}
+.trickview figure.w .svgc{outline:3px solid var(--brass);border-radius:9px}
+.decl{display:flex;flex-direction:column;gap:4px;margin:8px 0}
+.decl div{display:flex;justify-content:space-between;gap:10px;border-bottom:1px dashed var(--sheet-line);padding:4px 0}
+.rank{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:6px 14px;font-size:14.5px;margin:6px 0}
+.rank div{display:flex;justify-content:space-between;border-bottom:1px dashed var(--sheet-line)}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+</head>
+<body>
+<div id="defs"></div>
+<div id="app">
+  <section id="home"></section>
+  <section id="table" hidden>
+    <header class="bar">
+      <button class="ib" id="bHome" aria-label="Menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M15 5l-7 7 7 7"/></svg></button>
+      <div class="chip" id="trumpChip"></div>
+      <div class="chip score" id="scoreChip"></div>
+      <button class="ib" id="bLast" aria-label="Last trick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 12a8 8 0 1 0 3-6.2"/><path d="M4 4v5h5"/></svg></button>
+      <button class="ib" id="bRules" aria-label="Rules"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14"/><circle cx="12" cy="17.2" r=".6" fill="currentColor"/></svg></button>
+    </header>
+    <div class="felt" id="felt">
+      <div class="seat s2" id="seat2"></div>
+      <div class="seat s1" id="seat1"></div>
+      <div class="seat s3" id="seat3"></div>
+      <div class="stock" id="stock" hidden></div>
+      <div id="center"></div>
+    </div>
+    <div class="action" id="action"></div>
+    <div class="hand" id="hand"></div>
+  </section>
+</div>
+<div id="overlay"></div>
+
+<script>// ===================== ENGINE (pure game logic + AI) =====================
+const Engine = (() => {
+  const shuffle = (a) => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  const sum = (a, f) => a.reduce((x, y) => x + f(y), 0);
+
+  // ---------- shared seat helpers ----------
+  function teamOf(st, seat) { return st.seats.length === 2 ? (seat === 0 ? 0 : 1) : seat % 2; }
+  function nextSeat(st, s) { const i = st.seats.indexOf(s); return st.seats[(i + 1) % st.seats.length]; }
+  function roundFrom(st, s) { const o = []; for (let i = 0; i < st.seats.length; i++) { o.push(s); s = nextSeat(st, s); } return o; }
+
+  // =============================== BRIŠKULA ===============================
+  // Triestine 40-card deck. Rank order A,3,K(re),C(cavallo/konj),F(fante),7,6,5,4,2
+  const B_RANKS = [
+    { k: 'A', n: 1, st: 10, p: 11 }, { k: '3', n: 3, st: 9, p: 10 }, { k: 'K', n: 13, st: 8, p: 4 },
+    { k: 'C', n: 12, st: 7, p: 3 }, { k: 'F', n: 11, st: 6, p: 2 }, { k: '7', n: 7, st: 5, p: 0 },
+    { k: '6', n: 6, st: 4, p: 0 }, { k: '5', n: 5, st: 3, p: 0 }, { k: '4', n: 4, st: 2, p: 0 }, { k: '2', n: 2, st: 1, p: 0 }];
+  function bDeck() { const d = []; for (let s = 0; s < 4; s++) for (const r of B_RANKS) d.push({ id: 'b' + s + r.k, s, r: r.k, n: r.n, st: r.st, p: r.p }); return d; }
+
+  function bNew(opts) {
+    const seats = opts.players === 4 ? [0, 1, 2, 3] : [0, 2];
+    return { game: 'b', opts, seats, dealer: seats[seats.length - 1], wins: [0, 0], history: [] };
+  }
+  function bDeal(st) {
+    const deck = shuffle(bDeck());
+    const hs = st.opts.double ? 4 : 3;
+    st.hands = {}; st.seats.forEach(s => st.hands[s] = []);
+    let s = nextSeat(st, st.dealer);
+    for (let i = 0; i < hs * st.seats.length; i++) { st.hands[s].push(deck.pop()); s = nextSeat(st, s); }
+    st.stock = deck;               // drawn with pop(); stock[0] is the face-up trump card (drawn last)
+    st.trumpCard = deck[0]; st.trump = deck[0].s;
+    st.leader = nextSeat(st, st.dealer);
+    st.trick = []; st.won = [[], []]; st.seen = new Set(); st.lastTrick = null; st.trickNo = 0;
+  }
+  function bOrder(st) { const o = roundFrom(st, st.leader); return st.opts.double ? o.concat(o) : o; }
+  function bToPlay(st) { return bOrder(st)[st.trick.length]; }
+  function bBeats(a, b, T) { return a.s === b.s ? a.st > b.st : a.s === T; }
+  function bWinnerIdx(trick, T) { let w = 0; for (let i = 1; i < trick.length; i++) if (bBeats(trick[i].card, trick[w].card, T)) w = i; return w; }
+  function bPlay(st, seat, card) {
+    const h = st.hands[seat]; h.splice(h.findIndex(c => c.id === card.id), 1);
+    st.trick.push({ seat, card }); st.seen.add(card.id);
+    return st.trick.length === bOrder(st).length;
+  }
+  function bFinishTrick(st) {
+    const w = st.trick[bWinnerIdx(st.trick, st.trump)].seat;
+    st.won[teamOf(st, w)].push(...st.trick.map(t => t.card));
+    st.lastTrick = { trick: st.trick, winner: w, pts: sum(st.trick, t => t.card.p) };
+    st.trick = []; st.leader = w; st.trickNo++;
+    const draws = [];
+    if (st.stock.length) {
+      const rounds = st.opts.double ? 2 : 1;
+      for (let r = 0; r < rounds; r++) for (const s of roundFrom(st, w)) { const c = st.stock.pop(); st.hands[s].push(c); draws.push({ seat: s, card: c }); }
+    }
+    return { winner: w, draws };
+  }
+  function bHandOver(st) { return st.trick.length === 0 && st.seats.every(s => st.hands[s].length === 0); }
+  function bPoints(st) { return st.won.map(cs => sum(cs, c => c.p)); }
+
+  function bAI(st, seat) {
+    const hand = st.hands[seat], T = st.trump, order = bOrder(st), pos = st.trick.length;
+    const after = order.slice(pos + 1), me = teamOf(st, seat);
+    const oppAfter = after.filter(s => teamOf(st, s) !== me).length;
+    const partnerAfter = after.some(s => s !== seat && teamOf(st, s) === me);
+    const known = new Set([...st.seen, ...hand.map(c => c.id)]);
+    const unk = bDeck().filter(c => !known.has(c.id));
+    const unkT = unk.filter(c => c.s === T);
+    const tablePts = sum(st.trick, t => t.card.p);
+    const curW = pos ? st.trick[bWinnerIdx(st.trick, T)] : null;
+    const late = st.stock.length === 0;
+    const pHold = (card) => {
+      if (!oppAfter) return 1;
+      let one;
+      if (card.s === T) { const u = unkT.filter(c => c.st > card.st).length; one = u === 0 ? 1 : Math.max(0.1, Math.pow(0.74, u)); }
+      else {
+        const h = unk.filter(c => c.s === card.s && c.st > card.st).length;
+        one = Math.pow(0.86, h) * (unkT.length ? Math.max(0.3, 1 - 0.1 * Math.min(unkT.length, 7)) : 1);
+      }
+      return Math.pow(one, oppAfter);
+    };
+    let best = null;
+    for (const c of hand) {
+      const iWin = !curW || bBeats(c, curW.card, T);
+      let pWin;
+      if (iWin) { const ph = pHold(c); pWin = ph + (1 - ph) * (partnerAfter ? 0.25 : 0); }
+      else if (teamOf(st, curW.seat) === me) pWin = pHold(curW.card);
+      else pWin = partnerAfter ? 0.3 : 0;
+      let ev = (2 * pWin - 1) * (tablePts + c.p + after.length * 1.6);
+      if (c.s === T) ev -= (late ? 0.35 : 1) * (2 + c.st * 0.9 + (c.p >= 10 ? 7 : 0));
+      ev += Math.random() * 0.25;
+      if (!best || ev > best.ev) best = { c, ev };
+    }
+    return best.c;
+  }
+
+  // ================================= BELA =================================
+  // Mađarice (German-suited, William Tell). Suits: 0 Herc, 1 Bundeva(zvono), 2 Zeleni(list), 3 Žir
+  const H_KEYS = ['7', '8', '9', '10', 'U', 'O', 'K', 'A'];
+  const T_STR = { '7': 1, '8': 2, 'O': 3, 'K': 4, '10': 5, 'A': 6, '9': 7, 'U': 8 };
+  const N_STR = { '7': 1, '8': 2, '9': 3, 'U': 4, 'O': 5, 'K': 6, '10': 7, 'A': 8 };
+  const T_PTS = { 'U': 20, '9': 14, 'A': 11, '10': 10, 'K': 4, 'O': 3 };
+  const N_PTS = { 'A': 11, '10': 10, 'K': 4, 'O': 3, 'U': 2 };
+  function hDeck() { const d = []; for (let s = 0; s < 4; s++) H_KEYS.forEach((k, q) => d.push({ id: 'h' + s + k, s, r: k, q })); return d; }
+  const hStr = (c, T) => c.s === T ? 100 + T_STR[c.r] : N_STR[c.r];
+  const hPts = (c, T) => (c.s === T ? T_PTS : N_PTS)[c.r] || 0;
+
+  function hNew(opts) { return { game: 'h', opts, seats: [0, 1, 2, 3], dealer: 3, score: [0, 0], hang: 0, rows: [] }; }
+  function hDeal(st) {
+    const deck = shuffle(hDeck());
+    st.hands = {}; st.talon = {};
+    for (const s of st.seats) { st.hands[s] = deck.splice(0, 6); st.talon[s] = deck.splice(0, 2); }
+    st.trump = null; st.caller = null; st.bidder = nextSeat(st, st.dealer); st.bids = [];
+    st.trick = []; st.won = [[], []]; st.tricks = [0, 0]; st.seen = new Set(); st.lastTrick = null; st.trickNo = 0;
+    st.void = { 0: {}, 1: {}, 2: {}, 3: {} }; st.belaSeat = null; st.belaCalled = false; st.decls = null;
+  }
+  function hBidValue(hand, s) {
+    let v = 0; const tr = hand.filter(c => c.s === s);
+    const tv = { 'U': 16, '9': 12, 'A': 8, '10': 6, 'K': 4, 'O': 4, '8': 3, '7': 3 };
+    for (const c of tr) v += tv[c.r];
+    for (const c of hand) if (c.s !== s) {
+      if (c.r === 'A') v += 7;
+      else if (c.r === '10') v += hand.some(x => x.s === c.s && x.r === 'A') ? 4 : 1.5;
+      else if (c.r === 'K') v += 1;
+    }
+    if (tr.length >= 3) v += 4;
+    if (tr.some(c => c.r === 'U') && tr.some(c => c.r === '9')) v += 4;
+    if (tr.some(c => c.r === 'K') && tr.some(c => c.r === 'O')) v += 4;
+    return v;
+  }
+  // returns suit index, or -1 to pass
+  function hAIBid(st, seat) {
+    const hand = st.hands[seat]; let best = 0, bv = -1;
+    for (let s = 0; s < 4; s++) { const v = hBidValue(hand, s); if (v > bv) { bv = v; best = s; } }
+    const forced = seat === st.dealer;
+    return (forced || bv >= 38) ? best : -1;
+  }
+  function hBid(st, seat, suit) {
+    st.bids.push({ seat, suit });
+    if (suit >= 0) {
+      st.trump = suit; st.caller = seat;
+      for (const s of st.seats) st.hands[s].push(...st.talon[s]);
+      st.leader = nextSeat(st, st.dealer);
+      for (const s of st.seats) {
+        const h = st.hands[s];
+        if (h.some(c => c.s === suit && c.r === 'K') && h.some(c => c.s === suit && c.r === 'O')) st.belaSeat = s;
+      }
+      st.decls = hResolveDecls(st);
+      return true;
+    }
+    st.bidder = nextSeat(st, seat);
+    return false;
+  }
+  function hFindDecls(hand) {
+    const out = [];
+    for (let s = 0; s < 4; s++) {
+      const qs = hand.filter(c => c.s === s).map(c => c.q).sort((a, b) => a - b);
+      let i = 0;
+      while (i < qs.length) {
+        let j = i; while (j + 1 < qs.length && qs[j + 1] === qs[j] + 1) j++;
+        const L = j - i + 1;
+        if (L >= 3) out.push({ type: L === 8 ? 'belot' : 'seq', s, len: L, top: qs[j], low: qs[i], val: L === 8 ? 1001 : L === 3 ? 20 : L === 4 ? 50 : 100 });
+        i = j + 1;
+      }
+    }
+    for (const r of ['U', '9', 'A', '10', 'K', 'O']) {
+      if (hand.filter(c => c.r === r).length === 4) out.push({ type: 'quad', r, val: r === 'U' ? 200 : r === '9' ? 150 : 100, len: 4, top: H_KEYS.indexOf(r) });
+    }
+    return out;
+  }
+  const declKey = d => [d.type === 'belot' ? 1 : 0, d.val, d.type === 'quad' ? 1 : 0, d.len, d.top];
+  function cmpKey(a, b) { for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return a[i] - b[i]; return 0; }
+  function hResolveDecls(st) {
+    const order = roundFrom(st, nextSeat(st, st.dealer));
+    const per = {}; let bestSeat = null, bestKey = null;
+    for (const s of order) {
+      per[s] = hFindDecls(st.hands[s]);
+      for (const d of per[s]) { const k = declKey(d); if (!bestKey || cmpKey(k, bestKey) > 0) { bestKey = k; bestSeat = s; } }
+    }
+    const team = bestSeat === null ? -1 : bestSeat % 2;
+    const belot = order.find(s => per[s].some(d => d.type === 'belot'));
+    let total = 0;
+    if (team >= 0) for (const s of order) if (s % 2 === team) total += sum(per[s].filter(d => d.type !== 'belot'), d => d.val);
+    return { per, order, team, total, belotSeat: belot === undefined ? null : belot };
+  }
+  function hTrickMaxStr(trick, T, suitFilter) { let m = 0; for (const t of trick) if (suitFilter(t.card)) m = Math.max(m, hStr(t.card, T)); return m; }
+  function hLegal(st, seat) {
+    const hand = st.hands[seat], T = st.trump, trick = st.trick;
+    if (!trick.length) return hand.slice();
+    const led = trick[0].card.s;
+    const follow = hand.filter(c => c.s === led);
+    if (follow.length) {
+      if (led !== T && trick.some(t => t.card.s === T)) return follow;
+      const mx = hTrickMaxStr(trick, T, c => c.s === led);
+      const higher = follow.filter(c => hStr(c, T) > mx);
+      return higher.length ? higher : follow;
+    }
+    const trumps = hand.filter(c => c.s === T);
+    if (trumps.length) {
+      const mx = hTrickMaxStr(trick, T, c => c.s === T);
+      const higher = trumps.filter(c => hStr(c, T) > mx);
+      return higher.length ? higher : trumps;
+    }
+    return hand.slice();
+  }
+  function hWinnerIdx(trick, T) {
+    let w = 0;
+    for (let i = 1; i < trick.length; i++) {
+      const a = trick[i].card, b = trick[w].card;
+      if ((a.s === b.s && hStr(a, T) > hStr(b, T)) || (a.s === T && b.s !== T)) w = i;
+    }
+    return w;
+  }
+  function hToPlay(st) { return roundFrom(st, st.leader)[st.trick.length]; }
+  // returns {done, bela}
+  function hPlay(st, seat, card) {
+    const T = st.trump, h = st.hands[seat];
+    if (st.trick.length) {
+      const led = st.trick[0].card.s;
+      if (card.s !== led) { st.void[seat][led] = true; if (card.s !== T) st.void[seat][T] = true; }
+    }
+    let bela = false;
+    if (seat === st.belaSeat && !st.belaCalled && card.s === T && (card.r === 'K' || card.r === 'O')) { st.belaCalled = true; bela = true; }
+    h.splice(h.findIndex(c => c.id === card.id), 1);
+    st.trick.push({ seat, card }); st.seen.add(card.id);
+    return { done: st.trick.length === 4, bela };
+  }
+  function hFinishTrick(st) {
+    const w = st.trick[hWinnerIdx(st.trick, st.trump)].seat;
+    const tm = w % 2;
+    st.won[tm].push(...st.trick.map(t => t.card)); st.tricks[tm]++;
+    st.lastTrick = { trick: st.trick, winner: w, pts: sum(st.trick, t => hPts(t.card, st.trump)) };
+    st.trick = []; st.leader = w; st.trickNo++;
+    if (st.trickNo === 8) st.lastWinner = w;
+    return { winner: w };
+  }
+  function hHandOver(st) { return st.trickNo === 8; }
+  function hScoreHand(st) {
+    const T = st.trump, c = st.caller % 2, o = 1 - c;
+    const cardPts = st.won.map(cs => sum(cs, x => hPts(x, T)));
+    const pts = cardPts.slice(); pts[st.lastWinner % 2] += 10;
+    const declPts = [0, 0];
+    if (st.decls.team >= 0 && st.tricks[st.decls.team] > 0) declPts[st.decls.team] += st.decls.total;
+    const belaTeam = st.belaSeat === null ? -1 : st.belaSeat % 2;
+    if (belaTeam >= 0 && st.belaCalled && st.tricks[belaTeam] > 0) declPts[belaTeam] += 20;
+    let stiglja = -1;
+    for (const t of [0, 1]) if (st.tricks[t] === 8) { pts[t] += 90; stiglja = t; }
+    const tot = [pts[0] + declPts[0], pts[1] + declPts[1]];
+    const all = tot[0] + tot[1];
+    let result, add = [0, 0], hangUse = st.hang;
+    if (tot[c] > tot[o]) { result = 'pass'; add = tot.slice(); add[c] += st.hang; st.hang = 0; }
+    else if (tot[c] < tot[o]) { result = 'fall'; add[o] = all + st.hang; st.hang = 0; }
+    else { result = 'hang'; add[o] = tot[o]; st.hang += tot[c]; hangUse = 0; }
+    st.score[0] += add[0]; st.score[1] += add[1];
+    const row = { caller: st.caller, trump: T, cardPts, pts, declPts, tot, add, result, stiglja, hangUse, score: st.score.slice() };
+    st.rows.push(row);
+    return row;
+  }
+  function hMatchWinner(st) {
+    const t = st.opts.target;
+    if (st.score[0] >= t || st.score[1] >= t) { if (st.score[0] !== st.score[1]) return st.score[0] > st.score[1] ? 0 : 1; }
+    return -1;
+  }
+
+  function hAI(st, seat) {
+    const legal = hLegal(st, seat);
+    if (legal.length === 1) return legal[0];
+    const T = st.trump, hand = st.hands[seat], pos = st.trick.length;
+    const order = roundFrom(st, st.leader), after = order.slice(pos + 1), me = seat % 2;
+    const opps = after.filter(s => s % 2 !== me);
+    const partnerAfter = after.some(s => s % 2 === me);
+    const known = new Set([...st.seen, ...hand.map(c => c.id)]);
+    const unk = hDeck().filter(c => !known.has(c.id));
+    const unkT = unk.filter(c => c.s === T);
+    const tablePts = sum(st.trick, t => hPts(t.card, T));
+    const curW = pos ? st.trick[hWinnerIdx(st.trick, T)] : null;
+    const led = pos ? st.trick[0].card.s : null;
+    const tricksLeft = 8 - st.trickNo;
+    const holdVs = (card, opp) => {
+      const v = st.void[opp];
+      if (card.s === T) {
+        if (v[T]) return 1;
+        const u = unkT.filter(c => hStr(c, T) > hStr(card, T)).length;
+        return Math.pow(2 / 3, u);
+      }
+      const h = unk.filter(c => c.s === card.s && hStr(c, T) > hStr(card, T)).length;
+      const k = unk.filter(c => c.s === card.s).length;
+      const pT = v[T] ? 0 : 1 - Math.pow(2 / 3, unkT.length);
+      if (v[card.s]) return 1 - pT;
+      const pVoid = Math.pow(2 / 3, k);
+      return Math.pow(2 / 3, h) * (1 - pVoid * pT);
+    };
+    const pHold = card => opps.reduce((p, o) => p * holdVs(card, o), 1);
+    const isMaster = c => !unk.some(x => x.s === c.s && hStr(x, T) > hStr(c, T)) && (c.s === T || true);
+    const myTrumps = hand.filter(c => c.s === T).length;
+    const callerTeam = st.caller % 2 === me;
+    let best = null;
+    for (const c of legal) {
+      let pts = tablePts + hPts(c, T) + after.length * 3;
+      if (st.trickNo === 7) pts += 10;
+      const iWin = !curW || (c.s === curW.card.s ? hStr(c, T) > hStr(curW.card, T) : c.s === T);
+      let pWin;
+      if (iWin) { const ph = pHold(c); pWin = ph + (1 - ph) * (partnerAfter ? 0.3 : 0); }
+      else if (curW.seat % 2 === me) pWin = pHold(curW.card);
+      else pWin = partnerAfter ? 0.3 : 0;
+      let ev = (2 * pWin - 1) * pts;
+      if (c.s === T) ev -= (tricksLeft / 8) * (1.5 + T_STR[c.r] * 0.9);
+      if (!iWin && isMaster(c) && c.s !== T && hPts(c, T) >= 10) ev -= 4;
+      if (pos === 0) {
+        if (c.s === T && isMaster(c) && unkT.length > 0 && (callerTeam || myTrumps >= 3)) ev += 8 + unkT.length;
+        if (c.s !== T && isMaster(c) && unk.some(x => x.s === c.s)) ev += 3;
+        if (c.s === T && !isMaster(c) && !callerTeam) ev -= 4;
+      }
+      if (seat === st.belaSeat && !st.belaCalled && c.s === T && (c.r === 'K' || c.r === 'O')) ev += 1;
+      ev += Math.random() * 0.2;
+      if (!best || ev > best.ev) best = { c, ev };
+    }
+    return best.c;
+  }
+
+  return {
+    shuffle, teamOf, nextSeat, roundFrom,
+    B_RANKS, bDeck, bNew, bDeal, bOrder, bToPlay, bBeats, bWinnerIdx, bPlay, bFinishTrick, bHandOver, bPoints, bAI,
+    H_KEYS, hDeck, hStr, hPts, hNew, hDeal, hAIBid, hBid, hFindDecls, hLegal, hWinnerIdx, hToPlay, hPlay, hFinishTrick, hHandOver, hScoreHand, hMatchWinner, hAI, hBidValue
+  };
+})();
+
+</script>
+<script>// ===================== CARD ART (original SVG drawings) =====================
+const Cards = (() => {
+  const INK = '#2a1d14', RED = '#c4382b', GOLD = '#e2a92f', BLUE = '#3c6aa0', GREEN = '#4a8a3c', SKIN = '#f1c9a0', PAPER = '#fbf6ea';
+  // ---- suit symbols in a 100x100 box centred on 0,0 ----
+  const T_SUIT = [
+    // 0 Kupe (cups)
+    `<path d="M-34,-36H34C34,-6 18,10 0,12C-18,10 -34,-6 -34,-36Z" fill="${GOLD}" stroke="${INK}" stroke-width="3.5"/>
+     <ellipse cx="0" cy="-36" rx="34" ry="7" fill="${RED}" stroke="${INK}" stroke-width="3.5"/>
+     <path d="M-22,-20H22" stroke="${RED}" stroke-width="5"/>
+     <rect x="-5" y="11" width="10" height="20" fill="${BLUE}" stroke="${INK}" stroke-width="3"/>
+     <ellipse cx="0" cy="22" rx="10" ry="5" fill="${GOLD}" stroke="${INK}" stroke-width="3"/>
+     <path d="M-26,44Q0,26 26,44Z" fill="${GOLD}" stroke="${INK}" stroke-width="3.5"/>`,
+    // 1 Dinari (coins)
+    `<circle r="44" fill="${GOLD}" stroke="${INK}" stroke-width="4"/>
+     <circle r="33" fill="none" stroke="${INK}" stroke-width="2.5"/>
+     ${[0, 45, 90, 135].map(a => `<ellipse rx="6" ry="27" transform="rotate(${a})" fill="${RED}" stroke="${INK}" stroke-width="1.6"/>`).join('')}
+     <circle r="9" fill="${GREEN}" stroke="${INK}" stroke-width="2.5"/>`,
+    // 2 Špade (swords) - curved sabre
+    `<path d="M-3,-48Q18,-8 4,30L-6,30Q6,-8 -11,-44Z" fill="#c9d6e2" stroke="${INK}" stroke-width="3"/>
+     <path d="M-3,-40Q12,-8 0,26" fill="none" stroke="${BLUE}" stroke-width="2"/>
+     <path d="M-22,29H20Q22,36 14,36H-16Q-24,36 -22,29Z" fill="${GOLD}" stroke="${INK}" stroke-width="3"/>
+     <rect x="-5" y="36" width="10" height="10" fill="${RED}" stroke="${INK}" stroke-width="2.5"/>
+     <circle cx="0" cy="50" r="5" fill="${GOLD}" stroke="${INK}" stroke-width="2.5"/>`,
+    // 3 Baštoni (clubs) - knotted baton
+    `<path d="M-7,46L-12,-34Q0,-52 12,-34L7,46Q0,50 -7,46Z" fill="#6f9a3e" stroke="${INK}" stroke-width="3.5"/>
+     <path d="M-11,-22l-9,-6M11,-6l9,-6M-10,10l-9,-5M9,24l8,-5" stroke="${INK}" stroke-width="5" stroke-linecap="round"/>
+     <path d="M-11,-22l-9,-6M11,-6l9,-6M-10,10l-9,-5M9,24l8,-5" stroke="#9cc06a" stroke-width="2" stroke-linecap="round"/>
+     <path d="M-9,34H9" stroke="${RED}" stroke-width="5"/>`
+  ];
+  const H_SUIT = [
+    // 0 Herc (hearts)
+    `<path d="M0,40C-58,2 -42,-50 0,-22C42,-50 58,2 0,40Z" fill="${RED}" stroke="${INK}" stroke-width="3.5"/>
+     <path d="M-24,-22Q-30,-6 -14,6" fill="none" stroke="#f08a74" stroke-width="4" stroke-linecap="round"/>`,
+    // 1 Bundeva / zvono (bells)
+    `<circle cx="0" cy="-40" r="6" fill="none" stroke="${INK}" stroke-width="3.5"/>
+     <path d="M-30,22C-32,-8 -22,-34 0,-34C22,-34 32,-8 30,22Z" fill="${GOLD}" stroke="${INK}" stroke-width="3.5"/>
+     <rect x="-30" y="2" width="60" height="9" fill="${RED}" stroke="${INK}" stroke-width="2.5"/>
+     <path d="M-30,22H30" stroke="${INK}" stroke-width="3.5"/>
+     <path d="M-14,-18Q0,-24 14,-18" fill="none" stroke="#fbe28f" stroke-width="3" stroke-linecap="round"/>
+     <circle cx="0" cy="31" r="7" fill="${GOLD}" stroke="${INK}" stroke-width="3"/>`,
+    // 2 Zeleni / list (leaves)
+    `<path d="M0,-46C36,-30 42,10 4,38L2,48H-2L-4,38C-42,10 -36,-30 0,-46Z" fill="${GREEN}" stroke="${INK}" stroke-width="3.5"/>
+     <path d="M0,-38V38M0,-14L-18,-26M0,-14L18,-26M0,6L-22,-8M0,6L22,-8M0,24L-16,14M0,24L16,14" stroke="#b8dc8e" stroke-width="2.2" fill="none"/>`,
+    // 3 Žir (acorns)
+    `<rect x="-3" y="-46" width="6" height="12" fill="#6b4220" stroke="${INK}" stroke-width="2"/>
+     <ellipse cx="0" cy="12" rx="20" ry="28" fill="${GOLD}" stroke="${INK}" stroke-width="3.5"/>
+     <path d="M-27,-6Q-27,-36 0,-37Q27,-36 27,-6Q0,4 -27,-6Z" fill="#8a5a28" stroke="${INK}" stroke-width="3.5"/>
+     <path d="M-18,-26L14,-4M-6,-33L22,-14M-22,-14L4,4M18,-30L-14,-2M6,-34L-22,-12M24,-18L0,4" stroke="#5a3a18" stroke-width="2"/>
+     <path d="M-8,18Q-6,30 4,34" fill="none" stroke="#fbe28f" stroke-width="3" stroke-linecap="round"/>`
+  ];
+  const sym = (art, x, y, sc, rot = 0) => `<g transform="translate(${x},${y}) rotate(${rot}) scale(${sc})">${art}</g>`;
+
+  const W = 120, Hh = 190;
+  const frame = (fill, stroke) => `<rect x="1.5" y="1.5" width="${W - 3}" height="${Hh - 3}" rx="9" fill="${fill}" stroke="${stroke}" stroke-width="2"/>`;
+  const PIPS = {
+    1: [[60, 95]], 2: [[60, 52], [60, 138]], 3: [[60, 45], [60, 95], [60, 145]],
+    4: [[38, 55], [82, 55], [38, 135], [82, 135]], 5: [[38, 52], [82, 52], [60, 95], [38, 138], [82, 138]],
+    6: [[38, 45], [82, 45], [38, 95], [82, 95], [38, 145], [82, 145]],
+    7: [[38, 40], [82, 40], [60, 70], [38, 100], [82, 100], [38, 150], [82, 150]],
+    8: [[38, 40], [82, 40], [38, 78], [82, 78], [38, 116], [82, 116], [38, 154], [82, 154]],
+    9: [[38, 40], [82, 40], [38, 75], [82, 75], [60, 97], [38, 120], [82, 120], [38, 154], [82, 154]],
+    10: [[38, 38], [82, 38], [60, 58], [38, 80], [82, 80], [38, 112], [82, 112], [60, 134], [38, 154], [82, 154]]
+  };
+  const IT_SUIT = ['COPPE', 'DENARI', 'SPADE', 'BASTONI'];
+  const IT_COURT = { F: 'FANTE', C: 'CAVALLO', K: 'RE' };
+  const SUIT_COL = [RED, GOLD, BLUE, GREEN];
+
+  // a small stylised figure, drawn in the top half (y 12..88), mirrored for double-headed cards
+  function figure(rank, col, suitArt, hung) {
+    let hat = '';
+    if (rank === 'K') hat = `<path d="M44,24L47,10L54,19L60,7L66,19L73,10L76,24Z" fill="${GOLD}" stroke="${INK}" stroke-width="2"/>`;
+    else if (rank === 'C' || rank === 'O') hat = `<path d="M44,25Q60,8 76,25Z" fill="${col}" stroke="${INK}" stroke-width="2"/><path d="M70,14Q86,4 88,18" fill="none" stroke="${RED}" stroke-width="3"/>`;
+    else hat = `<path d="M45,25Q48,13 60,13Q74,13 78,22L72,25Z" fill="${col}" stroke="${INK}" stroke-width="2"/>`;
+    const horse = rank === 'C' ? `<path d="M14,86Q10,58 26,48Q30,40 38,44L36,52Q30,58 32,70L30,86Z" fill="#b07a46" stroke="${INK}" stroke-width="2"/><circle cx="31" cy="49" r="1.6" fill="${INK}"/>` : '';
+    return `${horse}
+      <path d="M38,88L42,48Q60,40 78,48L82,88Z" fill="${col}" stroke="${INK}" stroke-width="2.2"/>
+      <path d="M42,62H78M60,46V88" stroke="${PAPER}" stroke-width="2" opacity=".7"/>
+      <path d="M48,46Q60,54 72,46" fill="${PAPER}" stroke="${INK}" stroke-width="1.8"/>
+      <circle cx="60" cy="33" r="10" fill="${SKIN}" stroke="${INK}" stroke-width="2"/>
+      <path d="M55,36Q60,40 65,36" fill="none" stroke="${INK}" stroke-width="1.4"/>
+      <circle cx="56.5" cy="31" r="1.2" fill="${INK}"/><circle cx="63.5" cy="31" r="1.2" fill="${INK}"/>
+      ${hat}
+      ${sym(suitArt, hung ? 26 : 92, hung ? 66 : 64, 0.2)}`;
+  }
+
+  function triestine(c) {
+    const col = SUIT_COL[c.s], art = T_SUIT[c.s];
+    let body = frame(PAPER, '#8b7a5c');
+    body += `<rect x="7" y="7" width="${W - 14}" height="${Hh - 14}" rx="5" fill="none" stroke="${col}" stroke-width="1.2" opacity=".55"/>`;
+    const idx = (n) => `<text x="13" y="24" class="ix" fill="${INK}">${n}</text><text x="${W - 13}" y="${Hh - 12}" class="ix" fill="${INK}" transform="rotate(180 ${W - 13} ${Hh - 18})">${n}</text>`;
+    if (['F', 'C', 'K'].includes(c.r)) {
+      const top = figure(c.r, col, art, false);
+      body += `<g>${top}</g><g transform="rotate(180 60 95)">${top}</g>`;
+      body += `<rect x="12" y="86" width="96" height="18" fill="${PAPER}" stroke="${INK}" stroke-width="1.5"/>
+               <text x="60" y="98.5" class="lbl" fill="${INK}">${IT_COURT[c.r]} DI ${IT_SUIT[c.s]}</text>`;
+      body += idx(c.n);
+    } else {
+      const n = c.n;
+      if (n === 1) {
+        body += `<circle cx="60" cy="95" r="44" fill="${col}" opacity=".12"/>`;
+        body += sym(art, 60, 95, 0.78);
+        body += `<path d="M24,160Q60,148 96,160" fill="none" stroke="${col}" stroke-width="2"/>`;
+      } else {
+        const sc = c.s >= 2 ? 0.34 : 0.27;
+        PIPS[n].forEach(([x, y]) => { body += sym(art, x, y, sc, (c.s >= 2 && y > 95) ? 180 : 0); });
+      }
+      body += idx(n);
+    }
+    return `<svg viewBox="0 0 ${W} ${Hh}" xmlns="http://www.w3.org/2000/svg">${body}</svg>`;
+  }
+
+  const ROMAN = { '7': 'VII', '8': 'VIII', '9': 'IX', '10': 'X' };
+  const SEASON = { hr: ['PROLJEĆE', 'ZIMA', 'LJETO', 'JESEN'], en: ['SPRING', 'WINTER', 'SUMMER', 'AUTUMN'] };
+  function madjarice(c, lang) {
+    const col = ['#c4382b', '#c98a1c', '#3f7f36', '#8a5a28'][c.s];
+    const art = H_SUIT[c.s];
+    let body = frame('#fffaf0', '#6f6250');
+    body += `<rect x="6" y="6" width="${W - 12}" height="${Hh - 12}" rx="6" fill="none" stroke="${INK}" stroke-width="1.2"/>`;
+    if (ROMAN[c.r]) {
+      PIPS[+c.r].forEach(([x, y]) => { body += sym(art, x, y, 0.25); });
+      body += `<text x="14" y="22" class="ixr" fill="${INK}">${ROMAN[c.r]}</text><text x="${W - 14}" y="22" class="ixr" fill="${INK}" text-anchor="end">${ROMAN[c.r]}</text>`;
+    } else if (c.r === 'A') {
+      body += `<rect x="14" y="20" width="92" height="118" rx="6" fill="${col}" opacity=".1"/>`;
+      body += sym(art, 60, 76, 0.72);
+      body += `<path d="M20,146H100L94,158H26Z" fill="${col}" stroke="${INK}" stroke-width="1.5"/>`;
+      body += `<text x="60" y="155" class="lbl" fill="#fff">${SEASON[lang][c.s]}</text>`;
+      body += sym(art, 22, 172, 0.15) + sym(art, 98, 172, 0.15);
+    } else {
+      // single-figure court: Ober has its suit sign high, Unter low (as on real William Tell cards)
+      const isU = c.r === 'U';
+      body += `<rect x="12" y="12" width="96" height="166" rx="4" fill="${col}" opacity=".08"/>`;
+      body += `<g transform="translate(0,22) scale(1,1.6) translate(0,-8)">${figure(c.r === 'K' ? 'K' : c.r === 'O' ? 'O' : 'F', col, '', false)}</g>`;
+      body += `<path d="M44,160H76" stroke="${INK}" stroke-width="2"/><path d="M47,148V160M73,148V160" stroke="${INK}" stroke-width="5" stroke-linecap="round"/>`;
+      body += sym(art, isU ? 26 : 24, isU ? 128 : 28, 0.22);
+      body += `<text x="${W - 14}" y="${Hh - 12}" class="ixr" fill="${INK}" text-anchor="end">${c.r === 'U' ? 'U' : c.r === 'O' ? 'O' : 'K'}</text>`;
+    }
+    return `<svg viewBox="0 0 ${W} ${Hh}" xmlns="http://www.w3.org/2000/svg">${body}</svg>`;
+  }
+
+  function back(deck) {
+    if (deck === 'b') return `<svg viewBox="0 0 ${W} ${Hh}" xmlns="http://www.w3.org/2000/svg">${frame('#24477a', '#0f2240')}
+      <rect x="8" y="8" width="${W - 16}" height="${Hh - 16}" rx="5" fill="url(#bkT)" stroke="#d9b45a" stroke-width="1.5"/>
+      <circle cx="60" cy="95" r="16" fill="#24477a" stroke="#d9b45a" stroke-width="1.5"/><circle cx="60" cy="95" r="7" fill="#d9b45a"/></svg>`;
+    return `<svg viewBox="0 0 ${W} ${Hh}" xmlns="http://www.w3.org/2000/svg">${frame('#8e2a24', '#4a120e')}
+      <rect x="8" y="8" width="${W - 16}" height="${Hh - 16}" rx="5" fill="url(#bkH)" stroke="#e8d7a8" stroke-width="1.5"/>
+      <rect x="40" y="75" width="40" height="40" rx="4" transform="rotate(45 60 95)" fill="#8e2a24" stroke="#e8d7a8" stroke-width="1.5"/></svg>`;
+  }
+  const DEFS = `<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+    <pattern id="bkT" width="12" height="12" patternUnits="userSpaceOnUse"><rect width="12" height="12" fill="#24477a"/><path d="M6,0L12,6L6,12L0,6Z" fill="none" stroke="#5d84bd" stroke-width="1"/></pattern>
+    <pattern id="bkH" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="10" height="10" fill="#8e2a24"/><rect width="5" height="10" fill="#7a221d"/><circle cx="5" cy="5" r="1.4" fill="#3f7d3a"/></pattern>
+  </defs></svg>`;
+  const suitIcon = (game, s, size = 18) => `<svg viewBox="-50 -50 100 100" width="${size}" height="${size}" aria-hidden="true">${(game === 'b' ? T_SUIT : H_SUIT)[s]}</svg>`;
+  return { triestine, madjarice, back, DEFS, suitIcon };
+})();
+</script>
+<script>// ===================== APP (UI + game flow) =====================
+(() => {
+const E = Engine;
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+// ---------- settings ----------
+const DEF = { lang: (navigator.language || '').toLowerCase().startsWith('hr') ? 'hr' : 'en', bPlayers: 4, bDouble: false, bTarget: 3, bReveal: false, hTarget: 1001, speed: 'normal', tap: 2 };
+let S = { ...DEF };
+try { Object.assign(S, JSON.parse(localStorage.getItem('stih.v1') || '{}')); } catch (e) { }
+const save = () => { try { localStorage.setItem('stih.v1', JSON.stringify(S)); } catch (e) { } };
+const SPEED = () => S.speed === 'fast' ? { ai: 320, trick: 600, deal: 200 } : { ai: 700, trick: 1100, deal: 400 };
+
+// ---------- strings ----------
+const STR = {
+  hr: {
+    tagline: 'Briškula i bela za kafanskim stolom — ti i tri igrača s druge strane.',
+    bSub: 'Tršćanske karte · 40 karata · adut je briškula', hSub: 'Mađarice · 32 karte · zvanja, bela, 1001',
+    players: 'Igrači', p2: '2 · jedan na jedan', p4: '4 · u paru',
+    mode: 'Način', classic: 'Klasična · 3 karte', double: 'Dupla · 4 karte',
+    doubleNote: 'Dupla: svatko drži 4 karte i igra dvaput u istom štihu, pa vuče dvije.',
+    matchTo: 'Partija do', winsN: n => `${n} dobivene`,
+    reveal: 'Partner pokazuje karte kad se špil potroši',
+    hTo: 'Igra se do', start: 'Igraj',
+    speed: 'Brzina', normal: 'Normalno', fast: 'Brzo', tap: 'Igranje karte', tap1: 'Jedan dodir', tap2: 'Dva dodira',
+    rules: 'Pravila', rulesB: 'Pravila briškule', rulesH: 'Pravila bele',
+    foot: 'Igra se protiv računala. Postavke se pamte na ovom uređaju.',
+    names: { 0: 'Ti', 1: 'Ante', 2: 'Mare', 3: 'Jure' }, names2: { 0: 'Ti', 2: 'Ante' },
+    we: 'Mi', they: 'Vi',
+    yourTurn: 'Tvoj red — odaberi kartu', tapAgain: 'Dodirni istu kartu još jednom', thinking: n => `${n} razmišlja…`,
+    trump: 'Adut', stock: 'U špilu',
+    pass: 'Dalje', mustCall: 'Zadnji mora zvati', callPrompt: 'Tvoj red: zovi adut ili reci dalje',
+    calls: (n, s) => `${n} zove ${s}`, called: s => `Zovem ${s}`,
+    bidWait: n => `${n} odlučuje…`,
+    belaCall: 'Bela!', belot: 'BELOT!', declWord: 'Zvanje',
+    declWin: (t, v) => `Zvanja priznata: ${t} +${v}`, declNone: 'Nema zvanja',
+    lastTrick: 'Zadnji štih', noLast: 'Još nije odigran nijedan štih.', took: n => `Nosi: ${n}`, pts: 'bodova',
+    handWon: 'Dobili ste ruku!', handLost: 'Izgubili ste ruku.', handDraw: 'Neriješeno, 60 : 60.',
+    matchWon: 'Partija je vaša!', matchLost: 'Partija je izgubljena.',
+    next: 'Sljedeća ruka', again: 'Nova partija', home: 'Izbornik',
+    pass_r: 'prolaz', fall_r: 'pad', hang_r: 'visi', stiglja: 'štiglja', callerShort: 'zvali',
+    pisanka: 'Rezultat', handNo: '#',
+    quit: 'Prekinuti partiju?', quitSub: 'Trenutna partija neće biti spremljena.', yes: 'Prekini', no: 'Nastavi',
+    close: 'Zatvori', dealer: 'D', yourTeam: 'Mi = ti i Mare', target: t => `do ${t}`,
+    belotWin: t => `${t} ima belot — osam karata u nizu — i dobiva cijelu partiju!`,
+    declDesc: d => d.type === 'quad' ? `četiri ${({ U: 'dečka', '9': 'devetke', A: 'asa', '10': 'desetke', K: 'kralja', O: 'babe' })[d.r]}` : `${d.len} u nizu`,
+    handTitle: n => `Ruka ${n}`, cardsPts: 'karte', declPts: 'zvanja',
+    sB: ['Kupe', 'Dinari', 'Špade', 'Baštoni'], sH: ['Herc', 'Bundeva', 'Zeleni', 'Žir'],
+    sHacc: ['herc', 'bundevu', 'zeleni', 'žir'], sBacc: ['kupe', 'dinare', 'špade', 'baštone']
+  },
+  en: {
+    tagline: 'Briškula and Bela at the café table — you against three computer players.',
+    bSub: 'Triestine cards · 40 cards · trump is the briškula', hSub: 'Mađarice · 32 cards · declarations, bela, 1001',
+    players: 'Players', p2: '2 · head to head', p4: '4 · partners',
+    mode: 'Mode', classic: 'Classic · 3 cards', double: 'Double · 4 cards',
+    doubleNote: 'Double: everyone holds 4 cards and plays twice to the same trick, then draws two.',
+    matchTo: 'Match to', winsN: n => `${n} hands won`,
+    reveal: 'Partner shows their cards once the deck runs out',
+    hTo: 'Play to', start: 'Play',
+    speed: 'Speed', normal: 'Normal', fast: 'Fast', tap: 'Playing a card', tap1: 'One tap', tap2: 'Two taps',
+    rules: 'Rules', rulesB: 'Briškula rules', rulesH: 'Bela rules',
+    foot: 'You play against the computer. Settings are kept on this device.',
+    names: { 0: 'You', 1: 'Ante', 2: 'Mare', 3: 'Jure' }, names2: { 0: 'You', 2: 'Ante' },
+    we: 'Us', they: 'Them',
+    yourTurn: 'Your turn — pick a card', tapAgain: 'Tap the same card again to play it', thinking: n => `${n} is thinking…`,
+    trump: 'Trump', stock: 'Deck',
+    pass: 'Pass', mustCall: 'Dealer must call', callPrompt: 'Your turn: call trump or pass',
+    calls: (n, s) => `${n} calls ${s}`, called: s => `${s}!`,
+    bidWait: n => `${n} is deciding…`,
+    belaCall: 'Bela!', belot: 'BELOT!', declWord: 'Declares',
+    declWin: (t, v) => `Declarations count for: ${t} +${v}`, declNone: 'No declarations',
+    lastTrick: 'Last trick', noLast: 'No trick has been played yet.', took: n => `Taken by: ${n}`, pts: 'points',
+    handWon: 'You won the hand!', handLost: 'You lost the hand.', handDraw: 'Draw, 60 : 60.',
+    matchWon: 'The match is yours!', matchLost: 'Match lost.',
+    next: 'Next hand', again: 'New match', home: 'Menu',
+    pass_r: 'made it', fall_r: 'fell', hang_r: 'hangs', stiglja: 'all tricks', callerShort: 'called',
+    pisanka: 'Score sheet', handNo: '#',
+    quit: 'Leave this match?', quitSub: 'The current match will not be saved.', yes: 'Leave', no: 'Keep playing',
+    close: 'Close', dealer: 'D', yourTeam: 'Us = you and Mare', target: t => `to ${t}`,
+    belotWin: t => `${t} holds a belot — eight in a row — and wins the whole match!`,
+    declDesc: d => d.type === 'quad' ? `four ${({ U: 'unters', '9': 'nines', A: 'aces', '10': 'tens', K: 'kings', O: 'obers' })[d.r]}` : `${d.len} in a row`,
+    handTitle: n => `Hand ${n}`, cardsPts: 'cards', declPts: 'decl.',
+    sB: ['Cups', 'Coins', 'Swords', 'Clubs'], sH: ['Hearts', 'Bells', 'Leaves', 'Acorns'],
+    sHacc: ['hearts', 'bells', 'leaves', 'acorns'], sBacc: ['cups', 'coins', 'swords', 'clubs']
+  }
+};
+const L = () => STR[S.lang];
+
+// ---------- rules text ----------
+const RULES = {
+  hr: {
+    b: `<h3>Briškula</h3>
+<p class="muted">Tršćanski špil od 40 karata: kupe, dinari, špade i baštoni. Figure su fanat (11), konj (12) i kralj (13).</p>
+<h4>Jačina i bodovi</h4>
+<div class="rank"><div><span>As (1)</span><b>11</b></div><div><span>Trica (3)</span><b>10</b></div><div><span>Kralj (13)</span><b>4</b></div><div><span>Konj (12)</span><b>3</b></div><div><span>Fanat (11)</span><b>2</b></div><div><span>7, 6, 5, 4, 2</span><b>0</b></div></div>
+<p>Ukupno je 120 bodova u špilu. Za pobjedu u ruci treba 61; 60 : 60 je neriješeno.</p>
+<h4>Tijek igre</h4>
+<ul><li>Svatko dobije 3 karte. Sljedeća karta okrene se licem gore ispod špila — njena boja je <b>briškula</b> (adut), a ta karta se vuče zadnja.</li>
+<li>Prvi igra igrač desno od djelitelja; igra se u smjeru suprotnom od kazaljke.</li>
+<li>Ne mora se odgovoriti na boju niti rezati. Štih nosi najjača briškula; ako je nema, najjača karta boje koja je prva bačena.</li>
+<li>Nakon štiha svatko vuče kartu iz špila, počevši od onoga tko je nosio. Kad se špil potroši, igra se do kraja bez vučenja.</li>
+<li>U četvero igraju parovi jedan nasuprot drugome: ti i Mare protiv Ante i Jure.</li></ul>
+<h4>Dupla briškula</h4>
+<p>Dijele se 4 karte. Svatko igra dvaput u istom štihu (krug pa još jedan krug), najjača karta nosi sve, a zatim svi vuku po dvije karte.</p>`,
+    h: `<h3>Bela</h3>
+<p class="muted">Mađarice, 32 karte: herc, bundeva, zeleni i žir. Igraju se dva para: ti i Mare protiv Ante i Jure. Sve ide suprotno od kazaljke.</p>
+<h4>Jačina i bodovi</h4>
+<div class="rank"><div><span>Adut: dečko (unter)</span><b>20</b></div><div><span>Adut: devetka</span><b>14</b></div><div><span>As</span><b>11</b></div><div><span>Desetka</span><b>10</b></div><div><span>Kralj</span><b>4</b></div><div><span>Baba (ober)</span><b>3</b></div><div><span>Dečko izvan aduta</span><b>2</b></div><div><span>Zadnji štih</span><b>+10</b></div></div>
+<p>Redoslijed u adutu: dečko, 9, as, 10, kralj, baba, 8, 7. U ostalim bojama: as, 10, kralj, baba, dečko, 9, 8, 7. Ukupno 162 boda.</p>
+<h4>Zvanje aduta</h4>
+<ul><li>Svatko dobije 6 karata i 2 u talon. Gledajući samo 6 karata, igrači redom zovu adut ili kažu „dalje“. Djelitelj je zadnji i mora zvati.</li>
+<li>Kad je adut zvan, svi uzimaju talon i imaju 8 karata.</li></ul>
+<h4>Zvanja</h4>
+<div class="rank"><div><span>3 u nizu</span><b>20</b></div><div><span>4 u nizu</span><b>50</b></div><div><span>5–7 u nizu</span><b>100</b></div><div><span>Četiri dečka</span><b>200</b></div><div><span>Četiri devetke</span><b>150</b></div><div><span>Četiri asa, 10, kralja, babe</span><b>100</b></div><div><span>Bela (kralj + baba aduta)</span><b>20</b></div><div><span>Belot (8 u nizu)</span><b>pobjeda</b></div></div>
+<p>Niz se gleda po redu 7, 8, 9, 10, dečko, baba, kralj, as. Zvanja se priznaju samo paru s najjačim zvanjem (jači niz, pa viša karta, pa tko je prije na redu), ali tada vrijede sva zvanja tog para. Belu uvijek dobiva par koji je ima, a zove se kad se baci prva od te dvije karte. Zvanja vrijede samo ako par nosi barem jedan štih.</p>
+<h4>Pravila bacanja</h4>
+<ul><li>Mora se odgovoriti na boju i, ako se može, baciti kartu jaču od svih u štihu.</li>
+<li>Ako je netko već presjekao adutom, na boju se odgovara bilo kojom kartom te boje.</li>
+<li>Tko nema boju, mora rezati adutom, i to jačim od aduta na stolu ako ga ima. Tko nema ni boju ni adut, baca bilo što.</li></ul>
+<h4>Obračun</h4>
+<ul><li>Par koji je zvao mora imati više od protivnika (karte + zvanja). Ako ima manje, <b>pada</b> i protivnici dobivaju sve bodove ruke.</li>
+<li>Kod jednakog broja bodovi zvanog para <b>vise</b> i pripadaju paru koji dobije sljedeću ruku.</li>
+<li>Tko nosi sve štihove (štiglja) dobiva još 90.</li>
+<li>Igra se do 1001 (ili 501 / 701).</li></ul>`
+  },
+  en: {
+    b: `<h3>Briškula</h3>
+<p class="muted">Triestine 40-card deck: cups, coins, swords and clubs. The court cards are the fante (11), cavallo/knight (12) and king (13).</p>
+<h4>Rank and points</h4>
+<div class="rank"><div><span>Ace (1)</span><b>11</b></div><div><span>Three (3)</span><b>10</b></div><div><span>King (13)</span><b>4</b></div><div><span>Knight (12)</span><b>3</b></div><div><span>Fante (11)</span><b>2</b></div><div><span>7, 6, 5, 4, 2</span><b>0</b></div></div>
+<p>The deck holds 120 points. You need 61 to win a hand; 60 : 60 is a draw.</p>
+<h4>Play</h4>
+<ul><li>Everyone gets 3 cards. The next card goes face up under the deck; its suit is the <b>briškula</b> (trump) and that card is drawn last.</li>
+<li>The player to the dealer's right leads; play goes counter-clockwise.</li>
+<li>You never have to follow suit or trump. The highest trump wins the trick; with no trump, the highest card of the suit led wins.</li>
+<li>After each trick everyone draws one card, starting with the trick winner. Once the deck is gone, play out the remaining cards.</li>
+<li>With four players, partners sit opposite: you and Mare against Ante and Jure.</li></ul>
+<h4>Double briškula</h4>
+<p>Four cards each. Everyone plays twice to the same trick (one round, then another), the best card takes all of them, then everyone draws two.</p>`,
+    h: `<h3>Bela</h3>
+<p class="muted">German-suited mađarice, 32 cards: hearts, bells, leaves and acorns. Two pairs play: you and Mare against Ante and Jure. Everything goes counter-clockwise.</p>
+<h4>Rank and points</h4>
+<div class="rank"><div><span>Trump unter (jack)</span><b>20</b></div><div><span>Trump nine</span><b>14</b></div><div><span>Ace</span><b>11</b></div><div><span>Ten</span><b>10</b></div><div><span>King</span><b>4</b></div><div><span>Ober (queen)</span><b>3</b></div><div><span>Non-trump unter</span><b>2</b></div><div><span>Last trick</span><b>+10</b></div></div>
+<p>Trump order: unter, 9, ace, 10, king, ober, 8, 7. Other suits: ace, 10, king, ober, unter, 9, 8, 7. 162 points in total.</p>
+<h4>Calling trump</h4>
+<ul><li>Everyone gets 6 cards plus 2 face-down talon cards. Looking only at the 6, players in turn call a trump suit or pass. The dealer speaks last and must call.</li>
+<li>Once trump is called, everyone picks up the talon and holds 8 cards.</li></ul>
+<h4>Declarations (zvanja)</h4>
+<div class="rank"><div><span>3 in a row</span><b>20</b></div><div><span>4 in a row</span><b>50</b></div><div><span>5–7 in a row</span><b>100</b></div><div><span>Four unters</span><b>200</b></div><div><span>Four nines</span><b>150</b></div><div><span>Four aces, 10s, kings, obers</span><b>100</b></div><div><span>Bela (trump king + ober)</span><b>20</b></div><div><span>Belot (8 in a row)</span><b>wins</b></div></div>
+<p>Sequences run 7, 8, 9, 10, unter, ober, king, ace. Only the pair holding the best declaration scores (higher value, then higher top card, then whoever is earlier in turn), but then all of that pair's declarations count. Bela always counts for its holder and is announced when the first of the two cards is played. Declarations only count if the pair wins at least one trick.</p>
+<h4>Playing</h4>
+<ul><li>You must follow suit and, if you can, beat every card already in the trick.</li>
+<li>If someone has already trumped, follow suit with any card of that suit.</li>
+<li>If you cannot follow, you must trump, beating any trump already played if you can. With neither, play anything.</li></ul>
+<h4>Scoring</h4>
+<ul><li>The calling pair must score more than the opponents (cards + declarations). If they score less they <b>fall</b> and the opponents take every point of the hand.</li>
+<li>On a tie the callers' points <b>hang</b> and go to whoever wins the next hand.</li>
+<li>Taking every trick (štiglja) is worth 90 more.</li>
+<li>Play to 1001 (or 501 / 701).</li></ul>`
+  }
+};
+
+// ---------- card rendering ----------
+function face(game, c) { return game === 'b' ? Cards.triestine(c) : Cards.madjarice(c, S.lang); }
+const cardHTML = (game, c, cls = '') => `<div class="svgc ${cls}">${face(game, c)}</div>`;
+const backHTML = (game, cls = '') => `<div class="svgc ${cls}">${Cards.back(game)}</div>`;
+const suitName = (game, s) => (game === 'b' ? L().sB : L().sH)[s];
+
+// ---------- flow control ----------
+let G = null, token = 0, pending = null, sel = null;
+class Abort extends Error { }
+const sleep = ms => { const t = token; return new Promise((res, rej) => setTimeout(() => t === token ? res() : rej(new Abort()), ms)); };
+const check = t => { if (t !== token) throw new Abort(); };
+const name = s => (G && G.seats.length === 2 ? L().names2 : L().names)[s];
+const team = s => E.teamOf(G, s);
+
+// ================= HOME =================
+function renderHome() {
+  const t = L();
+  const seg = (key, opts) => `<div class="seg">${opts.map(([v, lab]) => `<button data-k="${key}" data-v="${v}" aria-pressed="${S[key] === v}">${lab}</button>`).join('')}</div>`;
+  const D = E.bDeck(), H = E.hDeck();
+  const fanB = [D.find(c => c.id === 'b1A'), D.find(c => c.id === 'b03'), D.find(c => c.id === 'b2K')];
+  const fanH = [H.find(c => c.id === 'h0U'), H.find(c => c.id === 'h09'), H.find(c => c.id === 'h3A')];
+  const fan = (game, cs) => `<div class="fan">${cs.map((c, i) => `<div class="svgc" style="transform:rotate(${(i - 1) * 16}deg) translateX(${(i - 1) * 6}px)">${face(game, c)}</div>`).join('')}</div>`;
+  $('#home').innerHTML = `<div class="wrap">
+    <div class="brand"><div class="bl"><div class="logo"><svg viewBox="0 0 120 120" aria-hidden="true"><path d="M16 76C22 46 46 32 70 33C90 34 102 50 106 76Z" fill="#5b7186"/><path d="M42 36C46 22 54 12 68 6C64 18 64 28 66 35Z" fill="#5b7186"/><circle cx="84" cy="55" r="7" fill="#fbf6ea"/><circle cx="81" cy="57" r="3.5" fill="#1f1a14"/><path d="M75 45Q84 41 93 46" fill="none" stroke="#1f1a14" stroke-width="3" stroke-linecap="round"/><g transform="rotate(-22 60 140)"><rect x="38" y="64" width="44" height="64" rx="6" fill="#8e2a24" stroke="#0e241c" stroke-width="2.5"/><rect x="42" y="68" width="36" height="56" rx="4" fill="none" stroke="#e8d7a8" stroke-width="1.2"/><path transform="translate(48 77) scale(.1)" d="M0,40C-58,2 -42,-50 0,-22C42,-50 58,2 0,40Z" fill="#e8d7a8"/></g><g><rect x="38" y="64" width="44" height="64" rx="6" fill="#8e2a24" stroke="#0e241c" stroke-width="2.5"/><rect x="42" y="68" width="36" height="56" rx="4" fill="none" stroke="#e8d7a8" stroke-width="1.2"/><path transform="translate(48 77) scale(.1)" d="M0,40C-58,2 -42,-50 0,-22C42,-50 58,2 0,40Z" fill="#e8d7a8"/></g><g transform="rotate(22 60 140)"><rect x="38" y="64" width="44" height="64" rx="6" fill="#8e2a24" stroke="#0e241c" stroke-width="2.5"/><rect x="42" y="68" width="36" height="56" rx="4" fill="none" stroke="#e8d7a8" stroke-width="1.2"/><path transform="translate(60 92) scale(.26)" d="M0,40C-58,2 -42,-50 0,-22C42,-50 58,2 0,40Z" fill="#e8d7a8"/></g></svg>
+</div><div><h1>Card<span>shark</span></h1><p>${t.tagline}</p></div></div>
+      <div class="lang" role="group" aria-label="Language"><button data-lang="hr" aria-pressed="${S.lang === 'hr'}">HR</button><button data-lang="en" aria-pressed="${S.lang === 'en'}">EN</button></div></div>
+    <article class="game">
+      <div class="game-top">${fan('b', fanB)}<div><h2>Briškula</h2><p class="sub">${t.bSub}</p></div></div>
+      <div class="opt"><span>${t.players}</span>${seg('bPlayers', [[4, t.p4], [2, t.p2]])}</div>
+      <div class="opt"><span>${t.mode}</span>${seg('bDouble', [[false, t.classic], [true, t.double]])}<p class="note">${t.doubleNote}</p></div>
+      <div class="opt"><span>${t.matchTo}</span>${seg('bTarget', [[2, t.winsN(2)], [3, t.winsN(3)], [4, t.winsN(4)]])}</div>
+      ${S.bPlayers === 4 ? `<label class="check"><input type="checkbox" id="bReveal" ${S.bReveal ? 'checked' : ''}><span>${t.reveal}</span></label>` : ''}
+      <button class="play" id="goB">${t.start}: Briškula</button>
+    </article>
+    <article class="game">
+      <div class="game-top">${fan('h', fanH)}<div><h2>Bela</h2><p class="sub">${t.hSub}</p></div></div>
+      <div class="opt"><span>${t.hTo}</span>${seg('hTarget', [[501, '501'], [701, '701'], [1001, '1001']])}</div>
+      <p class="note">${t.yourTeam}</p>
+      <button class="play" id="goH">${t.start}: Bela</button>
+    </article>
+    <div class="prefs">
+      <div class="opt"><span>${t.speed}</span>${seg('speed', [['normal', t.normal], ['fast', t.fast]])}</div>
+      <div class="opt"><span>${t.tap}</span>${seg('tap', [[1, t.tap1], [2, t.tap2]])}</div>
+    </div>
+    <div class="prefs"><button class="ghost" id="rB">${t.rulesB}</button><button class="ghost" id="rH">${t.rulesH}</button></div>
+    <p class="foot">${t.foot}</p>
+  </div>`;
+  $('#home').querySelectorAll('.seg button').forEach(b => b.onclick = () => {
+    const k = b.dataset.k; let v = b.dataset.v;
+    v = v === 'true' ? true : v === 'false' ? false : isNaN(+v) ? v : +v;
+    S[k] = v; save(); renderHome();
+  });
+  $('#home').querySelectorAll('[data-lang]').forEach(b => b.onclick = () => { S.lang = b.dataset.lang; save(); document.documentElement.lang = S.lang; renderHome(); });
+  const rv = $('#bReveal'); if (rv) rv.onchange = () => { S.bReveal = rv.checked; save(); };
+  $('#goB').onclick = () => startGame('b');
+  $('#goH').onclick = () => startGame('h');
+  $('#rB').onclick = () => showRules('b');
+  $('#rH').onclick = () => showRules('h');
+}
+function showHome() { token++; pending = null; G = null; closeSheet(); $('#table').hidden = true; $('#home').hidden = false; renderHome(); }
+
+// ================= SHEETS =================
+let sheetResolve = null;
+function openSheet(html, onBind) {
+  $('#overlay').innerHTML = `<div class="veil"><div class="sheet" role="dialog" aria-modal="true">${html}</div></div>`;
+  const veil = $('#overlay .veil');
+  if (onBind) onBind(veil);
+  const first = veil.querySelector('button'); if (first) first.focus({ preventScroll: true });
+}
+function closeSheet() { $('#overlay').innerHTML = ''; }
+function showRules(game) {
+  openSheet(RULES[S.lang][game] + `<div class="btns"><button class="pri" id="sx">${L().close}</button></div>`, v => {
+    v.querySelector('#sx').onclick = closeSheet; v.onclick = e => { if (e.target === v) closeSheet(); };
+  });
+}
+function showLastTrick() {
+  const t = L();
+  if (!G || !G.lastTrick) { openSheet(`<h3>${t.lastTrick}</h3><p>${t.noLast}</p><div class="btns"><button class="pri" id="sx">${t.close}</button></div>`, v => v.querySelector('#sx').onclick = closeSheet); return; }
+  const lt = G.lastTrick;
+  const wIdx = G.game === 'b' ? E.bWinnerIdx(lt.trick, G.trump) : E.hWinnerIdx(lt.trick, G.trump);
+  openSheet(`<h3>${t.lastTrick}</h3><p class="muted">${t.took(esc(name(lt.winner)))} · ${lt.pts} ${t.pts}</p>
+    <div class="trickview">${lt.trick.map((x, i) => `<figure class="${i === wIdx ? 'w' : ''}">${cardHTML(G.game, x.card)}<figcaption>${esc(name(x.seat))}</figcaption></figure>`).join('')}</div>
+    <div class="btns"><button class="pri" id="sx">${t.close}</button></div>`, v => { v.querySelector('#sx').onclick = closeSheet; v.onclick = e => { if (e.target === v) closeSheet(); }; });
+}
+function askQuit() {
+  const t = L();
+  if (!G) return showHome();
+  openSheet(`<h3>${t.quit}</h3><p class="muted">${t.quitSub}</p><div class="btns"><button class="sec" id="qy">${t.yes}</button><button class="pri" id="qn">${t.no}</button></div>`, v => {
+    v.querySelector('#qy').onclick = showHome; v.querySelector('#qn').onclick = closeSheet;
+  });
+}
+function waitSheet(html) {
+  return new Promise(res => openSheet(html, v => v.querySelectorAll('[data-go]').forEach(b => b.onclick = () => { closeSheet(); res(b.dataset.go); })));
+}
+
+// ================= TABLE RENDER =================
+const felt = () => $('#felt');
+function layoutSizes() {
+  const f = felt().getBoundingClientRect();
+  const tw = Math.max(46, Math.min(88, Math.min(f.width * 0.2, f.height * 0.15)));
+  felt().style.setProperty('--tw', tw + 'px');
+  renderHand();
+}
+const SLOT = { 0: [50, 66], 1: [72, 50], 2: [50, 34], 3: [28, 50] };
+const ORIGIN = { 0: [50, 125], 1: [125, 45], 2: [50, -25], 3: [-25, 45] };
+function slotFor(seat, nth) {
+  const [x, y] = SLOT[seat];
+  if (!nth) return { x, y, r: (seat * 7 % 9) - 4 };
+  const dx = { 0: 9, 1: -4, 2: -9, 3: 4 }[seat], dy = { 0: -6, 1: 9, 2: 6, 3: -9 }[seat];
+  return { x: x + dx, y: y + dy, r: 9 - seat * 5 };
+}
+function renderSeats() {
+  const t = L();
+  for (const s of [1, 2, 3]) {
+    const el = $('#seat' + s);
+    if (!G.seats.includes(s)) { el.hidden = true; continue; }
+    el.hidden = false;
+    const mate = team(s) === team(0);
+    el.className = `seat s${s}${mate ? ' mate' : ''}${G.turn === s ? ' turn' : ''}`;
+    const n = (G.hands && G.hands[s]) ? G.hands[s].length : 0;
+    const tags = [];
+    if (G.dealer === s) tags.push(`<span class="tag">${t.dealer}</span>`);
+    if (G.game === 'h' && G.caller === s) tags.push(`<span class="tag call">${Cards.suitIcon('h', G.trump, 12)}</span>`);
+    const reveal = G.game === 'b' && mate && G.opts.reveal && G.stock && G.stock.length === 0 && n > 0;
+    let mini = '';
+    if (reveal) mini = `<div class="mini open">${G.hands[s].map(c => cardHTML('b', c)).join('')}</div>`;
+    else { let talon = (G.phase === 'bid' ? 2 : 0); mini = `<div class="mini">${Array.from({ length: Math.min(n + talon, 10) }, () => backHTML(G.game)).join('')}</div>`; }
+    el.innerHTML = `<div class="who"><span class="av">${esc(name(s)[0])}</span>${esc(name(s))}${tags.join('')}</div>${mini}`;
+  }
+}
+function renderStock() {
+  const st = $('#stock');
+  if (G.game !== 'b' || !G.stock || !G.stock.length) { st.hidden = true; return; }
+  st.hidden = false;
+  st.innerHTML = `<div class="tr">${cardHTML('b', G.trumpCard)}</div>${G.stock.length > 1 ? `<div class="pile">${backHTML('b')}</div><div class="cnt">${G.stock.length}</div>` : ''}`;
+}
+function renderBar() {
+  const t = L();
+  if (G.game === 'b') {
+    $('#trumpChip').innerHTML = `${Cards.suitIcon('b', G.trump, 20)}<b>${suitName('b', G.trump)}</b>`;
+    $('#scoreChip').innerHTML = `<span class="k">${t.we}</span><b>${G.wins[0]}</b>:<b>${G.wins[1]}</b><span class="k">${t.they}</span>`;
+  } else {
+    $('#trumpChip').innerHTML = G.trump === null ? `<span class="k">${t.trump}</span><b>—</b>` : `${Cards.suitIcon('h', G.trump, 20)}<b>${suitName('h', G.trump)}</b>`;
+    $('#scoreChip').innerHTML = `<span class="k">${t.we}</span><b>${G.score[0]}</b>:<b>${G.score[1]}</b><span class="k">${t.they}</span>`;
+  }
+}
+function renderHand() {
+  const el = $('#hand'); if (!G || !G.hands) { el.innerHTML = ''; return; }
+  const cards = G.hands[0].slice();
+  const showTalon = G.game === 'h' && G.phase === 'bid';
+  const order = G.game === 'b' ? [1, 0, 2, 3] : [0, 1, 2, 3];
+  const tr = G.trump;
+  cards.sort((a, b) => {
+    const sa = (a.s === tr ? 9 : order[a.s]), sb = (b.s === tr ? 9 : order[b.s]);
+    if (sa !== sb) return sa - sb;
+    return G.game === 'b' ? b.st - a.st : E.hStr(b, tr) - E.hStr(a, tr);
+  });
+  const n = cards.length + (showTalon ? 2 : 0);
+  const W = el.clientWidth || 360;
+  const cw = Math.min(96, W / (1 + Math.max(0, n - 1) * 0.58));
+  const step = n > 1 ? Math.min(cw * 1.04, (W - cw) / (n - 1)) : 0;
+  const total = cw + step * (n - 1);
+  const x0 = (W - total) / 2;
+  el.style.setProperty('--cw', cw + 'px');
+  el.style.height = (cw * 190 / 120 + 6) + 'px';
+  const legal = pending ? pending.legal : null;
+  el.classList.toggle('live', !!pending);
+  let html = cards.map((c, i) => {
+    const off = legal && !legal.has(c.id);
+    return `<button class="hc${off ? ' off' : ''}${sel === c.id ? ' sel' : ''}" data-id="${c.id}" style="left:${x0 + i * step}px" aria-label="${c.id}" ${off ? 'aria-disabled="true"' : ''}>${face(G.game, c)}</button>`;
+  }).join('');
+  if (showTalon) for (let i = 0; i < 2; i++) html += `<div class="hc talon" style="left:${x0 + (cards.length + i) * step}px">${Cards.back('h')}</div>`;
+  el.innerHTML = html;
+}
+function renderAll() { renderBar(); renderSeats(); renderStock(); renderHand(); }
+function setAction(html) { $('#action').innerHTML = html; }
+function status(text, muted) { setAction(`<div class="msg">${muted ? `<span class="m">${text}</span>` : text}</div>`); }
+
+function bubble(seat, html, gold, ms = 1700) {
+  const pos = { 0: [50, 84], 1: [78, 38], 2: [50, 25], 3: [22, 38] }[seat];
+  const b = document.createElement('div');
+  b.className = 'bubble' + (gold ? ' gold' : '');
+  b.style.left = pos[0] + '%'; b.style.top = pos[1] + '%';
+  b.innerHTML = html;
+  felt().appendChild(b);
+  setTimeout(() => b.remove(), ms);
+}
+
+// trick cards on the felt
+function placeTrickCard(seat, card) {
+  const nth = G.trick.filter(t => t.seat === seat).length - 1;
+  const p = slotFor(seat, nth);
+  const el = document.createElement('div');
+  el.className = 'tc svgc'; el.dataset.id = card.id;
+  el.style.left = p.x + '%'; el.style.top = p.y + '%'; el.style.setProperty('--r', p.r + 'deg');
+  el.style.zIndex = G.trick.length;
+  el.innerHTML = face(G.game, card);
+  $('#center').appendChild(el);
+  const o = ORIGIN[seat];
+  el.animate([{ left: o[0] + '%', top: o[1] + '%', opacity: .3 }, { left: p.x + '%', top: p.y + '%', opacity: 1 }], { duration: 260, easing: 'cubic-bezier(.2,.8,.3,1)' });
+}
+async function collectTrick(winner) {
+  const o = ORIGIN[winner];
+  const els = [...$('#center').children];
+  els.forEach(el => el.animate([{ opacity: 1 }, { left: o[0] + '%', top: o[1] + '%', opacity: 0 }], { duration: 360, easing: 'ease-in', fill: 'forwards' }));
+  await sleep(370);
+  $('#center').innerHTML = '';
+}
+
+// human input
+function humanPick(legalIds) {
+  return new Promise(res => { pending = { legal: new Set(legalIds), res }; sel = null; renderHand(); });
+}
+$('#hand').addEventListener('click', e => {
+  const b = e.target.closest('.hc'); if (!b || !pending || !b.dataset.id) return;
+  const id = b.dataset.id;
+  if (!pending.legal.has(id)) return;
+  if (S.tap === 2 && sel !== id) { sel = id; renderHand(); status(L().tapAgain); return; }
+  const card = G.hands[0].find(c => c.id === id);
+  const p = pending; pending = null; sel = null;
+  p.res(card);
+});
+$('#center').addEventListener('click', () => { });
+
+// ================= GAME START =================
+function startGame(game) {
+  token++; pending = null; sel = null; closeSheet();
+  if (game === 'b') { G = E.bNew({ players: S.bPlayers, double: S.bDouble, target: S.bTarget, reveal: S.bPlayers === 4 && S.bReveal }); }
+  else { G = E.hNew({ target: S.hTarget }); }
+  G.turn = null;
+  $('#home').hidden = true; $('#table').hidden = false;
+  $('#center').innerHTML = '';
+  const my = token;
+  requestAnimationFrame(() => { layoutSizes(); });
+  (game === 'b' ? briskulaMatch(my) : belaMatch(my)).catch(e => { if (!(e instanceof Abort)) { console.error(e); } });
+}
+
+async function turnTo(seat) {
+  G.turn = seat; renderSeats();
+  if (seat === 0) status(L().yourTurn);
+  else status(L().thinking(esc(name(seat))), true);
+}
+
+// ================= BRIŠKULA =================
+async function briskulaMatch(my) {
+  const t = () => L();
+  while (true) {
+    G.dealer = E.nextSeat(G, G.dealer);
+    E.bDeal(G); G.turn = null;
+    $('#center').innerHTML = '';
+    renderAll(); status('');
+    await sleep(SPEED().deal); check(my);
+    while (!E.bHandOver(G)) {
+      const s = E.bToPlay(G);
+      await turnTo(s);
+      let card;
+      if (s === 0) card = await humanPick(G.hands[0].map(c => c.id));
+      else { await sleep(SPEED().ai); card = E.bAI(G, s); }
+      check(my);
+      const done = E.bPlay(G, s, card);
+      placeTrickCard(s, card); renderSeats(); renderHand();
+      if (done) {
+        G.turn = null; renderSeats(); status('');
+        await sleep(SPEED().trick); check(my);
+        const { winner } = E.bFinishTrick(G);
+        await collectTrick(winner); check(my);
+        renderAll();
+      }
+    }
+    G.turn = null; renderSeats();
+    const pts = E.bPoints(G);
+    let verdict;
+    if (pts[0] > 60) { G.wins[0]++; verdict = t().handWon; }
+    else if (pts[1] > 60) { G.wins[1]++; verdict = t().handLost; }
+    else verdict = t().handDraw;
+    G.history.push(pts);
+    renderBar();
+    const over = G.wins[0] >= G.opts.target || G.wins[1] >= G.opts.target;
+    const marks = w => '|'.repeat(w) || '–';
+    const head = over ? (G.wins[0] > G.wins[1] ? t().matchWon : t().matchLost) : verdict;
+    const go = await waitSheet(`<h3>${head}</h3>
+      <div class="big"><div>${pts[0]}<small>${t().we}</small></div><span class="sep">:</span><div>${pts[1]}<small>${t().they}</small></div></div>
+      ${over ? `<p class="verdict">${verdict}</p>` : ''}
+      <div class="tally"><div><span class="muted">${t().we}</span><b class="marks">${marks(G.wins[0])}</b></div><div><span class="muted">${t().matchTo}</span><b>${G.opts.target}</b></div><div><span class="muted">${t().they}</span><b class="marks">${marks(G.wins[1])}</b></div></div>
+      <div class="btns">${over ? `<button class="sec" data-go="home">${t().home}</button><button class="pri" data-go="again">${t().again}</button>` : `<button class="pri" data-go="next">${t().next}</button>`}</div>`);
+    check(my);
+    if (go === 'home') return showHome();
+    if (go === 'again') return startGame('b');
+  }
+}
+
+// ================= BELA =================
+async function belaMatch(my) {
+  const t = () => L();
+  while (true) {
+    G.dealer = E.nextSeat(G, G.dealer);
+    E.hDeal(G); G.phase = 'bid'; G.turn = null;
+    $('#center').innerHTML = '';
+    renderAll(); status('');
+    await sleep(SPEED().deal); check(my);
+    // ---- bidding ----
+    let calledSuit = -1;
+    while (calledSuit < 0) {
+      const s = G.bidder; G.turn = s; renderSeats();
+      let b;
+      if (s === 0) b = await humanBid(s === G.dealer);
+      else { status(t().bidWait(esc(name(s))), true); await sleep(SPEED().ai); b = E.hAIBid(G, s); }
+      check(my);
+      if (b < 0) { bubble(s, t().pass); E.hBid(G, s, -1); }
+      else { calledSuit = b; bubble(s, `${Cards.suitIcon('h', b, 18)}${t().called(suitName('h', b))}`, true, 2000); E.hBid(G, s, b); }
+      if (calledSuit < 0) await sleep(SPEED().ai * 0.4);
+    }
+    G.phase = 'play'; G.turn = null;
+    renderAll();
+    status(t().calls(esc(name(G.caller)), `<b>${suitName('h', G.trump)}</b>`));
+    await sleep(SPEED().trick); check(my);
+    // ---- declarations ----
+    const D = G.decls;
+    if (D.belotSeat !== null) {
+      const w = D.belotSeat % 2;
+      bubble(D.belotSeat, t().belot, true, 3000);
+      G.score[w] = Math.max(G.score[w], G.opts.target);
+      renderBar();
+      await sleep(1400);
+      const go = await waitSheet(`<h3>${w === 0 ? t().matchWon : t().matchLost}</h3><p>${t().belotWin(esc(name(D.belotSeat)))}</p>
+        <div class="btns"><button class="sec" data-go="home">${t().home}</button><button class="pri" data-go="again">${t().again}</button></div>`);
+      if (go === 'home') return showHome(); return startGame('h');
+    }
+    let any = false;
+    for (const s of D.order) {
+      const ds = D.per[s]; if (!ds.length) continue;
+      any = true;
+      bubble(s, `${t().declWord} ${ds.map(d => d.val).join(' + ')}`, false, 2400);
+      await sleep(SPEED().ai * 0.6);
+    }
+    if (any) {
+      status(D.team >= 0 ? t().declWin(D.team === team(0) ? t().we : t().they, D.total) : t().declNone);
+      await sleep(SPEED().trick * 1.2); check(my);
+    }
+    // ---- tricks ----
+    while (!E.hHandOver(G)) {
+      const s = E.hToPlay(G);
+      await turnTo(s);
+      let card;
+      if (s === 0) card = await humanPick(E.hLegal(G, 0).map(c => c.id));
+      else { await sleep(SPEED().ai); card = E.hAI(G, s); }
+      check(my);
+      const r = E.hPlay(G, s, card);
+      placeTrickCard(s, card); renderSeats(); renderHand();
+      if (r.bela) bubble(s, t().belaCall, true);
+      if (r.done) {
+        G.turn = null; renderSeats(); status('');
+        await sleep(SPEED().trick); check(my);
+        const { winner } = E.hFinishTrick(G);
+        await collectTrick(winner); check(my);
+        renderAll();
+      }
+    }
+    G.turn = null; renderSeats();
+    const row = E.hScoreHand(G);
+    renderBar();
+    const mw = E.hMatchWinner(G);
+    const go = await waitSheet(scoreSheetHTML(row, mw));
+    check(my);
+    if (go === 'home') return showHome();
+    if (go === 'again') return startGame('h');
+  }
+}
+function humanBid(isDealer) {
+  const t = L();
+  status(isDealer ? t.mustCall : t.callPrompt);
+  return new Promise(res => {
+    const btns = [0, 1, 2, 3].map(s => `<button data-s="${s}">${Cards.suitIcon('h', s, 20)}${suitName('h', s)}</button>`).join('');
+    setAction(`<div class="msg">${isDealer ? t.mustCall : t.callPrompt}</div><div class="bid">${btns}<button class="pass" data-s="-1" ${isDealer ? 'disabled' : ''}>${t.pass}</button></div>`);
+    $('#action').querySelectorAll('button[data-s]').forEach(b => b.onclick = () => { if (b.disabled) return; setAction(''); res(+b.dataset.s); });
+  });
+}
+function scoreSheetHTML(row, mw) {
+  const t = L();
+  const res = r => r.result === 'pass' ? t.pass_r : r.result === 'fall' ? t.fall_r : t.hang_r;
+  const rows = G.rows.map((r, i) => {
+    const ct = r.caller % 2;
+    const cell = tm => {
+      const v = r.add[tm];
+      const fallen = r.result === 'fall' && ct === tm;
+      return `<td>${fallen ? '<span class="x">—</span>' : v}</td>`;
+    };
+    const note = `${Cards.suitIcon('h', r.trump, 13)} ${t.callerShort}: ${ct === 0 ? t.we : t.they} · ${res(r)}${r.stiglja >= 0 ? ' · ' + t.stiglja : ''}${(r.declPts[0] + r.declPts[1]) ? ` · ${t.declPts} ${r.declPts[0] || r.declPts[1]}` : ''}`;
+    return `<tr><td class="n">${i + 1}</td>${cell(0)}${cell(1)}<td class="note">${note}</td></tr>`;
+  }).join('');
+  const r = row;
+  const head = mw >= 0 ? (mw === 0 ? t.matchWon : t.matchLost) : t.handTitle(G.rows.length);
+  const detail = `<div class="decl">
+     <div><span>${t.cardsPts}</span><b>${r.pts[0]} : ${r.pts[1]}</b></div>
+     <div><span>${t.declPts}</span><b>${r.declPts[0]} : ${r.declPts[1]}</b></div>
+     <div><span>${t.callerShort}: ${r.caller % 2 === 0 ? t.we : t.they}</span><b>${res(r)}${G.hang ? ` (${G.hang})` : ''}</b></div></div>`;
+  return `<h3>${head}</h3>${detail}
+    <div class="pisw"><table class="pis"><thead><tr><th></th><th>${t.we}</th><th>${t.they}</th><th></th></tr></thead><tbody>${rows}
+    <tr class="tot"><td></td><td>${G.score[0]}</td><td>${G.score[1]}</td><td class="note">${t.target(G.opts.target)}</td></tr></tbody></table></div>
+    <div class="btns">${mw >= 0 ? `<button class="sec" data-go="home">${t.home}</button><button class="pri" data-go="again">${t.again}</button>` : `<button class="pri" data-go="next">${t.next}</button>`}</div>`;
+}
+function showScore() {
+  if (!G) return;
+  const t = L();
+  if (G.game === 'b') {
+    openSheet(`<h3>${t.pisanka}</h3><div class="pisw"><table class="pis"><thead><tr><th></th><th>${t.we}</th><th>${t.they}</th></tr></thead><tbody>
+      ${G.history.map((p, i) => `<tr><td class="n">${i + 1}</td><td>${p[0]}</td><td>${p[1]}</td></tr>`).join('')}
+      <tr class="tot"><td></td><td>${G.wins[0]}</td><td>${G.wins[1]}</td></tr></tbody></table></div>
+      <div class="btns"><button class="pri" id="sx">${t.close}</button></div>`, v => v.querySelector('#sx').onclick = closeSheet);
+  } else {
+    openSheet(`<h3>${t.pisanka}</h3><div class="pisw"><table class="pis"><thead><tr><th></th><th>${t.we}</th><th>${t.they}</th><th></th></tr></thead><tbody>
+      ${G.rows.map((r, i) => `<tr><td class="n">${i + 1}</td><td>${r.result === 'fall' && r.caller % 2 === 0 ? '<span class="x">—</span>' : r.add[0]}</td><td>${r.result === 'fall' && r.caller % 2 === 1 ? '<span class="x">—</span>' : r.add[1]}</td><td class="note">${Cards.suitIcon('h', r.trump, 13)}</td></tr>`).join('')}
+      <tr class="tot"><td></td><td>${G.score[0]}</td><td>${G.score[1]}</td><td class="note">${t.target(G.opts.target)}</td></tr></tbody></table></div>
+      <div class="btns"><button class="pri" id="sx">${t.close}</button></div>`, v => v.querySelector('#sx').onclick = closeSheet);
+  }
+}
+
+// ================= WIRING =================
+$('#defs').innerHTML = Cards.DEFS;
+$('#bHome').onclick = askQuit;
+$('#bLast').onclick = showLastTrick;
+$('#bRules').onclick = () => showRules(G ? G.game : 'b');
+$('#scoreChip').onclick = showScore; $('#scoreChip').style.cursor = 'pointer';
+addEventListener('resize', () => { if (G) layoutSizes(); });
+document.documentElement.lang = S.lang;
+renderHome();
+})();
+</script>
+
+<script>if('serviceWorker' in navigator){addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));}</script>
+</body>
+</html>
