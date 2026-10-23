@@ -61,6 +61,7 @@ button{font:inherit;color:inherit}
 .wseat{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:46%;padding:10px 8px;border-radius:12px;border:1.5px dashed var(--sheet-line);background:#fff;color:var(--sheet-ink);cursor:pointer}
 .wseat small{font-size:11px;color:var(--sheet-muted);font-weight:700;text-transform:uppercase;letter-spacing:.06em;min-height:1em}
 .wseat b{font-size:15px}.wseat.taken{border-style:solid;cursor:default;background:rgba(0,0,0,.04)}.wseat.me{border-color:var(--felt,#1d4a3a);border-width:2px}
+.robo{width:15px;height:15px;margin-left:5px;vertical-align:-2px;color:var(--brass);flex:none}
 #awayPill{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:8;background:var(--brass);color:var(--brass-ink);border:0;border-radius:99px;padding:10px 16px;font-weight:700;font-size:14px;box-shadow:0 6px 18px rgba(0,0,0,.45);white-space:nowrap;cursor:pointer}
 table.stats{width:100%;border-collapse:separate;border-spacing:4px;table-layout:fixed;margin:2px 0 8px}
 table.stats th{font-size:12px;font-weight:700;color:var(--sheet-muted);text-align:center;padding:2px}
@@ -1704,7 +1705,7 @@ const STR = {
     pass_r: 'prolaz', fall_r: 'pad', hang_r: 'visi', stiglja: 'štiglja', callerShort: 'zvali',
     pisanka: 'Rezultat', handNo: '#',
     quit: 'Prekinuti partiju?', quitSub: 'Trenutna partija neće biti spremljena.', yes: 'Prekini', no: 'Nastavi',
-    close: 'Zatvori', dealer: 'D', yourTeam: 'Mi = ti i Mare', target: t => `do ${t}`,
+    close: 'Zatvori', dealer: 'D', yourTeam: 'Mi = ti i partner', target: t => `do ${t}`,
     belotWin: t => `${t} ima belot — osam karata u nizu — i dobiva cijelu partiju!`,
     declDesc: d => d.type === 'quad' ? `četiri ${({ U: 'dečka', '9': 'devetke', A: 'asa', '10': 'desetke', K: 'kralja', O: 'babe' })[d.r]}` : `${d.len} u nizu`,
     handTitle: n => `Ruka ${n}`, cardsPts: 'karte', declPts: 'zvanja',
@@ -1756,7 +1757,7 @@ const STR = {
     pass_r: 'made it', fall_r: 'fell', hang_r: 'hangs', stiglja: 'all tricks', callerShort: 'called',
     pisanka: 'Score sheet', handNo: '#',
     quit: 'Leave this match?', quitSub: 'The current match will not be saved.', yes: 'Leave', no: 'Keep playing',
-    close: 'Close', dealer: 'D', yourTeam: 'Us = you and Mare', target: t => `to ${t}`,
+    close: 'Close', dealer: 'D', yourTeam: 'Us = you and your partner', target: t => `to ${t}`,
     belotWin: t => `${t} holds a belot — eight in a row — and wins the whole match!`,
     declDesc: d => d.type === 'quad' ? `four ${({ U: 'unters', '9': 'nines', A: 'aces', '10': 'tens', K: 'kings', O: 'obers' })[d.r]}` : `${d.len} in a row`,
     handTitle: n => `Hand ${n}`, cardsPts: 'cards', declPts: 'decl.',
@@ -1779,11 +1780,11 @@ const RULES = {
 <li>Prvi igra igrač desno od djelitelja; igra se u smjeru suprotnom od kazaljke.</li>
 <li>Ne mora se odgovoriti na boju niti rezati. Štih nosi najjača briškula; ako je nema, najjača karta boje koja je prva bačena.</li>
 <li>Nakon štiha svatko vuče kartu iz špila, počevši od onoga tko je nosio. Kad se špil potroši, igra se do kraja bez vučenja.</li>
-<li>U četvero igraju parovi jedan nasuprot drugome: ti i Mare protiv Ante i Jure.</li></ul>
+<li>U četvero igraju parovi jedan nasuprot drugome: ti i partner protiv dva protivnika.</li></ul>
 <h4>Dupla briškula</h4>
 <p>Dijele se 4 karte. Svatko igra dvaput u istom štihu (krug pa još jedan krug), najjača karta nosi sve, a zatim svi vuku po dvije karte.</p>`,
     t: `<h3>Trešeta</h3>
-<p class="muted">Isti špil od 40 karata kao za briškulu. Nema aduta. Igra se u dva para (ti i Mare protiv Ante i Jure) ili jedan na jedan.</p>
+<p class="muted">Isti špil od 40 karata kao za briškulu. Nema aduta. Igra se u dva para (ti i partner protiv dva protivnika) ili jedan na jedan.</p>
 <h4>Jačina i bodovi</h4>
 <div class="rank"><div><span>Trica</span><b>⅓</b></div><div><span>Dvica</span><b>⅓</b></div><div><span>As</span><b>1</b></div><div><span>Kralj, konj, fanat</span><b>⅓</b></div><div><span>7, 6, 5, 4</span><b>0</b></div><div><span>Zadnji štih</span><b>+1</b></div></div>
 <p>Jačina u svakoj boji: 3, 2, as, kralj, konj, fanat, 7, 6, 5, 4. Trice, dvice i figure su „bele“ i vrijede po trećinu boda. Svaki par zbraja svoje trećine i odbacuje ostatak, pa ruka donosi 10 ili 11 bodova.</p>
@@ -1802,7 +1803,7 @@ const RULES = {
 <li><b>Volo</b> – ovo mi je zadnja karta te boje.</li></ul>
 <p class="muted">Akuže, dugu napolitanu, ostatak trećina, znakove i smjer igre možeš uključiti ili isključiti pod „Lokalna pravila“ prije početka partije.</p>`,
     h: `<h3>Bela</h3>
-<p class="muted">Mađarice, 32 karte: herc, bundeva, zeleni i žir. Igraju se dva para: ti i Mare protiv Ante i Jure. Sve ide suprotno od kazaljke.</p>
+<p class="muted">Mađarice, 32 karte: herc, bundeva, zeleni i žir. Igraju se dva para: ti i partner protiv dva protivnika. Sve ide suprotno od kazaljke.</p>
 <h4>Jačina i bodovi</h4>
 <div class="rank"><div><span>Adut: dečko (unter)</span><b>20</b></div><div><span>Adut: devetka</span><b>14</b></div><div><span>As</span><b>11</b></div><div><span>Desetka</span><b>10</b></div><div><span>Kralj</span><b>4</b></div><div><span>Baba (ober)</span><b>3</b></div><div><span>Dečko izvan aduta</span><b>2</b></div><div><span>Zadnji štih</span><b>+10</b></div></div>
 <p>Redoslijed u adutu: dečko, 9, as, 10, kralj, baba, 8, 7. U ostalim bojama: as, 10, kralj, baba, dečko, 9, 8, 7. Ukupno 162 boda.</p>
@@ -1833,11 +1834,11 @@ const RULES = {
 <li>The player to the dealer's right leads; play goes counter-clockwise.</li>
 <li>You never have to follow suit or trump. The highest trump wins the trick; with no trump, the highest card of the suit led wins.</li>
 <li>After each trick everyone draws one card, starting with the trick winner. Once the deck is gone, play out the remaining cards.</li>
-<li>With four players, partners sit opposite: you and Mare against Ante and Jure.</li></ul>
+<li>With four players, partners sit opposite: you and your partner against two opponents.</li></ul>
 <h4>Double briškula</h4>
 <p>Four cards each. Everyone plays twice to the same trick (one round, then another), the best card takes all of them, then everyone draws two.</p>`,
     t: `<h3>Trešeta</h3>
-<p class="muted">The same 40-card deck as briškula. No trumps. Played in two pairs (you and Mare against Ante and Jure) or head to head.</p>
+<p class="muted">The same 40-card deck as briškula. No trumps. Played in two pairs (you and your partner against two opponents) or head to head.</p>
 <h4>Rank and points</h4>
 <div class="rank"><div><span>Three</span><b>⅓</b></div><div><span>Two</span><b>⅓</b></div><div><span>Ace</span><b>1</b></div><div><span>King, knight, fante</span><b>⅓</b></div><div><span>7, 6, 5, 4</span><b>0</b></div><div><span>Last trick</span><b>+1</b></div></div>
 <p>Each suit ranks 3, 2, ace, king, knight, fante, 7, 6, 5, 4. Threes, twos and court cards ("bele") are worth a third of a point. Each pair adds up its thirds and drops the remainder, so a hand is worth 10 or 11 points.</p>
@@ -1856,7 +1857,7 @@ const RULES = {
 <li><b>Last one (volo)</b> – this is my last card of the suit.</li></ul>
 <p class="muted">Declarations, long napolitana, leftover thirds, signals and direction of play can be switched on or off under "Local rules" before a match.</p>`,
     h: `<h3>Bela</h3>
-<p class="muted">German-suited mađarice, 32 cards: hearts, bells, leaves and acorns. Two pairs play: you and Mare against Ante and Jure. Everything goes counter-clockwise.</p>
+<p class="muted">German-suited mađarice, 32 cards: hearts, bells, leaves and acorns. Two pairs play: you and your partner against two opponents. Everything goes counter-clockwise.</p>
 <h4>Rank and points</h4>
 <div class="rank"><div><span>Trump unter (jack)</span><b>20</b></div><div><span>Trump nine</span><b>14</b></div><div><span>Ace</span><b>11</b></div><div><span>Ten</span><b>10</b></div><div><span>King</span><b>4</b></div><div><span>Ober (queen)</span><b>3</b></div><div><span>Non-trump unter</span><b>2</b></div><div><span>Last trick</span><b>+10</b></div></div>
 <p>Trump order: unter, 9, ace, 10, king, ober, 8, 7. Other suits: ace, 10, king, ober, unter, 9, 8, 7. 162 points in total.</p>
@@ -1891,7 +1892,21 @@ class Abort extends Error { }
 const sleep = ms => { const t = token; return new Promise((res, rej) => setTimeout(() => t === token ? res() : rej(new Abort()), ms)); };
 const check = t => { if (t !== token) throw new Abort(); };
 const name = s => G && G.names ? botName(G.names[s] || '') : (G && G.seats.length === 2 ? L().names2 : L().names)[s];
-const botName = n => n[0] === '@' ? (L().lv[n.slice(1)] || n.slice(1)) : n;
+// bot names by level: small herbivores up to apex predators (hr|en)
+const BOT_NAMES = {"novice": ["Kunić|Rabbit", "Zec|Hare", "Hrčak|Hamster", "Zamorac|Guinea Pig", "Vjeverica|Squirrel", "Puh|Dormouse", "Miš|Mouse", "Činčila|Chinchilla", "Svizac|Marmot", "Gerbil|Gerbil", "Voluharica|Vole", "Pika|Pika", "Kornjača|Tortoise", "Puž|Snail", "Leming|Lemming", "Janje|Lamb", "Lane|Fawn", "Kozlić|Kid", "Degu|Degu", "Dikdik|Dik-dik"], "average": ["Jelen|Deer", "Konj|Horse", "Koza|Goat", "Lama|Llama", "Alpaka|Alpaca", "Zebra|Zebra", "Žirafa|Giraffe", "Bizon|Bison", "Los|Moose", "Antilopa|Antelope", "Gazela|Gazelle", "Kengur|Kangaroo", "Rakun|Raccoon", "Jazavac|Badger", "Dabar|Beaver", "Divokoza|Chamois", "Kozorog|Ibex", "Magarac|Donkey", "Deva|Camel", "Bivol|Buffalo"], "pro": ["Lisica|Fox", "Ris|Lynx", "Divlja mačka|Wildcat", "Kuna|Marten", "Lasica|Weasel", "Vidra|Otter", "Sokol|Falcon", "Jastreb|Hawk", "Sova|Owl", "Kojot|Coyote", "Šakal|Jackal", "Mungos|Mongoose", "Gepard|Cheetah", "Ocelot|Ocelot", "Karakal|Caracal", "Barakuda|Barracuda", "Murina|Moray", "Kobra|Cobra", "Hijena|Hyena", "Dingo|Dingo"], "cardshark": ["Orka|Orca", "Bijela psina|Great White", "Lav|Lion", "Tigar|Tiger", "Jaguar|Jaguar", "Leopard|Leopard", "Polarni medvjed|Polar Bear", "Grizli|Grizzly", "Vuk|Wolf", "Snježni leopard|Snow Leopard", "Puma|Puma", "Krokodil|Crocodile", "Aligator|Alligator", "Komodski varan|Komodo Dragon", "Suri orao|Golden Eagle", "Harpija|Harpy Eagle", "Morski leopard|Leopard Seal", "Tigrasta psina|Tiger Shark", "Mako|Mako", "Anakonda|Anaconda"]};
+// '@level:index' is a bot; older '@level' falls back to the level's name
+const botName = n => {
+  if (n[0] !== '@') return n;
+  const [lv, i] = n.slice(1).split(':'), list = BOT_NAMES[lv];
+  if (!list || i === undefined) return L().lv[lv] || lv;
+  return list[+i % list.length].split('|')[S.lang === 'hr' ? 0 : 1];
+};
+// distinct animal names for the computer seats of one match
+function pickBotNames(levels) {
+  const used = new Set(), out = {};
+  for (const s in levels) { let i; do { i = Math.floor(Math.random() * 20); } while (used.has(levels[s] + i)); used.add(levels[s] + i); out[s] = '@' + levels[s] + ':' + i; }
+  return out;
+}
 // score-column labels: pairs/head-to-head use Us/Them, three players use their names
 const sideLabels = () => G.teams > 2 ? G.seats.map(s => name(s)) : [L().we, L().they];
 const team = s => E.teamOf(G, s);
@@ -1977,7 +1992,7 @@ function showSettings() {
     <h4>${t.deckB}</h4><div class="decks">${deckRow('b', pickB, 'bDeck')}</div>
     <h4>${t.deckH}</h4><div class="decks">${deckRow('h', pickH, 'hDeck')}</div>
     <h4>${t.speed}</h4>${seg('speed', [['normal', t.normal], ['fast', t.fast]])}
-    <p class="muted credit">${t.credit} · v27</p>
+    <p class="muted credit">${t.credit} · v28</p>
     <div class="btns"><button class="pri" id="sx">${t.close}</button></div>`, v => {
     v.querySelector('#sx').onclick = () => { closeSheet(); if (G) renderAll(); else renderHome(); };
     v.onclick = e => { if (e.target === v) { closeSheet(); if (G) renderAll(); else renderHome(); } };
@@ -2075,7 +2090,8 @@ function renderSeats() {
     let mini = '';
     if (reveal) mini = `<div class="mini open">${G.hands[s].map(c => cardHTML('b', c)).join('')}</div>`;
     else { let talon = (G.phase === 'bid' ? 2 : 0); mini = `<div class="mini">${Array.from({ length: Math.min(n + talon, 10) }, () => backHTML(G.game)).join('')}</div>`; }
-    el.innerHTML = `<div class="who"><span class="av">${esc((name(s) || " ")[0])}</span>${esc(name(s))}${tags.join('')}</div>${mini}`;
+    const robo = G.online && NET && NET.botSeats && NET.botSeats.includes(s) ? ROBOT : '';
+    el.innerHTML = `<div class="who"><span class="av">${esc((name(s) || " ")[0])}</span>${esc(name(s))}${robo}${tags.join('')}</div>${mini}`;
   }
 }
 function renderStock() {
@@ -2229,6 +2245,7 @@ function startGame(game) {
   else { G = E.hNew({ target: S.hTarget }); }
   G.turn = null;
   G.lv = { partner: S[game + 'Partner'], opp: S[game + 'Level'] };
+  { const lv = {}; for (const x of G.seats) if (x !== 0) lv[x] = lvOf(x); G.names = { 0: L().names[0], ...pickBotNames(lv) }; }
   $('#home').hidden = true; $('#table').hidden = false;
   $('#center').innerHTML = '';
   const my = token;
@@ -2639,6 +2656,7 @@ async function handleNet(m) {
   }
   if (m.t === 'ask') return askHuman(m.req);
   if (m.t === 'away') { pending = null; renderHand(); showAway(true); return; }
+  if (m.t === 'bots') { NET.botSeats = m.seats; if (G && G.online) renderSeats(); return; }
   if (m.t === 'rating') { const c = m.change; const el = document.querySelector('#ratingLine'); if (el && c) el.textContent = `${t.rating} ${c.r} (${c.d >= 0 ? '+' : ''}${c.d})`; NET.rating = c; return; }
   if (m.t === 'error') { status(esc(m.msg || 'error')); return; }
   if (m.t !== 'ev') return;
@@ -2700,6 +2718,7 @@ function onlineSheet(html, over) {
     else v.querySelector('#on').onclick = () => { netSend({ a: 'next' }); v.querySelector('#on').disabled = true; };
   });
 }
+const ROBOT = '<svg class="robo" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="2.5" r="1.5" fill="currentColor"/><rect x="4" y="6" width="16" height="13" rx="4" fill="currentColor"/><circle cx="9" cy="12" r="1.8" fill="#14251d"/><circle cx="15" cy="12" r="1.8" fill="#14251d"/><path d="M9 16h6" stroke="#14251d" stroke-width="1.6" stroke-linecap="round"/><path d="M2 11v4M22 11v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
 // stays on the table until tapped: a bot plays your turns meanwhile
 function showAway(on) {
   let el = document.querySelector('#awayPill');

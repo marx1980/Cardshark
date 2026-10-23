@@ -150,7 +150,7 @@ export class Table {
       const pid = String(m.pid || '').slice(0, 64); if (!/^[a-f0-9]{8,64}$/.test(pid)) return;
       setPid(pid); this.socks.set(pid, ws);
       const seat = this.seatOf(pid);
-      if (seat >= 0) { i.seats[seat].name = clean(m.name); this.away.delete(seat); }
+      if (seat >= 0) { i.seats[seat].name = clean(m.name); this.away.delete(seat); this.pushBots(); }
       this.sendWs(ws, { t: 'table', info: this.publicInfo(), mySeat: seat });
       if (i.status === 'playing' && seat >= 0 && this.runner) {
         const view = this.runner.snapshot(seat);
@@ -170,8 +170,8 @@ export class Table {
     if (m.a === 'stand' && i.status === 'waiting' && seat >= 0) { i.seats[seat] = null; await this.announce(); return; }
     if (m.a === 'start' && i.status === 'waiting' && pid === i.host && seat >= 0) { await this.start(); return; }
     if (seat < 0) return;
-    if (m.a === 'move') { this.away.delete(seat); const a = this.asks.get(seat); if (a) { clearTimeout(a.timer); this.asks.delete(seat); a.resolve(m); } return; }
-    if (m.a === 'back') { this.away.delete(seat); return; }
+    if (m.a === 'move') { if (this.away.delete(seat)) this.pushBots(); const a = this.asks.get(seat); if (a) { clearTimeout(a.timer); this.asks.delete(seat); a.resolve(m); } return; }
+    if (m.a === 'back') { this.away.delete(seat); this.pushBots(); return; }
     if (m.a === 'next' && this.nextVotes) { this.nextVotes.add(seat); this.checkNext(); return; }
   }
   async onLeave(pid) {
@@ -183,7 +183,13 @@ export class Table {
       if (!this.humanSeats().length && !this.socks.size) { i.status = 'done'; await this.save(); await this.lobby().fetch('https://do/remove', { method: 'POST', body: JSON.stringify({ id: i.id }) }); }
       else await this.announce();
     }
-    if (i.status === 'playing' && seat >= 0) { const a = this.asks.get(seat); if (a) { clearTimeout(a.timer); this.asks.delete(seat); a.resolve(null); } }
+    if (i.status === 'playing' && seat >= 0) { const a = this.asks.get(seat); if (a) { clearTimeout(a.timer); this.asks.delete(seat); a.resolve(null); } this.pushBots(); }
+  }
+  botted() { return this.humanSeats().filter(s => this.away.has(s) || !this.socks.has(this.info.seats[s].pid)); }
+  pushBots() {
+    if (!this.info || this.info.status !== 'playing') return;
+    const b = this.botted();
+    for (const s of this.humanSeats()) this.sendSeat(s, { t: 'bots', seats: b.map(x => ((x - s) % 4 + 4) % 4) });
   }
   namesFor(me) { const n = {}; for (let s = 0; s < 4; s++) { const x = this.info.seats[s]; n[((s - me) % 4 + 4) % 4] = x ? x.name : ''; } return n; }
   humanSeats() { return [0, 1, 2, 3].filter(s => this.info.seats[s] && this.info.seats[s].pid); }
@@ -201,9 +207,13 @@ export class Table {
     i.status = 'playing';
     const pids = this.humanSeats().map(s => i.seats[s].pid);
     this.ratings = await (await this.registry().fetch('https://do/many', { method: 'POST', body: JSON.stringify({ pids }) })).json();
+    const used = new Set();
     for (let s = 0; s < 4; s++) {
       this.levels[s] = this.levelFor(s);
-      if (!i.seats[s]) i.seats[s] = { bot: true, name: '@' + this.levels[s], level: this.levels[s] };   // the app shows the level as the bot's name
+      if (i.seats[s]) continue;
+      // the app turns '@level:n' into an animal name for that level (herbivores up to apex predators)
+      let n; do { n = Math.floor(Math.random() * 20); } while (used.has(this.levels[s] + n)); used.add(this.levels[s] + n);
+      i.seats[s] = { bot: true, name: '@' + this.levels[s] + ':' + n, level: this.levels[s] };
     }
     await this.announce();
     for (let s = 0; s < 4; s++) this.sendSeat(s, { t: 'start', names: this.namesFor(s) });
@@ -222,7 +232,7 @@ export class Table {
     if (!ws || this.away.has(seat)) return sleep(800).then(() => null);   // away: the bot plays this turn
     return new Promise(resolve => {
       const deadline = Date.now() + TURN_MS;
-      const timer = setTimeout(() => { this.asks.delete(seat); this.away.add(seat); this.sendSeat(seat, { t: 'away' }); resolve(null); }, TURN_MS);
+      const timer = setTimeout(() => { this.asks.delete(seat); this.away.add(seat); this.sendSeat(seat, { t: 'away' }); this.pushBots(); resolve(null); }, TURN_MS);
       this.asks.set(seat, { resolve, timer, req, deadline });
       this.sendWs(ws, { t: 'ask', req, ms: TURN_MS });
     });
