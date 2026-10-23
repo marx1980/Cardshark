@@ -610,7 +610,13 @@ const Engine = (() => {
       // padding: partner's non-trump ace is winning, so drop my 10 of that suit on it
       // (as defenders especially: the callers would trump that 10 later)
       const partnerAce = curW && curW.seat === partnerSeat && curW.card.s !== T && curW.card.r === 'A' && c.s === curW.card.s && c.r === '10';
+      // banking: partner has this trick won, and I hold the top cards of a suit (e.g. A, 10, K) – drop the top one now;
+      // my next card becomes the new master, so I still control the suit, and the points are safe from a later trump
+      const trickSafe = curW && curW.seat === partnerSeat && (pos === 3 || pHold(curW.card) >= 0.85);
+      const nextTop = c.s !== T && hand.filter(x => x.s === c.s && x.id !== c.id).sort((x, y) => hStr(y, T) - hStr(x, T))[0];
+      const bank = trickSafe && c.s !== T && hPts(c, T) >= 10 && isMaster(c) && nextTop && !unk.some(y => y.s === c.s && hStr(y, T) > hStr(nextTop, T));
       if (partnerAce) ev += callerTeam ? 4 : 9;
+      else if (bank) ev += 2 + hPts(c, T) * (callerTeam ? 0.4 : 0.7);
       else if (!iWin && isMaster(c) && c.s !== T && hPts(c, T) >= 10) ev -= 4;
       // the caller's partner keeps the trump 9 to back up the caller's jack
       if (partnerCalled && c.s === T && c.r === '9' && !jackOut && legal.length > 1 && !(iWin && pos === 3 && tablePts >= 20)) ev -= 7;
@@ -1494,7 +1500,7 @@ function showSettings() {
     <h4>${t.deckB}</h4><div class="decks">${deckRow('b', pickB, 'bDeck')}</div>
     <h4>${t.deckH}</h4><div class="decks">${deckRow('h', pickH, 'hDeck')}</div>
     <h4>${t.speed}</h4>${seg('speed', [['normal', t.normal], ['fast', t.fast]])}
-    <p class="muted credit">${t.credit} · v18</p>
+    <p class="muted credit">${t.credit} · v19</p>
     <div class="btns"><button class="pri" id="sx">${t.close}</button></div>`, v => {
     v.querySelector('#sx').onclick = () => { closeSheet(); if (G) renderAll(); else renderHome(); };
     v.onclick = e => { if (e.target === v) { closeSheet(); if (G) renderAll(); else renderHome(); } };
