@@ -212,7 +212,7 @@ export class Table {
       this.levels[s] = this.levelFor(s);
       if (i.seats[s]) continue;
       // the app turns '@level:n' into an animal name for that level (herbivores up to apex predators)
-      let n; do { n = Math.floor(Math.random() * 20); } while (used.has(this.levels[s] + n)); used.add(this.levels[s] + n);
+      let n; do { n = Math.floor(Math.random() * 10); } while (used.has(this.levels[s] + n)); used.add(this.levels[s] + n);
       i.seats[s] = { bot: true, name: '@' + this.levels[s] + ':' + n, level: this.levels[s] };
     }
     await this.announce();

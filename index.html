@@ -1893,7 +1893,7 @@ const sleep = ms => { const t = token; return new Promise((res, rej) => setTimeo
 const check = t => { if (t !== token) throw new Abort(); };
 const name = s => G && G.names ? botName(G.names[s] || '') : (G && G.seats.length === 2 ? L().names2 : L().names)[s];
 // bot names by level: small herbivores up to apex predators (hr|en)
-const BOT_NAMES = {"novice": ["Kunić|Rabbit", "Zec|Hare", "Hrčak|Hamster", "Zamorac|Guinea Pig", "Vjeverica|Squirrel", "Puh|Dormouse", "Miš|Mouse", "Činčila|Chinchilla", "Svizac|Marmot", "Gerbil|Gerbil", "Voluharica|Vole", "Pika|Pika", "Kornjača|Tortoise", "Puž|Snail", "Leming|Lemming", "Janje|Lamb", "Lane|Fawn", "Kozlić|Kid", "Degu|Degu", "Dikdik|Dik-dik"], "average": ["Jelen|Deer", "Konj|Horse", "Koza|Goat", "Lama|Llama", "Alpaka|Alpaca", "Zebra|Zebra", "Žirafa|Giraffe", "Bizon|Bison", "Los|Moose", "Antilopa|Antelope", "Gazela|Gazelle", "Kengur|Kangaroo", "Rakun|Raccoon", "Jazavac|Badger", "Dabar|Beaver", "Divokoza|Chamois", "Kozorog|Ibex", "Magarac|Donkey", "Deva|Camel", "Bivol|Buffalo"], "pro": ["Lisica|Fox", "Ris|Lynx", "Divlja mačka|Wildcat", "Kuna|Marten", "Lasica|Weasel", "Vidra|Otter", "Sokol|Falcon", "Jastreb|Hawk", "Sova|Owl", "Kojot|Coyote", "Šakal|Jackal", "Mungos|Mongoose", "Gepard|Cheetah", "Ocelot|Ocelot", "Karakal|Caracal", "Barakuda|Barracuda", "Murina|Moray", "Kobra|Cobra", "Hijena|Hyena", "Dingo|Dingo"], "cardshark": ["Orka|Orca", "Bijela psina|Great White", "Lav|Lion", "Tigar|Tiger", "Jaguar|Jaguar", "Leopard|Leopard", "Polarni medvjed|Polar Bear", "Grizli|Grizzly", "Vuk|Wolf", "Snježni leopard|Snow Leopard", "Puma|Puma", "Krokodil|Crocodile", "Aligator|Alligator", "Komodski varan|Komodo Dragon", "Suri orao|Golden Eagle", "Harpija|Harpy Eagle", "Morski leopard|Leopard Seal", "Tigrasta psina|Tiger Shark", "Mako|Mako", "Anakonda|Anaconda"]};
+const BOT_NAMES = {"novice": ["Zec|Hare", "Kunić|Rabbit", "Hrčak|Hamster", "Vjeverica|Squirrel", "Miš|Mouse", "Puh|Dormouse", "Kornjača|Tortoise", "Puž|Snail", "Janje|Lamb", "Lane|Fawn"], "average": ["Jelen|Deer", "Konj|Horse", "Koza|Goat", "Zebra|Zebra", "Žirafa|Giraffe", "Bizon|Bison", "Los|Moose", "Klokan|Kangaroo", "Jazavac|Badger", "Dabar|Beaver"], "pro": ["Lisica|Fox", "Ris|Lynx", "Kuna|Marten", "Lasica|Weasel", "Vidra|Otter", "Sokol|Falcon", "Jastreb|Hawk", "Sova|Owl", "Gepard|Cheetah", "Hijena|Hyena"], "cardshark": ["Lav|Lion", "Tigar|Tiger", "Vuk|Wolf", "Medvjed|Bear", "Orka|Orca", "Jaguar|Jaguar", "Leopard|Leopard", "Puma|Puma", "Krokodil|Crocodile", "Orao|Eagle"]};
 // '@level:index' is a bot; older '@level' falls back to the level's name
 const botName = n => {
   if (n[0] !== '@') return n;
@@ -1904,7 +1904,7 @@ const botName = n => {
 // distinct animal names for the computer seats of one match
 function pickBotNames(levels) {
   const used = new Set(), out = {};
-  for (const s in levels) { let i; do { i = Math.floor(Math.random() * 20); } while (used.has(levels[s] + i)); used.add(levels[s] + i); out[s] = '@' + levels[s] + ':' + i; }
+  for (const s in levels) { let i; do { i = Math.floor(Math.random() * 10); } while (used.has(levels[s] + i)); used.add(levels[s] + i); out[s] = '@' + levels[s] + ':' + i; }
   return out;
 }
 // score-column labels: pairs/head-to-head use Us/Them, three players use their names
@@ -1992,7 +1992,7 @@ function showSettings() {
     <h4>${t.deckB}</h4><div class="decks">${deckRow('b', pickB, 'bDeck')}</div>
     <h4>${t.deckH}</h4><div class="decks">${deckRow('h', pickH, 'hDeck')}</div>
     <h4>${t.speed}</h4>${seg('speed', [['normal', t.normal], ['fast', t.fast]])}
-    <p class="muted credit">${t.credit} · v28</p>
+    <p class="muted credit">${t.credit} · v29</p>
     <div class="btns"><button class="pri" id="sx">${t.close}</button></div>`, v => {
     v.querySelector('#sx').onclick = () => { closeSheet(); if (G) renderAll(); else renderHome(); };
     v.onclick = e => { if (e.target === v) { closeSheet(); if (G) renderAll(); else renderHome(); } };
