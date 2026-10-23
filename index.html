@@ -159,7 +159,20 @@ button{font:inherit;color:inherit}
 .seat.mate .av{background:var(--brass);color:var(--brass-ink)}
 .seat.turn .who{border-color:var(--brass);box-shadow:0 0 0 3px rgba(214,171,82,.25)}
 .tag{font-size:10.5px;font-weight:800;letter-spacing:.06em;border-radius:5px;padding:1px 5px;background:var(--ink);color:var(--felt-lo)}
-.tag.call{background:var(--brass);color:var(--brass-ink)}
+.tag.call{background:var(--brass);color:var(--brass-ink);padding:2px 4px;border-radius:7px;display:inline-grid;place-items:center;line-height:0}
+#trumpChip{cursor:default}
+.zv{font-size:11.5px;font-weight:800;letter-spacing:.04em;background:var(--brass);color:var(--brass-ink);border-radius:99px;padding:2px 7px;margin-left:2px}
+.zlist{display:flex;flex-direction:column;gap:10px;margin:10px 0}
+.zseat{display:flex;flex-direction:column;gap:4px}
+.zname{font-weight:800;display:flex;gap:8px;align-items:baseline}
+.zname small{font-weight:600;color:var(--sheet-muted);font-size:12.5px;text-transform:uppercase;letter-spacing:.08em}
+.zrow{display:flex;align-items:center;gap:10px;border-bottom:1px dashed var(--sheet-line);padding:4px 0}
+.zrow.off{opacity:.45}
+.zrow .zd{flex:1;font-size:14.5px}
+.zcards{display:flex}
+.zcards .svgc{width:38px;margin-left:-14px;filter:drop-shadow(0 1px 1px rgba(0,0,0,.25))}
+.zcards .svgc:first-child{margin-left:0}
+.sheet .small{font-size:12.5px}
 .mini{display:flex;height:34px}
 .mini .svgc{width:22px;margin-left:-14px;filter:drop-shadow(0 1px 1px rgba(0,0,0,.4))}
 .mini .svgc:first-child{margin-left:0}
@@ -1189,6 +1202,8 @@ const STR = {
     bidWait: n => `${n} odlučuje…`,
     belaCall: 'Bela!', belot: 'BELOT!', declWord: 'Zvanje',
     declWin: (t, v) => `Zvanja priznata: ${t} +${v}`, declNone: 'Nema zvanja',
+    zvTitle: 'Zvanja', zvShort: 'Zv.', zvNotYet: 'Zvanja se vide kad je adut zvan.', zvMyBela: 'Imaš belu – zove se kad odigraš kralja ili babu aduta',
+    zvNote: 'Priznaju se samo zvanja para s najjačim zvanjem. Vrijede ako par nosi barem jedan štih.',
     lastTrick: 'Zadnji štih', noLast: 'Još nije odigran nijedan štih.', took: n => `Nosi: ${n}`, pts: 'bodova',
     handWon: 'Dobili ste ruku!', handLost: 'Izgubili ste ruku.', handDraw: 'Neriješeno, 60 : 60.',
     matchWon: 'Partija je vaša!', matchLost: 'Partija je izgubljena.',
@@ -1236,6 +1251,8 @@ const STR = {
     bidWait: n => `${n} is deciding…`,
     belaCall: 'Bela!', belot: 'BELOT!', declWord: 'Declares',
     declWin: (t, v) => `Declarations count for: ${t} +${v}`, declNone: 'No declarations',
+    zvTitle: 'Declarations', zvShort: 'Decl.', zvNotYet: 'Declarations are shown once trump is called.', zvMyBela: 'You hold bela – it is called when you play the trump king or ober',
+    zvNote: 'Only the pair with the best declaration scores. Declarations count only if that pair wins a trick.',
     lastTrick: 'Last trick', noLast: 'No trick has been played yet.', took: n => `Taken by: ${n}`, pts: 'points',
     handWon: 'You won the hand!', handLost: 'You lost the hand.', handDraw: 'Draw, 60 : 60.',
     matchWon: 'The match is yours!', matchLost: 'Match lost.',
@@ -1454,7 +1471,7 @@ function showSettings() {
     <h4>${t.deckB}</h4><div class="decks">${deckRow('b', pickB, 'bDeck')}</div>
     <h4>${t.deckH}</h4><div class="decks">${deckRow('h', pickH, 'hDeck')}</div>
     <h4>${t.speed}</h4>${seg('speed', [['normal', t.normal], ['fast', t.fast]])}
-    <p class="muted credit">${t.credit} · v15</p>
+    <p class="muted credit">${t.credit} · v16</p>
     <div class="btns"><button class="pri" id="sx">${t.close}</button></div>`, v => {
     v.querySelector('#sx').onclick = () => { closeSheet(); if (G) renderAll(); else renderHome(); };
     v.onclick = e => { if (e.target === v) { closeSheet(); if (G) renderAll(); else renderHome(); } };
@@ -1533,7 +1550,7 @@ function renderSeats() {
     const n = (G.hands && G.hands[s]) ? G.hands[s].length : 0;
     const tags = [];
     if (G.dealer === s) tags.push(`<span class="tag">${t.dealer}</span>`);
-    if (G.game === 'h' && G.caller === s) tags.push(`<span class="tag call">${Cards.suitIcon('h', G.trump, 12)}</span>`);
+    if (G.game === 'h' && G.caller === s) tags.push(`<span class="tag call">${Cards.suitIcon('h', G.trump, 20)}</span>`);
     const reveal = G.game === 'b' && mate && G.opts.reveal && G.stock && G.stock.length === 0 && n > 0;
     let mini = '';
     if (reveal) mini = `<div class="mini open">${G.hands[s].map(c => cardHTML('b', c)).join('')}</div>`;
@@ -1556,11 +1573,15 @@ function renderBar() {
     if (G.teams > 2) $('#scoreChip').innerHTML = G.seats.map((s, i) => `<span class="k">${esc(name(s)).slice(0, 1)}</span><b>${G.wins[i]}</b>`).join('<span class="k">·</span>');
     else $('#scoreChip').innerHTML = `<span class="k">${t.we}</span><b>${G.wins[0]}</b>:<b>${G.wins[1]}</b><span class="k">${t.they}</span>`;
   } else if (G.game === 't') {
+    $('#trumpChip').style.cursor = 'default';
     $('#trumpChip').innerHTML = `<b>Trešeta</b>`;
     $('#scoreChip').classList.remove('tight');
     $('#scoreChip').innerHTML = `<span class="k">${t.we}</span><b>${G.score[0]}</b>:<b>${G.score[1]}</b><span class="k">${t.they}</span>`;
   } else {
-    $('#trumpChip').innerHTML = G.trump === null ? `<span class="k">${t.trump}</span><b>—</b>` : `${Cards.suitIcon('h', G.trump, 20)}<b>${suitName('h', G.trump)}</b>`;
+    $('#trumpChip').style.cursor = 'pointer';
+    const zv = G.decls ? G.decls.total + (G.belaCalled ? 20 : 0) : 0;
+    $('#trumpChip').innerHTML = (G.trump === null ? `<span class="k">${t.trump}</span><b>—</b>` : `${Cards.suitIcon('h', G.trump, 20)}<b>${suitName('h', G.trump)}</b>`)
+      + `<span class="zv">${t.zvShort}${zv ? ' ' + zv : ''}</span>`;
     $('#scoreChip').innerHTML = `<span class="k">${t.we}</span><b>${G.score[0]}</b>:<b>${G.score[1]}</b><span class="k">${t.they}</span>`;
   }
 }
@@ -1773,7 +1794,7 @@ async function belaMatch(my) {
       check(my);
       const r = E.hPlay(G, s, card);
       placeTrickCard(s, card); renderSeats(); renderHand();
-      if (r.bela) bubble(s, t().belaCall, true);
+      if (r.bela) { bubble(s, t().belaCall, true); renderBar(); }
       if (r.done) {
         G.turn = null; renderSeats(); status('');
         await sleep(SPEED().trick); check(my);
@@ -1824,6 +1845,31 @@ function scoreSheetHTML(row, mw) {
     <div class="pisw"><table class="pis"><thead><tr><th></th><th>${t.we}</th><th>${t.they}</th><th></th></tr></thead><tbody>${rows}
     <tr class="tot"><td></td><td>${G.score[0]}</td><td>${G.score[1]}</td><td class="note">${t.target(G.opts.target)}</td></tr></tbody></table></div>
     <div class="btns">${mw >= 0 ? `<button class="sec" data-go="home">${t.home}</button><button class="pri" data-go="again">${t.again}</button>` : `<button class="pri" data-go="next">${t.next}</button>`}</div>`;
+}
+function showZvanja() {
+  const t = L();
+  if (!G || G.game !== 'h') return;
+  const close = `<div class="btns"><button class="pri" id="sx">${t.close}</button></div>`;
+  const bind = v => { v.querySelector('#sx').onclick = closeSheet; v.onclick = e => { if (e.target === v) closeSheet(); }; };
+  if (!G.decls) return openSheet(`<h3>${t.zvTitle}</h3><p class="muted">${t.zvNotYet}</p>${close}`, bind);
+  const D = G.decls, K = E.H_KEYS;
+  const declCards = d => d.type === 'quad' ? [0, 1, 2, 3].map(s => 'h' + s + d.r) : K.slice(d.low, d.top + 1).map(r => 'h' + d.s + r);
+  const deck = E.hDeck(), byId = id => deck.find(c => c.id === id);
+  const rows = D.order.map(s => {
+    const ds = D.per[s].filter(d => d.type !== 'belot');
+    const counts = D.team === s % 2;
+    const items = ds.map(d => `<div class="zrow${counts ? '' : ' off'}"><span class="zcards">${declCards(d).map(id => `<span class="svgc">${face('h', byId(id))}</span>`).join('')}</span><span class="zd">${t.declDesc(d)}</span><b>${d.val}</b></div>`).join('');
+    return `<div class="zseat"><div class="zname">${esc(name(s))}<small>${s % 2 === team(0) ? t.we : t.they}</small></div>${items || `<div class="zrow off"><span class="zd">—</span></div>`}</div>`;
+  }).join('');
+  let bela = '';
+  if (G.belaCalled) bela = `<div class="zrow"><span class="zd"><b>Bela</b> · ${esc(name(G.belaSeat))}</span><b>20</b></div>`;
+  else if (G.belaSeat === 0) bela = `<div class="zrow off"><span class="zd">${t.zvMyBela}</span><b>20</b></div>`;
+  const tot = [0, 1].map(tm => (D.team === tm ? D.total : 0) + (G.belaCalled && G.belaSeat % 2 === tm ? 20 : 0));
+  openSheet(`<h3>${t.zvTitle}</h3>
+    <p class="muted">${D.team >= 0 ? t.declWin(D.team === team(0) ? t.we : t.they, D.total) : t.declNone}</p>
+    <div class="zlist">${rows}${bela}</div>
+    <div class="decl"><div><span>${t.we} : ${t.they}</span><b>${tot[0]} : ${tot[1]}</b></div></div>
+    <p class="muted small">${t.zvNote}</p>${close}`, bind);
 }
 function showScore() {
   if (!G) return;
@@ -1922,6 +1968,7 @@ $('#bHome').onclick = askQuit;
 $('#bLast').onclick = showLastTrick;
 $('#bRules').onclick = () => showRules(G ? G.game : 'b');
 $('#scoreChip').onclick = showScore; $('#scoreChip').style.cursor = 'pointer';
+$('#trumpChip').onclick = () => { if (G && G.game === 'h') showZvanja(); };
 addEventListener('resize', () => { if (G) layoutSizes(); });
 document.documentElement.lang = S.lang;
 renderHome();
