@@ -88,14 +88,16 @@ button{font:inherit;color:inherit}
 .ghost{background:none;border:1px solid var(--faint);border-radius:12px;padding:11px;color:var(--ink);cursor:pointer;font-weight:700}
 .foot{color:var(--muted);font-size:12.5px;text-align:center;margin:0}
 /* home: two posters */
-#home .wrap{min-height:100%;box-sizing:border-box;gap:16px}
+#home .wrap{min-height:100%;box-sizing:border-box;gap:12px}
+.mini-card{display:inline-block;width:34px;vertical-align:middle;margin-left:4px}
 .hbar{display:flex;align-items:center;gap:10px;flex:none}
 .hbar .logo{width:46px;height:46px;border-radius:12px}
 .hbar h1{flex:1;margin:0;font:800 34px/1 var(--display);color:var(--ink)}
 .hbar h1 span{color:var(--brass)}
 .hbar .ib{width:44px;height:44px}
-.poster{position:relative;display:block;width:100%;flex:1 1 0;min-height:200px;border-radius:24px;overflow:hidden;border:1px solid var(--faint);padding:0;cursor:pointer;color:var(--ink);font:inherit;text-align:left;box-shadow:0 8px 22px rgba(0,0,0,.3)}
+.poster{position:relative;display:block;width:100%;flex:1 1 0;min-height:150px;border-radius:24px;overflow:hidden;border:1px solid var(--faint);padding:0;cursor:pointer;color:var(--ink);font:inherit;text-align:left;box-shadow:0 8px 22px rgba(0,0,0,.3)}
 .poster.pb{background:radial-gradient(90% 90% at 50% 18%,#2d7259,#173f31)}
+.poster.pt{background:radial-gradient(90% 90% at 50% 18%,#2f5389,#14284a)}
 .poster.ph{background:radial-gradient(90% 90% at 50% 18%,#76302a,#3b1512)}
 .poster:active{transform:scale(.99)}
 .pfan{position:absolute;left:50%;top:7%;height:62%;width:0}
@@ -580,10 +582,130 @@ const Engine = (() => {
     return best.c;
   }
 
+  // ================================= TREŠETA =================================
+  // Same 40-card Italian deck as briškula. No trumps, must follow suit.
+  // Rank 3 > 2 > A > K > C > F > 7 > 6 > 5 > 4. Ace = 1 point, 3/2/K/C/F ("bele") = 1/3 point, last trick = 1 point.
+  const T_ORDER = { '3': 10, '2': 9, 'A': 8, 'K': 7, 'C': 6, 'F': 5, '7': 4, '6': 3, '5': 2, '4': 1 };
+  const tStr = c => T_ORDER[c.r];
+  const tThirds = c => c.r === 'A' ? 3 : (c.r === '3' || c.r === '2' || c.r === 'K' || c.r === 'C' || c.r === 'F') ? 1 : 0;
+  function tNew(opts) {
+    const seats = opts.players === 2 ? [0, 2] : [0, 1, 2, 3];
+    return { game: 't', opts, seats, teams: 2, dealer: seats[seats.length - 1], score: [0, 0], rows: [] };
+  }
+  function tFindAkuze(hand) {
+    const out = [];
+    for (const r of ['3', '2', 'A']) {
+      const n = hand.filter(c => c.r === r).length;
+      if (n >= 3) out.push({ type: n === 4 ? 'four' : 'three', r, val: n });
+    }
+    for (let s = 0; s < 4; s++) if (['A', '2', '3'].every(r => hand.some(c => c.s === s && c.r === r))) out.push({ type: 'napolitana', s, val: 3 });
+    return out;
+  }
+  function tDeal(st) {
+    const deck = shuffle(bDeck());
+    st.hands = {}; st.seats.forEach(s => st.hands[s] = []);
+    let s = nextSeat(st, st.dealer);
+    for (let i = 0; i < 10 * st.seats.length; i++) { st.hands[s].push(deck.pop()); s = nextSeat(st, s); }
+    st.stock = deck; // empty with 4 players, 20 cards with 2
+    st.leader = nextSeat(st, st.dealer);
+    st.trick = []; st.won = [[], []]; st.tricks = [0, 0]; st.seen = new Set(); st.lastTrick = null; st.trickNo = 0;
+    st.void = {}; st.seats.forEach(x => st.void[x] = {});
+    st.akuze = {}; st.seats.forEach(x => st.akuze[x] = tFindAkuze(st.hands[x]));
+  }
+  function tToPlay(st) { return roundFrom(st, st.leader)[st.trick.length]; }
+  function tLegal(st, seat) {
+    const hand = st.hands[seat];
+    if (!st.trick.length) return hand.slice();
+    const led = st.trick[0].card.s, f = hand.filter(c => c.s === led);
+    return f.length ? f : hand.slice();
+  }
+  function tWinnerIdx(trick) {
+    const led = trick[0].card.s; let w = 0;
+    for (let i = 1; i < trick.length; i++) if (trick[i].card.s === led && tStr(trick[i].card) > tStr(trick[w].card)) w = i;
+    return w;
+  }
+  function tPlay(st, seat, card) {
+    if (st.trick.length && card.s !== st.trick[0].card.s) st.void[seat][st.trick[0].card.s] = true;
+    const h = st.hands[seat]; h.splice(h.findIndex(c => c.id === card.id), 1);
+    st.trick.push({ seat, card }); st.seen.add(card.id);
+    return st.trick.length === st.seats.length;
+  }
+  function tFinishTrick(st) {
+    const w = st.trick[tWinnerIdx(st.trick)].seat, tm = teamOf(st, w);
+    st.won[tm].push(...st.trick.map(t => t.card)); st.tricks[tm]++;
+    st.lastTrick = { trick: st.trick, winner: w, pts: sum(st.trick, t => tThirds(t.card)) / 3 };
+    st.trick = []; st.leader = w; st.trickNo++; st.lastWinner = w;
+    const draws = [];
+    if (st.stock.length) for (const s of roundFrom(st, w)) { const c = st.stock.pop(); st.hands[s].push(c); draws.push({ seat: s, card: c }); }
+    // in 2-player trešeta every drawn card is shown, so it is public
+    draws.forEach(d => (st.public = st.public || new Set()).add(d.card.id));
+    return { winner: w, draws };
+  }
+  function tHandOver(st) { return st.trick.length === 0 && st.seats.every(s => st.hands[s].length === 0); }
+  function tScoreHand(st) {
+    const thirds = st.won.map(cs => sum(cs, tThirds));
+    const cardPts = thirds.map(t => Math.floor(t / 3));
+    cardPts[teamOf(st, st.lastWinner)] += 1;
+    const akuze = [0, 0];
+    for (const s of st.seats) akuze[teamOf(st, s)] += sum(st.akuze[s], d => d.val);
+    const add = [cardPts[0] + akuze[0], cardPts[1] + akuze[1]];
+    st.score[0] += add[0]; st.score[1] += add[1];
+    const row = { thirds, cardPts, akuze, add, score: st.score.slice() };
+    st.rows.push(row);
+    return row;
+  }
+  function tMatchWinner(st) {
+    const t = st.opts.target;
+    if ((st.score[0] >= t || st.score[1] >= t) && st.score[0] !== st.score[1]) return st.score[0] > st.score[1] ? 0 : 1;
+    return -1;
+  }
+  function tAI(st, seat) {
+    const legal = tLegal(st, seat);
+    if (legal.length === 1) return legal[0];
+    const hand = st.hands[seat], pos = st.trick.length, me = teamOf(st, seat);
+    const after = roundFrom(st, st.leader).slice(pos + 1);
+    const opps = after.filter(s => teamOf(st, s) !== me);
+    const partnerAfter = after.some(s => teamOf(st, s) === me);
+    const known = new Set([...st.seen, ...hand.map(c => c.id)]);
+    const unk = bDeck().filter(c => !known.has(c.id));
+    const others = st.seats.filter(s => s !== seat);
+    const pool = sum(others, s => st.hands[s].length) + st.stock.length;
+    const curW = pos ? st.trick[tWinnerIdx(st.trick)] : null;
+    const led = pos ? st.trick[0].card.s : null;
+    const table = sum(st.trick, t => tThirds(t.card));
+    const lastTrick = hand.length === 1 && st.stock.length === 0;
+    const higher = c => unk.filter(x => x.s === c.s && tStr(x) > tStr(c)).length;
+    // chance that one opponent holds none of the cards that beat c (no trumps, so a void player can never beat it)
+    const holdVs = (c, o) => st.void[o][c.s] ? 1 : Math.pow(1 - Math.min(0.95, st.hands[o].length / Math.max(1, pool)), higher(c));
+    const pHold = c => opps.reduce((p, o) => p * holdVs(c, o), 1);
+    const isMaster = c => higher(c) === 0;
+    let best = null;
+    for (const c of legal) {
+      const follows = !pos || c.s === led;
+      const iWin = !curW || (follows && tStr(c) > tStr(curW.card));
+      let pWin;
+      if (iWin) { const ph = pHold(c); pWin = ph + (1 - ph) * (partnerAfter ? 0.25 : 0); }
+      else if (teamOf(st, curW.seat) === me) pWin = pHold(curW.card);
+      else pWin = partnerAfter ? 0.25 : 0;
+      const pts = table + tThirds(c) + after.length * 0.55 + (lastTrick ? 3 : 0);
+      let ev = (2 * pWin - 1) * pts;
+      // spending a master card or the 2 behind a 3 costs future tricks
+      const keep = isMaster(c) ? 2.4 : tStr(c) >= 9 ? 1.2 : tStr(c) === 8 ? 0.4 : 0;
+      if (!iWin) ev -= keep; else ev -= keep * 0.25 + tStr(c) * 0.04;
+      // an off-suit discard: keep guards, dump plain low cards from short suits
+      if (!follows) ev += tThirds(c) === 0 ? 0.6 - 0.1 * hand.filter(x => x.s === c.s).length : 0;
+      if (!pos) ev += 0.08 * hand.filter(x => x.s === c.s).length; // lead from long suits
+      ev += Math.random() * 0.15;
+      if (!best || ev > best.ev) best = { c, ev };
+    }
+    return best.c;
+  }
+
   return {
     shuffle, teamOf, nextSeat, roundFrom,
     B_RANKS, bDeck, bNew, bDeal, bOrder, bToPlay, bBeats, bWinnerIdx, bPlay, bFinishTrick, bHandOver, bPoints, bAI,
-    H_KEYS, hDeck, hStr, hPts, hNew, hDeal, hAIBid, hBid, hFindDecls, hLegal, hWinnerIdx, hToPlay, hPlay, hFinishTrick, hHandOver, hScoreHand, hMatchWinner, hAI, hBidValue
+    H_KEYS, hDeck, hStr, hPts, hNew, hDeal, hAIBid, hBid, hFindDecls, hLegal, hWinnerIdx, hToPlay, hPlay, hFinishTrick, hHandOver, hScoreHand, hMatchWinner, hAI, hBidValue,
+    tStr, tThirds, tNew, tDeal, tToPlay, tLegal, tWinnerIdx, tPlay, tFinishTrick, tHandOver, tScoreHand, tMatchWinner, tAI, tFindAkuze
   };
 })();
 
@@ -967,7 +1089,7 @@ const $ = s => document.querySelector(s);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
 // ---------- settings ----------
-const DEF = { lang: (navigator.language || '').toLowerCase().startsWith('hr') ? 'hr' : 'en', bMode: 'p4', bTarget: 3, bReveal: false, hTarget: 1001, speed: 'normal', tap: 2, bDeck: 'triestine', hDeck: 'hungarian' };
+const DEF = { lang: (navigator.language || '').toLowerCase().startsWith('hr') ? 'hr' : 'en', bMode: 'p4', bTarget: 3, tMode: 4, tTarget: 41, bReveal: false, hTarget: 1001, speed: 'normal', tap: 2, bDeck: 'triestine', hDeck: 'hungarian' };
 let S = { ...DEF };
 try { Object.assign(S, JSON.parse(localStorage.getItem('stih.v1') || '{}')); } catch (e) { }
 // older saves had players + double separately; 4-player double is not a real variant
@@ -995,9 +1117,12 @@ const STR = {
     speed: 'Brzina', normal: 'Normalno', fast: 'Brzo', tap: 'Igranje karte', tap1: 'Jedan dodir', tap2: 'Dva dodira',
     rules: 'Pravila', rulesB: 'Pravila briškule', rulesH: 'Pravila bele',
     settings: 'Postavke', language: 'Jezik',
+    sumT: () => `${S.tMode === 2 ? '2 igrača' : '4 igrača · u paru'} · do ${S.tTarget}`, tModeN: n => n === 2 ? '2 · jedan na jedan' : '4 · u paru',
+    akuza: 'Akuža', akuzaPts: 'akuže', drew: 'Vuče ',
+    akuzaName: d => d.type === 'napolitana' ? 'napolitana' : `${d.type === 'four' ? 'četiri' : 'tri'} ${({ '3': 'trice', '2': 'dvice', A: 'asa' })[d.r]}`,
     playersN: n => `${n} igrača`, modeN: n => ({ p4: '4 · u paru', s4: '4 · svatko za sebe', s3: '3 igrača', d2: '2 · dupla' })[n],
     handWonBy: n => `${n} dobiva ruku.`, handTie: 'Neriješeno.', pairNote: 'Dupla: 4 karte, svatko igra dvaput u štihu.', cardsN: n => n === 4 ? '4 karte · dupla' : '3 karte',
-    sumB: () => `${({ p4: '4 igrača · u paru', s4: '4 igrača · svatko za sebe', s3: '3 igrača', d2: '2 igrača · dupla' })[S.bMode]} · do ${S.bTarget}`, sumH: () => `4 igrača · do ${S.hTarget}`, deckB: 'Karte za briškulu', deckH: 'Karte za belu', lowRes: 'niža rezolucija',
+    sumB: () => `${({ p4: '4 igrača · u paru', s4: '4 igrača · svatko za sebe', s3: '3 igrača', d2: '2 igrača · dupla' })[S.bMode]} · do ${S.bTarget}`, sumH: () => `4 igrača · do ${S.hTarget}`, deckB: 'Karte za briškulu i trešetu', deckH: 'Karte za belu', lowRes: 'niža rezolucija',
     credit: 'Slike karata su fotografije pravih špilova (Modiano, Masenghini, Dal Negro, Fournier, Piatnik).',
     foot: 'Igra se protiv računala. Postavke se pamte na ovom uređaju.',
     names: { 0: 'Ti', 1: 'Ante', 2: 'Mare', 3: 'Jure' }, names2: { 0: 'Ti', 2: 'Ante' },
@@ -1035,9 +1160,12 @@ const STR = {
     speed: 'Speed', normal: 'Normal', fast: 'Fast', tap: 'Playing a card', tap1: 'One tap', tap2: 'Two taps',
     rules: 'Rules', rulesB: 'Briškula rules', rulesH: 'Bela rules',
     settings: 'Settings', language: 'Language',
+    sumT: () => `${S.tMode === 2 ? '2 players' : '4 players · pairs'} · to ${S.tTarget}`, tModeN: n => n === 2 ? '2 · head to head' : '4 · pairs',
+    akuza: 'Declares', akuzaPts: 'declarations', drew: 'Drew ',
+    akuzaName: d => d.type === 'napolitana' ? 'napolitana' : `${d.type === 'four' ? 'four' : 'three'} ${({ '3': 'threes', '2': 'twos', A: 'aces' })[d.r]}`,
     playersN: n => `${n} players`, modeN: n => ({ p4: '4 · pairs', s4: '4 · each for themselves', s3: '3 players', d2: '2 · double hand' })[n],
     handWonBy: n => `${n} wins the hand.`, handTie: 'Tie.', pairNote: 'Double: 4 cards, everyone plays twice per trick.', cardsN: n => n === 4 ? '4 cards · double' : '3 cards',
-    sumB: () => `${({ p4: '4 players · pairs', s4: '4 players · solo', s3: '3 players', d2: '2 players · double' })[S.bMode]} · first to ${S.bTarget}`, sumH: () => `4 players · to ${S.hTarget}`, deckB: 'Briškula cards', deckH: 'Bela cards', lowRes: 'lower resolution',
+    sumB: () => `${({ p4: '4 players · pairs', s4: '4 players · solo', s3: '3 players', d2: '2 players · double' })[S.bMode]} · first to ${S.bTarget}`, sumH: () => `4 players · to ${S.hTarget}`, deckB: 'Briškula & Trešeta cards', deckH: 'Bela cards', lowRes: 'lower resolution',
     credit: 'Card images are photographs of real decks (Modiano, Masenghini, Dal Negro, Fournier, Piatnik).',
     foot: 'You play against the computer. Settings are kept on this device.',
     names: { 0: 'You', 1: 'Ante', 2: 'Mare', 3: 'Jure' }, names2: { 0: 'You', 2: 'Ante' },
@@ -1082,6 +1210,20 @@ const RULES = {
 <li>U četvero igraju parovi jedan nasuprot drugome: ti i Mare protiv Ante i Jure.</li></ul>
 <h4>Dupla briškula</h4>
 <p>Dijele se 4 karte. Svatko igra dvaput u istom štihu (krug pa još jedan krug), najjača karta nosi sve, a zatim svi vuku po dvije karte.</p>`,
+    t: `<h3>Trešeta</h3>
+<p class="muted">Isti špil od 40 karata kao za briškulu. Nema aduta. Igra se u dva para (ti i Mare protiv Ante i Jure) ili jedan na jedan.</p>
+<h4>Jačina i bodovi</h4>
+<div class="rank"><div><span>Trica</span><b>⅓</b></div><div><span>Dvica</span><b>⅓</b></div><div><span>As</span><b>1</b></div><div><span>Kralj, konj, fanat</span><b>⅓</b></div><div><span>7, 6, 5, 4</span><b>0</b></div><div><span>Zadnji štih</span><b>+1</b></div></div>
+<p>Jačina u svakoj boji: 3, 2, as, kralj, konj, fanat, 7, 6, 5, 4. Trice, dvice i figure su „bele“ i vrijede po trećinu boda. Svaki par zbraja svoje trećine i odbacuje ostatak, pa ruka donosi 10 ili 11 bodova.</p>
+<h4>Tijek igre</h4>
+<ul><li>Svatko dobije 10 karata. U dvoje ostatak je špil: nakon svakog štiha prvo vuče onaj tko je nosio, a izvučena karta se pokazuje protivniku.</li>
+<li>Mora se odgovoriti na boju. Tko nema boju baca bilo što, ali takva karta ne može nositi.</li>
+<li>Štih nosi najjača karta boje koja je prva bačena.</li></ul>
+<h4>Akuže</h4>
+<div class="rank"><div><span>Tri trice, dvice ili asa</span><b>3</b></div><div><span>Četiri trice, dvice ili asa</span><b>4</b></div><div><span>Napolitana (as, 2, 3 iste boje)</span><b>3</b></div></div>
+<p>Akuže se zovu prije prve karte i odmah se pišu.</p>
+<h4>Pobjeda</h4>
+<p>Igra se do 41 (ili 21 / 31). Partija završava kad netko na kraju ruke ima dovoljno bodova.</p>`,
     h: `<h3>Bela</h3>
 <p class="muted">Mađarice, 32 karte: herc, bundeva, zeleni i žir. Igraju se dva para: ti i Mare protiv Ante i Jure. Sve ide suprotno od kazaljke.</p>
 <h4>Jačina i bodovi</h4>
@@ -1117,6 +1259,20 @@ const RULES = {
 <li>With four players, partners sit opposite: you and Mare against Ante and Jure.</li></ul>
 <h4>Double briškula</h4>
 <p>Four cards each. Everyone plays twice to the same trick (one round, then another), the best card takes all of them, then everyone draws two.</p>`,
+    t: `<h3>Trešeta</h3>
+<p class="muted">The same 40-card deck as briškula. No trumps. Played in two pairs (you and Mare against Ante and Jure) or head to head.</p>
+<h4>Rank and points</h4>
+<div class="rank"><div><span>Three</span><b>⅓</b></div><div><span>Two</span><b>⅓</b></div><div><span>Ace</span><b>1</b></div><div><span>King, knight, fante</span><b>⅓</b></div><div><span>7, 6, 5, 4</span><b>0</b></div><div><span>Last trick</span><b>+1</b></div></div>
+<p>Each suit ranks 3, 2, ace, king, knight, fante, 7, 6, 5, 4. Threes, twos and court cards ("bele") are worth a third of a point. Each pair adds up its thirds and drops the remainder, so a hand is worth 10 or 11 points.</p>
+<h4>Play</h4>
+<ul><li>Everyone gets 10 cards. With two players the rest is a stock: after each trick the winner draws first, and every drawn card is shown to the opponent.</li>
+<li>You must follow suit. If you can't, play anything, but that card can't win.</li>
+<li>The highest card of the suit led wins the trick.</li></ul>
+<h4>Declarations (akuže)</h4>
+<div class="rank"><div><span>Three 3s, 2s or aces</span><b>3</b></div><div><span>Four 3s, 2s or aces</span><b>4</b></div><div><span>Napolitana (ace, 2, 3 of a suit)</span><b>3</b></div></div>
+<p>Declarations are made before the first card and score straight away.</p>
+<h4>Winning</h4>
+<p>Play to 41 (or 21 / 31). The match ends when someone has enough at the end of a hand.</p>`,
     h: `<h3>Bela</h3>
 <p class="muted">German-suited mađarice, 32 cards: hearts, bells, leaves and acorns. Two pairs play: you and Mare against Ante and Jure. Everything goes counter-clockwise.</p>
 <h4>Rank and points</h4>
@@ -1141,10 +1297,11 @@ const RULES = {
 };
 
 // ---------- card rendering ----------
-function face(game, c) { return Cards.face(game, c); }
+const deckOf = g => g === 'h' ? 'h' : 'b'; // trešeta plays with the briškula deck
+function face(game, c) { return Cards.face(deckOf(game), c); }
 const cardHTML = (game, c, cls = '') => `<div class="svgc ${cls}">${face(game, c)}</div>`;
-const backHTML = (game, cls = '') => `<div class="svgc ${cls}">${Cards.back(game)}</div>`;
-const suitName = (game, s) => (game === 'b' ? L().sB : L().sH)[s];
+const backHTML = (game, cls = '') => `<div class="svgc ${cls}">${Cards.back(deckOf(game))}</div>`;
+const suitName = (game, s) => (game === 'h' ? L().sH : L().sB)[s];
 
 // ---------- flow control ----------
 let G = null, token = 0, pending = null, sel = null;
@@ -1162,25 +1319,29 @@ function renderHome() {
   const D = E.bDeck(), H = E.hDeck();
   const fanB = ['b1A', 'b02', 'b2K'].map(id => D.find(c => c.id === id));
   const fanH = ['h010', 'h1O', 'h3A'].map(id => H.find(c => c.id === id));
+  const fanT = ['b23', 'b22', 'b2A'].map(id => D.find(c => c.id === id));
   const fan = (game, cs) => `<div class="pfan">${cs.map((c, i) => `<div class="svgc" style="--i:${i - 1}">${face(game, c)}</div>`).join('')}</div>`;
   const arrow = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 5l8 7-8 7"/></svg>';
   $('#home').innerHTML = `<div class="wrap">
     <header class="hbar"><div class="logo"><svg viewBox="0 0 120 120" aria-hidden="true"><path d="M16 76C22 46 46 32 70 33C90 34 102 50 106 76Z" fill="#5b7186"/><path d="M42 36C46 22 54 12 68 6C64 18 64 28 66 35Z" fill="#5b7186"/><circle cx="84" cy="55" r="7" fill="#fbf6ea"/><circle cx="81" cy="57" r="3.5" fill="#1f1a14"/><path d="M75 45Q84 41 93 46" fill="none" stroke="#1f1a14" stroke-width="3" stroke-linecap="round"/><g transform="rotate(-22 60 140)"><rect x="38" y="64" width="44" height="64" rx="6" fill="#8e2a24" stroke="#0e241c" stroke-width="2.5"/><rect x="42" y="68" width="36" height="56" rx="4" fill="none" stroke="#e8d7a8" stroke-width="1.2"/><path transform="translate(48 77) scale(.1)" d="M0,40C-58,2 -42,-50 0,-22C42,-50 58,2 0,40Z" fill="#e8d7a8"/></g><g><rect x="38" y="64" width="44" height="64" rx="6" fill="#8e2a24" stroke="#0e241c" stroke-width="2.5"/><rect x="42" y="68" width="36" height="56" rx="4" fill="none" stroke="#e8d7a8" stroke-width="1.2"/><path transform="translate(48 77) scale(.1)" d="M0,40C-58,2 -42,-50 0,-22C42,-50 58,2 0,40Z" fill="#e8d7a8"/></g><g transform="rotate(22 60 140)"><rect x="38" y="64" width="44" height="64" rx="6" fill="#8e2a24" stroke="#0e241c" stroke-width="2.5"/><rect x="42" y="68" width="36" height="56" rx="4" fill="none" stroke="#e8d7a8" stroke-width="1.2"/><path transform="translate(60 92) scale(.26)" d="M0,40C-58,2 -42,-50 0,-22C42,-50 58,2 0,40Z" fill="#e8d7a8"/></g></svg></div><h1>Card<span>shark</span></h1>
       <button class="ib" id="goSet" aria-label="${t.settings}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button></header>
     <button class="poster pb" id="goB">${fan('b', fanB)}<span class="pcap"><span><b>Briškula</b><small>${t.sumB()}</small></span><span class="go">${arrow}</span></span></button>
+    <button class="poster pt" id="goT">${fan('b', fanT)}<span class="pcap"><span><b>Trešeta</b><small>${t.sumT()}</small></span><span class="go">${arrow}</span></span></button>
     <button class="poster ph" id="goH">${fan('h', fanH)}<span class="pcap"><span><b>Bela</b><small>${t.sumH()}</small></span><span class="go">${arrow}</span></span></button>
   </div>`;
   $('#goSet').onclick = showSettings;
   $('#goB').onclick = () => showGameSheet('b');
   $('#goH').onclick = () => showGameSheet('h');
+  $('#goT').onclick = () => showGameSheet('t');
 }
 function showGameSheet(game) {
   const t = L();
   const seg = (key, opts) => `<div class="seg dark" role="group">${opts.map(([v, lab]) => `<button data-k="${key}" data-v="${v}" aria-pressed="${S[key] === v}">${lab}</button>`).join('')}</div>`;
   const body = game === 'b'
     ? `<div class="glab">${t.players}</div><div class="seg dark modes" role="group">${['p4', 's4', 's3', 'd2'].map(m => `<button data-k="bMode" data-v="${m}" aria-pressed="${S.bMode === m}">${t.modeN(m)}</button>`).join('')}</div><div class="gsep"></div><div class="glab">${t.matchTo}</div>` + seg('bTarget', [[2, t.target(2)], [3, t.target(3)], [4, t.target(4)]])
+    : game === 't' ? `<div class="glab">${t.players}</div>` + seg('tMode', [[4, t.tModeN(4)], [2, t.tModeN(2)]]) + `<div class="gsep"></div><div class="glab">${t.hTo}</div>` + seg('tTarget', [[21, '21'], [31, '31'], [41, '41']])
     : `<div class="glab">${t.hTo}</div>` + seg('hTarget', [[501, '501'], [701, '701'], [1001, '1001']]);
-  openSheet(`<div class="gsh"><h3>${game === 'b' ? 'Briškula' : 'Bela'}</h3><button class="link" id="gRules">${t.rules}</button></div>
+  openSheet(`<div class="gsh"><h3>${({ b: 'Briškula', t: 'Trešeta', h: 'Bela' })[game]}</h3><button class="link" id="gRules">${t.rules}</button></div>
     <div class="gsegs">${body}</div>
     <div class="btns"><button class="play wide" id="gPlay">${t.start}</button></div>`, v => {
     v.onclick = e => { if (e.target === v) closeSheet(); };
@@ -1222,7 +1383,7 @@ function showSettings() {
     <h4>${t.deckB}</h4><div class="decks">${deckRow('b', pickB, 'bDeck')}</div>
     <h4>${t.deckH}</h4><div class="decks">${deckRow('h', pickH, 'hDeck')}</div>
     <h4>${t.speed}</h4>${seg('speed', [['normal', t.normal], ['fast', t.fast]])}
-    <p class="muted credit">${t.credit} · v13</p>
+    <p class="muted credit">${t.credit} · v14</p>
     <div class="btns"><button class="pri" id="sx">${t.close}</button></div>`, v => {
     v.querySelector('#sx').onclick = () => { closeSheet(); if (G) renderAll(); else renderHome(); };
     v.onclick = e => { if (e.target === v) { closeSheet(); if (G) renderAll(); else renderHome(); } };
@@ -1248,7 +1409,7 @@ function showLastTrick() {
   const t = L();
   if (!G || !G.lastTrick) { openSheet(`<h3>${t.lastTrick}</h3><p>${t.noLast}</p><div class="btns"><button class="pri" id="sx">${t.close}</button></div>`, v => v.querySelector('#sx').onclick = closeSheet); return; }
   const lt = G.lastTrick;
-  const wIdx = G.game === 'b' ? E.bWinnerIdx(lt.trick, G.trump) : E.hWinnerIdx(lt.trick, G.trump);
+  const wIdx = G.game === 'b' ? E.bWinnerIdx(lt.trick, G.trump) : G.game === 't' ? E.tWinnerIdx(lt.trick) : E.hWinnerIdx(lt.trick, G.trump);
   openSheet(`<h3>${t.lastTrick}</h3><p class="muted">${t.took(esc(name(lt.winner)))} · ${lt.pts} ${t.pts}</p>
     <div class="trickview">${lt.trick.map((x, i) => `<figure class="${i === wIdx ? 'w' : ''}">${cardHTML(G.game, x.card)}<figcaption>${esc(name(x.seat))}</figcaption></figure>`).join('')}</div>
     <div class="btns"><button class="pri" id="sx">${t.close}</button></div>`, v => { v.querySelector('#sx').onclick = closeSheet; v.onclick = e => { if (e.target === v) closeSheet(); }; });
@@ -1268,7 +1429,7 @@ function waitSheet(html) {
 const felt = () => $('#felt');
 function layoutSizes() {
   const f = felt().getBoundingClientRect();
-  const r = Cards.ratio(G ? G.game : 'b');
+  const r = Cards.ratio(deckOf(G ? G.game : 'b'));
   const cy = f.height * 0.56;
   // the top card of the trick must stay clear of the partner's badge and cards (~92px)
   let tw = Math.max(52, Math.min(124, f.width * 0.27, (cy - 92) / 0.95 / r));
@@ -1311,10 +1472,10 @@ function renderSeats() {
 }
 function renderStock() {
   const st = $('#stock');
-  if (G.game !== 'b' || !G.stock || !G.stock.length) { st.hidden = true; return; }
+  if (G.game === 'h' || !G.stock || !G.stock.length) { st.hidden = true; return; }
   st.hidden = false;
   felt().style.setProperty('--cr', Cards.ratio('b'));
-  st.innerHTML = `<div class="tr">${cardHTML('b', G.trumpCard)}</div>${G.stock.length > 1 ? `<div class="pile">${backHTML('b')}<div class="cnt">${G.stock.length}</div></div>` : ''}`;
+  st.innerHTML = G.game === 't' ? `<div class="pile">${backHTML('b')}<div class="cnt">${G.stock.length}</div></div>` : `<div class="tr">${cardHTML('b', G.trumpCard)}</div>${G.stock.length > 1 ? `<div class="pile">${backHTML('b')}<div class="cnt">${G.stock.length}</div></div>` : ''}`;
 }
 function renderBar() {
   const t = L();
@@ -1323,6 +1484,10 @@ function renderBar() {
     $('#scoreChip').classList.toggle('tight', G.teams > 3);
     if (G.teams > 2) $('#scoreChip').innerHTML = G.seats.map((s, i) => `<span class="k">${esc(name(s)).slice(0, 1)}</span><b>${G.wins[i]}</b>`).join('<span class="k">·</span>');
     else $('#scoreChip').innerHTML = `<span class="k">${t.we}</span><b>${G.wins[0]}</b>:<b>${G.wins[1]}</b><span class="k">${t.they}</span>`;
+  } else if (G.game === 't') {
+    $('#trumpChip').innerHTML = `<b>Trešeta</b>`;
+    $('#scoreChip').classList.remove('tight');
+    $('#scoreChip').innerHTML = `<span class="k">${t.we}</span><b>${G.score[0]}</b>:<b>${G.score[1]}</b><span class="k">${t.they}</span>`;
   } else {
     $('#trumpChip').innerHTML = G.trump === null ? `<span class="k">${t.trump}</span><b>—</b>` : `${Cards.suitIcon('h', G.trump, 20)}<b>${suitName('h', G.trump)}</b>`;
     $('#scoreChip').innerHTML = `<span class="k">${t.we}</span><b>${G.score[0]}</b>:<b>${G.score[1]}</b><span class="k">${t.they}</span>`;
@@ -1332,12 +1497,12 @@ function renderHand() {
   const el = $('#hand'); if (!G || !G.hands) { el.innerHTML = ''; return; }
   const cards = G.hands[0].slice();
   const showTalon = G.game === 'h' && G.phase === 'bid';
-  const order = G.game === 'b' ? [1, 0, 2, 3] : [0, 1, 2, 3];
+  const order = G.game === 'h' ? [0, 1, 2, 3] : [1, 0, 2, 3];
   const tr = G.trump;
   cards.sort((a, b) => {
     const sa = (a.s === tr ? 9 : order[a.s]), sb = (b.s === tr ? 9 : order[b.s]);
     if (sa !== sb) return sa - sb;
-    return G.game === 'b' ? b.st - a.st : E.hStr(b, tr) - E.hStr(a, tr);
+    return G.game === 'b' ? b.st - a.st : G.game === 't' ? E.tStr(b) - E.tStr(a) : E.hStr(b, tr) - E.hStr(a, tr);
   });
   const n = cards.length + (showTalon ? 2 : 0);
   const W = el.clientWidth || 360;
@@ -1346,7 +1511,7 @@ function renderHand() {
   const total = cw + step * (n - 1);
   const x0 = (W - total) / 2;
   el.style.setProperty('--cw', cw + 'px');
-  el.style.height = (cw * Cards.ratio(G.game) + 6) + 'px';
+  el.style.height = (cw * Cards.ratio(deckOf(G.game)) + 6) + 'px';
   const legal = pending ? pending.legal : null;
   el.classList.toggle('live', !!pending);
   let html = cards.map((c, i) => {
@@ -1414,13 +1579,14 @@ $('#center').addEventListener('click', () => { });
 function startGame(game) {
   token++; pending = null; sel = null; closeSheet();
   if (game === 'b') { G = E.bNew({ ...B_MODES[S.bMode], target: S.bTarget, reveal: S.bMode === 'p4' && S.bReveal }); }
+  else if (game === 't') { G = E.tNew({ players: S.tMode, target: S.tTarget }); }
   else { G = E.hNew({ target: S.hTarget }); }
   G.turn = null;
   $('#home').hidden = true; $('#table').hidden = false;
   $('#center').innerHTML = '';
   const my = token;
   requestAnimationFrame(() => { layoutSizes(); });
-  (game === 'b' ? briskulaMatch(my) : belaMatch(my)).catch(e => { if (!(e instanceof Abort)) { console.error(e); } });
+  (game === 'b' ? briskulaMatch(my) : game === 't' ? tresetaMatch(my) : belaMatch(my)).catch(e => { if (!(e instanceof Abort)) { console.error(e); } });
 }
 
 async function turnTo(seat) {
@@ -1596,11 +1762,73 @@ function showScore() {
       ${G.history.map((p, i) => `<tr><td class="n">${i + 1}</td>${p.map(v => `<td>${v}</td>`).join('')}</tr>`).join('')}
       <tr class="tot"><td></td>${G.wins.map(w => `<td>${w}</td>`).join('')}</tr></tbody></table></div>
       <div class="btns"><button class="pri" id="sx">${t.close}</button></div>`, v => v.querySelector('#sx').onclick = closeSheet);
+  } else if (G.game === 't') {
+    openSheet(`<h3>${t.pisanka}</h3>${tTable()}<div class="btns"><button class="pri" id="sx">${t.close}</button></div>`, v => v.querySelector('#sx').onclick = closeSheet);
   } else {
     openSheet(`<h3>${t.pisanka}</h3><div class="pisw"><table class="pis"><thead><tr><th></th><th>${t.we}</th><th>${t.they}</th><th></th></tr></thead><tbody>
       ${G.rows.map((r, i) => `<tr><td class="n">${i + 1}</td><td>${r.result === 'fall' && r.caller % 2 === 0 ? '<span class="x">—</span>' : r.add[0]}</td><td>${r.result === 'fall' && r.caller % 2 === 1 ? '<span class="x">—</span>' : r.add[1]}</td><td class="note">${Cards.suitIcon('h', r.trump, 13)}</td></tr>`).join('')}
       <tr class="tot"><td></td><td>${G.score[0]}</td><td>${G.score[1]}</td><td class="note">${t.target(G.opts.target)}</td></tr></tbody></table></div>
       <div class="btns"><button class="pri" id="sx">${t.close}</button></div>`, v => v.querySelector('#sx').onclick = closeSheet);
+  }
+}
+
+// ================= TREŠETA =================
+function tTable() {
+  const t = L();
+  return `<div class="pisw"><table class="pis"><thead><tr><th></th><th>${t.we}</th><th>${t.they}</th><th></th></tr></thead><tbody>
+    ${G.rows.map((r, i) => `<tr><td class="n">${i + 1}</td><td>${r.add[0]}</td><td>${r.add[1]}</td><td class="note">${(r.akuze[0] + r.akuze[1]) ? `${t.akuzaPts} ${r.akuze[0]}:${r.akuze[1]}` : ''}</td></tr>`).join('')}
+    <tr class="tot"><td></td><td>${G.score[0]}</td><td>${G.score[1]}</td><td class="note">${t.target(G.opts.target)}</td></tr></tbody></table></div>`;
+}
+async function tresetaMatch(my) {
+  const t = () => L();
+  while (true) {
+    G.dealer = E.nextSeat(G, G.dealer);
+    E.tDeal(G); G.turn = null;
+    $('#center').innerHTML = '';
+    renderAll(); status('');
+    await sleep(SPEED().deal); check(my);
+    // akuže are announced before the first card
+    let any = false;
+    for (const s of E.roundFrom(G, G.leader)) {
+      const ds = G.akuze[s]; if (!ds.length) continue;
+      any = true;
+      bubble(s, `${t().akuza}: ${ds.map(d => t().akuzaName(d)).join(', ')} +${ds.reduce((x, d) => x + d.val, 0)}`, true, 2600);
+      await sleep(SPEED().ai * 0.8); check(my);
+    }
+    if (any) { await sleep(SPEED().trick); check(my); }
+    while (!E.tHandOver(G)) {
+      const s = E.tToPlay(G);
+      await turnTo(s);
+      let card;
+      if (s === 0) card = await humanPick(E.tLegal(G, 0).map(c => c.id));
+      else { await sleep(SPEED().ai); card = E.tAI(G, s); }
+      check(my);
+      const done = E.tPlay(G, s, card);
+      placeTrickCard(s, card); renderSeats(); renderHand();
+      if (done) {
+        G.turn = null; renderSeats(); status('');
+        await sleep(SPEED().trick); check(my);
+        const { winner, draws } = E.tFinishTrick(G);
+        await collectTrick(winner); check(my);
+        renderAll();
+        // two players: the card each player draws is shown to the other
+        const theirs = draws.find(d => d.seat !== 0);
+        if (theirs) { bubble(theirs.seat, `${t().drew}<span class="svgc mini-card">${face('t', theirs.card)}</span>`, false, 1500); await sleep(SPEED().ai * 0.6); check(my); }
+      }
+    }
+    G.turn = null; renderSeats();
+    const r = E.tScoreHand(G);
+    renderBar();
+    const mw = E.tMatchWinner(G);
+    const head = mw >= 0 ? (mw === 0 ? t().matchWon : t().matchLost) : t().handTitle(G.rows.length);
+    const go = await waitSheet(`<h3>${head}</h3>
+      <div class="decl"><div><span>${t().cardsPts}</span><b>${r.cardPts[0]} : ${r.cardPts[1]}</b></div>
+      <div><span>${t().akuzaPts}</span><b>${r.akuze[0]} : ${r.akuze[1]}</b></div></div>
+      ${tTable()}
+      <div class="btns">${mw >= 0 ? `<button class="sec" data-go="home">${t().home}</button><button class="pri" data-go="again">${t().again}</button>` : `<button class="pri" data-go="next">${t().next}</button>`}</div>`);
+    check(my);
+    if (go === 'home') return showHome();
+    if (go === 'again') return startGame('t');
   }
 }
 
