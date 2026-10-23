@@ -87,6 +87,32 @@ button{font:inherit;color:inherit}
 .prefs{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .ghost{background:none;border:1px solid var(--faint);border-radius:12px;padding:11px;color:var(--ink);cursor:pointer;font-weight:700}
 .foot{color:var(--muted);font-size:12.5px;text-align:center;margin:0}
+/* home: two posters */
+.hbar{display:flex;align-items:center;gap:10px}
+.hbar .logo{width:46px;height:46px;border-radius:12px}
+.hbar h1{flex:1;margin:0;font:800 34px/1 var(--display);color:var(--ink)}
+.hbar h1 span{color:var(--brass)}
+.hbar .ib{width:44px;height:44px}
+.poster{position:relative;display:block;width:100%;height:clamp(240px,37vh,330px);border-radius:24px;overflow:hidden;border:1px solid var(--faint);padding:0;cursor:pointer;color:var(--ink);font:inherit;text-align:left;box-shadow:0 8px 22px rgba(0,0,0,.3)}
+.poster.pb{background:radial-gradient(90% 90% at 50% 18%,#2d7259,#173f31)}
+.poster.ph{background:radial-gradient(90% 90% at 50% 18%,#76302a,#3b1512)}
+.poster:active{transform:scale(.99)}
+.pfan{position:absolute;left:50%;top:7%;height:62%;width:0}
+.pfan .svgc{position:absolute;bottom:0;height:100%;width:auto;aspect-ratio:auto;left:0;transform-origin:50% 110%;filter:drop-shadow(0 6px 10px rgba(0,0,0,.45));
+  transform:translateX(calc(-50% + var(--i) * 34%)) rotate(calc(var(--i) * 14deg))}
+.pfan .svgc .ci{height:100%;width:auto}
+.pcap{position:absolute;left:0;right:0;bottom:0;padding:16px 18px;display:flex;align-items:flex-end;justify-content:space-between;gap:12px;background:linear-gradient(0deg,rgba(0,0,0,.55),transparent)}
+.pcap b{display:block;font:800 clamp(30px,9vw,40px)/1 var(--display)}
+.pcap small{display:block;font-size:15px;color:#e8e0cc;margin-top:4px}
+.go{width:54px;height:54px;flex:none;border-radius:50%;background:var(--brass);color:var(--brass-ink);display:grid;place-items:center;box-shadow:0 3px 0 #8a6a28}
+.go svg{width:24px;height:24px}
+.gsh{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.link{background:none;border:0;color:var(--felt);font:700 15px var(--body);text-decoration:underline;cursor:pointer;padding:6px 0}
+.gsegs{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.play.wide{flex:1}
+.check.dark{color:var(--sheet-ink)}
+.check.dark input{accent-color:var(--felt)}
+
 @media (max-width:420px){.prefs{grid-template-columns:1fr}}
 
 /* ---------- TABLE ---------- */
@@ -950,7 +976,9 @@ const STR = {
     hTo: 'Igra se do', start: 'Igraj',
     speed: 'Brzina', normal: 'Normalno', fast: 'Brzo', tap: 'Igranje karte', tap1: 'Jedan dodir', tap2: 'Dva dodira',
     rules: 'Pravila', rulesB: 'Pravila briškule', rulesH: 'Pravila bele',
-    settings: 'Postavke', deckB: 'Karte za briškulu', deckH: 'Karte za belu', lowRes: 'niža rezolucija',
+    settings: 'Postavke', language: 'Jezik',
+    playersN: n => `${n} igrača`, cardsN: n => n === 4 ? '4 karte · dupla' : '3 karte',
+    sumB: () => `${S.bPlayers} igrača · ${S.bDouble ? 'dupla' : '3 karte'} · do ${S.bTarget}`, sumH: () => `4 igrača · do ${S.hTarget}`, deckB: 'Karte za briškulu', deckH: 'Karte za belu', lowRes: 'niža rezolucija',
     credit: 'Slike karata su fotografije pravih špilova (Modiano, Masenghini, Dal Negro, Fournier, Piatnik).',
     foot: 'Igra se protiv računala. Postavke se pamte na ovom uređaju.',
     names: { 0: 'Ti', 1: 'Ante', 2: 'Mare', 3: 'Jure' }, names2: { 0: 'Ti', 2: 'Ante' },
@@ -987,7 +1015,9 @@ const STR = {
     hTo: 'Play to', start: 'Play',
     speed: 'Speed', normal: 'Normal', fast: 'Fast', tap: 'Playing a card', tap1: 'One tap', tap2: 'Two taps',
     rules: 'Rules', rulesB: 'Briškula rules', rulesH: 'Bela rules',
-    settings: 'Settings', deckB: 'Briškula cards', deckH: 'Bela cards', lowRes: 'lower resolution',
+    settings: 'Settings', language: 'Language',
+    playersN: n => `${n} players`, cardsN: n => n === 4 ? '4 cards · double' : '3 cards',
+    sumB: () => `${S.bPlayers} players · ${S.bDouble ? 'double' : '3 cards'} · first to ${S.bTarget}`, sumH: () => `4 players · to ${S.hTarget}`, deckB: 'Briškula cards', deckH: 'Bela cards', lowRes: 'lower resolution',
     credit: 'Card images are photographs of real decks (Modiano, Masenghini, Dal Negro, Fournier, Piatnik).',
     foot: 'You play against the computer. Settings are kept on this device.',
     names: { 0: 'You', 1: 'Ante', 2: 'Mare', 3: 'Jure' }, names2: { 0: 'You', 2: 'Ante' },
@@ -1107,45 +1137,39 @@ const team = s => E.teamOf(G, s);
 // ================= HOME =================
 function renderHome() {
   const t = L();
-  const seg = (key, opts) => `<div class="seg">${opts.map(([v, lab]) => `<button data-k="${key}" data-v="${v}" aria-pressed="${S[key] === v}">${lab}</button>`).join('')}</div>`;
   const D = E.bDeck(), H = E.hDeck();
-  const fanB = [D.find(c => c.id === 'b1A'), D.find(c => c.id === 'b03'), D.find(c => c.id === 'b2K')];
-  const fanH = [H.find(c => c.id === 'h0U'), H.find(c => c.id === 'h09'), H.find(c => c.id === 'h3A')];
-  const fan = (game, cs) => `<div class="fan">${cs.map((c, i) => `<div class="svgc" style="transform:rotate(${(i - 1) * 16}deg) translateX(${(i - 1) * 6}px)">${face(game, c)}</div>`).join('')}</div>`;
+  const fanB = ['b1A', 'b02', 'b2K'].map(id => D.find(c => c.id === id));
+  const fanH = ['h010', 'h1O', 'h3A'].map(id => H.find(c => c.id === id));
+  const fan = (game, cs) => `<div class="pfan">${cs.map((c, i) => `<div class="svgc" style="--i:${i - 1}">${face(game, c)}</div>`).join('')}</div>`;
+  const arrow = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 5l8 7-8 7"/></svg>';
   $('#home').innerHTML = `<div class="wrap">
-    <div class="brand"><div class="bl"><div class="logo"><svg viewBox="0 0 120 120" aria-hidden="true"><path d="M16 76C22 46 46 32 70 33C90 34 102 50 106 76Z" fill="#5b7186"/><path d="M42 36C46 22 54 12 68 6C64 18 64 28 66 35Z" fill="#5b7186"/><circle cx="84" cy="55" r="7" fill="#fbf6ea"/><circle cx="81" cy="57" r="3.5" fill="#1f1a14"/><path d="M75 45Q84 41 93 46" fill="none" stroke="#1f1a14" stroke-width="3" stroke-linecap="round"/><g transform="rotate(-22 60 140)"><rect x="38" y="64" width="44" height="64" rx="6" fill="#8e2a24" stroke="#0e241c" stroke-width="2.5"/><rect x="42" y="68" width="36" height="56" rx="4" fill="none" stroke="#e8d7a8" stroke-width="1.2"/><path transform="translate(48 77) scale(.1)" d="M0,40C-58,2 -42,-50 0,-22C42,-50 58,2 0,40Z" fill="#e8d7a8"/></g><g><rect x="38" y="64" width="44" height="64" rx="6" fill="#8e2a24" stroke="#0e241c" stroke-width="2.5"/><rect x="42" y="68" width="36" height="56" rx="4" fill="none" stroke="#e8d7a8" stroke-width="1.2"/><path transform="translate(48 77) scale(.1)" d="M0,40C-58,2 -42,-50 0,-22C42,-50 58,2 0,40Z" fill="#e8d7a8"/></g><g transform="rotate(22 60 140)"><rect x="38" y="64" width="44" height="64" rx="6" fill="#8e2a24" stroke="#0e241c" stroke-width="2.5"/><rect x="42" y="68" width="36" height="56" rx="4" fill="none" stroke="#e8d7a8" stroke-width="1.2"/><path transform="translate(60 92) scale(.26)" d="M0,40C-58,2 -42,-50 0,-22C42,-50 58,2 0,40Z" fill="#e8d7a8"/></g></svg>
-</div><div><h1>Card<span>shark</span></h1><p>${t.tagline}</p></div></div>
-      <div class="lang" role="group" aria-label="Language"><button data-lang="hr" aria-pressed="${S.lang === 'hr'}">HR</button><button data-lang="en" aria-pressed="${S.lang === 'en'}">EN</button></div></div>
-    <article class="game">
-      <div class="game-top">${fan('b', fanB)}<div><h2>Briškula</h2><p class="sub">${t.bSub}</p></div></div>
-      <div class="opt"><span>${t.players}</span>${seg('bPlayers', [[4, t.p4], [2, t.p2]])}</div>
-      <div class="opt"><span>${t.mode}</span>${seg('bDouble', [[false, t.classic], [true, t.double]])}<p class="note">${t.doubleNote}</p></div>
-      <div class="opt"><span>${t.matchTo}</span>${seg('bTarget', [[2, t.winsN(2)], [3, t.winsN(3)], [4, t.winsN(4)]])}</div>
-      ${S.bPlayers === 4 ? `<label class="check"><input type="checkbox" id="bReveal" ${S.bReveal ? 'checked' : ''}><span>${t.reveal}</span></label>` : ''}
-      <button class="play" id="goB">${t.start}: Briškula</button>
-    </article>
-    <article class="game">
-      <div class="game-top">${fan('h', fanH)}<div><h2>Bela</h2><p class="sub">${t.hSub}</p></div></div>
-      <div class="opt"><span>${t.hTo}</span>${seg('hTarget', [[501, '501'], [701, '701'], [1001, '1001']])}</div>
-      <p class="note">${t.yourTeam}</p>
-      <button class="play" id="goH">${t.start}: Bela</button>
-    </article>
-    <button class="ghost set" id="goSet"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>${t.settings}</button>
-    <div class="prefs"><button class="ghost" id="rB">${t.rulesB}</button><button class="ghost" id="rH">${t.rulesH}</button></div>
-    <p class="foot">${t.foot} · v9</p>
+    <header class="hbar"><div class="logo"><svg viewBox="0 0 120 120" aria-hidden="true"><path d="M16 76C22 46 46 32 70 33C90 34 102 50 106 76Z" fill="#5b7186"/><path d="M42 36C46 22 54 12 68 6C64 18 64 28 66 35Z" fill="#5b7186"/><circle cx="84" cy="55" r="7" fill="#fbf6ea"/><circle cx="81" cy="57" r="3.5" fill="#1f1a14"/><path d="M75 45Q84 41 93 46" fill="none" stroke="#1f1a14" stroke-width="3" stroke-linecap="round"/><g transform="rotate(-22 60 140)"><rect x="38" y="64" width="44" height="64" rx="6" fill="#8e2a24" stroke="#0e241c" stroke-width="2.5"/><rect x="42" y="68" width="36" height="56" rx="4" fill="none" stroke="#e8d7a8" stroke-width="1.2"/><path transform="translate(48 77) scale(.1)" d="M0,40C-58,2 -42,-50 0,-22C42,-50 58,2 0,40Z" fill="#e8d7a8"/></g><g><rect x="38" y="64" width="44" height="64" rx="6" fill="#8e2a24" stroke="#0e241c" stroke-width="2.5"/><rect x="42" y="68" width="36" height="56" rx="4" fill="none" stroke="#e8d7a8" stroke-width="1.2"/><path transform="translate(48 77) scale(.1)" d="M0,40C-58,2 -42,-50 0,-22C42,-50 58,2 0,40Z" fill="#e8d7a8"/></g><g transform="rotate(22 60 140)"><rect x="38" y="64" width="44" height="64" rx="6" fill="#8e2a24" stroke="#0e241c" stroke-width="2.5"/><rect x="42" y="68" width="36" height="56" rx="4" fill="none" stroke="#e8d7a8" stroke-width="1.2"/><path transform="translate(60 92) scale(.26)" d="M0,40C-58,2 -42,-50 0,-22C42,-50 58,2 0,40Z" fill="#e8d7a8"/></g></svg></div><h1>Card<span>shark</span></h1>
+      <button class="ib" id="goSet" aria-label="${t.settings}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button></header>
+    <button class="poster pb" id="goB">${fan('b', fanB)}<span class="pcap"><span><b>Briškula</b><small>${t.sumB()}</small></span><span class="go">${arrow}</span></span></button>
+    <button class="poster ph" id="goH">${fan('h', fanH)}<span class="pcap"><span><b>Bela</b><small>${t.sumH()}</small></span><span class="go">${arrow}</span></span></button>
   </div>`;
-  $('#home').querySelectorAll('.seg button').forEach(b => b.onclick = () => {
-    const k = b.dataset.k; let v = b.dataset.v;
-    v = v === 'true' ? true : v === 'false' ? false : isNaN(+v) ? v : +v;
-    S[k] = v; save(); renderHome();
-  });
-  $('#home').querySelectorAll('[data-lang]').forEach(b => b.onclick = () => { S.lang = b.dataset.lang; save(); document.documentElement.lang = S.lang; renderHome(); });
-  const rv = $('#bReveal'); if (rv) rv.onchange = () => { S.bReveal = rv.checked; save(); };
-  $('#goB').onclick = () => startGame('b');
-  $('#goH').onclick = () => startGame('h');
   $('#goSet').onclick = showSettings;
-  $('#rB').onclick = () => showRules('b');
-  $('#rH').onclick = () => showRules('h');
+  $('#goB').onclick = () => showGameSheet('b');
+  $('#goH').onclick = () => showGameSheet('h');
+}
+function showGameSheet(game) {
+  const t = L();
+  const seg = (key, opts) => `<div class="seg dark" role="group">${opts.map(([v, lab]) => `<button data-k="${key}" data-v="${v}" aria-pressed="${S[key] === v}">${lab}</button>`).join('')}</div>`;
+  const body = game === 'b'
+    ? seg('bPlayers', [[4, t.playersN(4)], [2, t.playersN(2)]]) + seg('bDouble', [[false, t.cardsN(3)], [true, t.cardsN(4)]]) + seg('bTarget', [[2, t.target(2)], [3, t.target(3)], [4, t.target(4)]])
+    : seg('hTarget', [[501, '501'], [701, '701'], [1001, '1001']]);
+  openSheet(`<div class="gsh"><h3>${game === 'b' ? 'Briškula' : 'Bela'}</h3><button class="link" id="gRules">${t.rules}</button></div>
+    <div class="gsegs">${body}</div>
+    <div class="btns"><button class="play wide" id="gPlay">${t.start}</button></div>`, v => {
+    v.onclick = e => { if (e.target === v) closeSheet(); };
+    v.querySelectorAll('.seg button').forEach(b => b.onclick = () => {
+      let val = b.dataset.v; val = val === 'true' ? true : val === 'false' ? false : +val;
+      S[b.dataset.k] = val; save(); renderHome();
+      b.parentNode.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b));
+    });
+    v.querySelector('#gRules').onclick = () => showRules(game);
+    v.querySelector('#gPlay').onclick = () => startGame(game);
+  });
 }
 function showHome() { token++; pending = null; G = null; closeSheet(); $('#table').hidden = true; $('#home').hidden = false; renderHome(); }
 
@@ -1171,13 +1195,16 @@ function showSettings() {
   }).join('');
   const seg = (key, opts) => `<div class="seg dark">${opts.map(([v, lab]) => `<button data-k="${key}" data-v="${v}" aria-pressed="${S[key] === v}">${lab}</button>`).join('')}</div>`;
   openSheet(`<h3>${t.settings}</h3>
+    <h4>${t.language}</h4>${seg('lang', [['hr', 'Hrvatski'], ['en', 'English']])}
+    <h4>Briškula</h4><label class="check dark"><input type="checkbox" id="sReveal" ${S.bReveal ? 'checked' : ''}><span>${t.reveal}</span></label>
     <h4>${t.deckB}</h4><div class="decks">${deckRow('b', pickB, 'bDeck')}</div>
     <h4>${t.deckH}</h4><div class="decks">${deckRow('h', pickH, 'hDeck')}</div>
     <h4>${t.speed}</h4>${seg('speed', [['normal', t.normal], ['fast', t.fast]])}
-    <p class="muted credit">${t.credit}</p>
+    <p class="muted credit">${t.credit} · v10</p>
     <div class="btns"><button class="pri" id="sx">${t.close}</button></div>`, v => {
     v.querySelector('#sx').onclick = () => { closeSheet(); if (G) renderAll(); else renderHome(); };
     v.onclick = e => { if (e.target === v) { closeSheet(); if (G) renderAll(); else renderHome(); } };
+    v.querySelector('#sReveal').onchange = e => { S.bReveal = e.target.checked; save(); };
     v.querySelectorAll('.deck').forEach(b => b.onclick = () => {
       S[b.dataset.g === 'b' ? 'bDeck' : 'hDeck'] = b.dataset.d; save(); applyDecks();
       v.querySelectorAll(`.deck[data-g="${b.dataset.g}"]`).forEach(x => x.setAttribute('aria-pressed', x === b));
@@ -1186,6 +1213,7 @@ function showSettings() {
     v.querySelectorAll('.seg button').forEach(b => b.onclick = () => {
       let val = b.dataset.v; val = isNaN(+val) ? val : +val; S[b.dataset.k] = val; save();
       b.parentNode.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b));
+      if (b.dataset.k === 'lang') { document.documentElement.lang = S.lang; if (G) renderAll(); else renderHome(); showSettings(); }
     });
   });
 }
