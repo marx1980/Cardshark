@@ -2715,6 +2715,20 @@ const UnoUI = (() => {
     const v = S.uVar || 'classic';
     return { variant: v, players: S.uPlayers || 4, target: S.uTarget ?? 500, stack: !!S.uStack, sevenO: v === 'classic' && !!S.uSevenO, jumpIn: v === 'classic' && !!S.uJumpIn, drawUntil: !!S.uDrawUntil };
   }
+  // a match is saved on this phone at every turn, so it can be picked up again after leaving it
+  function ckpt(at) { if (!st) return; api.S.unoSave = { at, st: JSON.stringify(st), levels, names, t: Date.now() }; api.save(); }
+  function clearSave() { if (api.S.unoSave) { api.S.unoSave = null; api.save(); } }
+  const hasSaved = () => !!(api && api.S.unoSave);
+  function resume() {
+    const sv = api.S.unoSave; if (!sv) return start();
+    api.closeSheet();
+    root = document.querySelector('#uno');
+    for (const id of ['#home', '#table', '#sol', '#poker']) { const el = document.querySelector(id); if (el) el.hidden = true; }
+    root.hidden = false;
+    st = JSON.parse(sv.st); levels = sv.levels; names = sv.names;
+    build();
+    token++; run(token, sv.at).catch(e => { if (!(e instanceof Abort)) console.error(e); });
+  }
   function start() {
     api.closeSheet();
     root = document.querySelector('#uno');
@@ -2906,8 +2920,11 @@ const UnoUI = (() => {
   }
 
   // ---------------------------------------------------------------- the game
-  async function run(my) {
+  async function run(my, cont) {
     while (true) {
+      if (cont === 'turn') { cont = null; catchState = null; if (!played) played = new Map(); render(); await sleep(250); check(my); }
+      else {
+      cont = null;
       U.newRound(st); catchState = null; played = new Map();
       // a Draw card turned first: the first player draws and misses the turn (shown after the deal)
       const sp = st.start, extra = sp.n ? st.hands[sp.p].splice(st.hands[sp.p].length - sp.n) : [];
@@ -2917,6 +2934,7 @@ const UnoUI = (() => {
         await sleep(350 * speed()); check(my);
         st.hands[sp.p].push(...extra); render(); api.toast(`${nm(sp.p)} +${extra.length}`);
         await animDraw(sp.p, extra.length); check(my);
+      }
       }
       while (st.winner === null) {
         check(my);
@@ -2932,6 +2950,7 @@ const UnoUI = (() => {
           const fx = U.resolveChallenge(st, ch); await showFx(fx); continue;
         }
         const p = st.turn;
+        ckpt('turn');
         if (p === 0) await humanTurn(my); else await botTurn(p, my);
       }
       check(my);
@@ -3047,6 +3066,7 @@ const UnoUI = (() => {
     for (let i = 0; i < st.n; i++) { const pts = st.hands[i].reduce((x, c) => x + U.cardPoints(st, c), 0); rows.push({ i, left: st.hands[i].length, pts }); }
     const total = rows.reduce((x, r) => x + (r.i === w ? 0 : r.pts), 0);
     const over = st.matchOver;
+    if (over) clearSave(); else ckpt('round');
     if (over) record(st.scores.indexOf(Math.max(...st.scores)) === 0);
     const order = [...rows].sort((a, b) => st.scores[b.i] - st.scores[a.i]);
     const champ = over ? st.scores.indexOf(Math.max(...st.scores)) : w;
@@ -3067,7 +3087,7 @@ const UnoUI = (() => {
     const r = m[lv] = m[lv] || [0, 0]; r[won ? 0 : 1]++; api.save();
   }
   const FACE = (c, side = 'L') => cardFace(c, side);
-  return { init, start, FACE, faceSVG, BACK, HEX };
+  return { init, start, resume, hasSaved, FACE, faceSVG, BACK, HEX };
 })();
 if (typeof module !== 'undefined') module.exports = UnoUI;
 </script>
@@ -3593,6 +3613,20 @@ const PokerUI = (() => {
     build();
     token++; run(token).catch(e => { if (!(e instanceof Abort)) console.error(e); });
   }
+  // a game is saved on this phone before every action, so it can be picked up again after leaving it
+  function ckpt() { if (!st) return; api.S.pokerSave = { st: JSON.stringify(st), levels, names, model, t: Date.now() }; api.save(); }
+  function clearSave() { if (api.S.pokerSave) { api.S.pokerSave = null; api.save(); } }
+  const hasSaved = () => !!(api && api.S.pokerSave);
+  function resume() {
+    const sv = api.S.pokerSave; if (!sv) return start();
+    api.closeSheet();
+    root = document.querySelector('#poker');
+    for (const id of ['#home', '#table', '#sol', '#uno']) { const el = document.querySelector(id); if (el) el.hidden = true; }
+    root.hidden = false;
+    st = JSON.parse(sv.st); levels = sv.levels; names = sv.names; model = sv.model || {};
+    build();
+    token++; run(token, st.street !== 'show').catch(e => { if (!(e instanceof Abort)) console.error(e); });
+  }
   function leave() { token++; wait = null; st = null; root.hidden = true; api.showHome(); }
   // seat spots around the table for 1..5 opponents (left %, top %), clockwise from my left
   const SPOTS = {
@@ -3723,14 +3757,19 @@ const PokerUI = (() => {
   const waitHuman = extra => new Promise(res => { wait = { res, ...extra }; render(); });
 
   // ---------------------------------------------------------------- the game
-  async function run(my) {
+  async function run(my, cont) {
     while (true) {
-      P.startHand(st); render.boardSeen = 0;
-      render(); dealAnim();
-      await sleep(450 * speed()); check(my);
+      if (cont) { render.boardSeen = st.board.length; render(); await sleep(250); check(my); }
+      else {
+        P.startHand(st); render.boardSeen = 0;
+        render(); dealAnim();
+        await sleep(450 * speed()); check(my);
+      }
+      cont = false;
       while (st.street !== 'show') {
         const i = st.toAct, before = st.street, nb = st.board.length;
         if (i < 0) break;
+        ckpt();
         if (st.street === 'draw') {
           if (i === 0) { const a = await waitHuman({ draw: true, sel: new Set() }); check(my); P.discard(st, 0, a.discard); }
           else { await sleep(500 * speed()); check(my); const d = A.discards(st, i, levels[i]); P.discard(st, i, d); api.toast(`${nm(i)}: ${d.length ? T().drew(d.length) : T().pat}`); }
@@ -3749,7 +3788,8 @@ const PokerUI = (() => {
       // showdown
       render();
       await showdown(my);
-      if (st.seats[0].out || st.champion !== undefined) { await matchEnd(my); return; }
+      if (st.seats[0].out || st.champion !== undefined) { clearSave(); await matchEnd(my); return; }
+      ckpt();
     }
   }
   function dealAnim() {
@@ -3788,7 +3828,7 @@ const PokerUI = (() => {
     const m = S.pokerStats[st.variant] = S.pokerStats[st.variant] || {};
     const r = m[levels[1]] = m[levels[1]] || [0, 0]; r[won ? 0 : 1]++; api.save();
   }
-  return { init, start, get state() { return st; } };
+  return { init, start, resume, hasSaved, get state() { return st; } };
 })();
 if (typeof module !== 'undefined') module.exports = PokerUI;
 </script>
@@ -4201,8 +4241,9 @@ function showGameSheet(game) {
     : lvl.replace('<div class="gsep"></div>', '') + `<div class="gsep"></div><div class="glab">${t.hTo}</div>` + seg('hTarget', [[501, '501'], [701, '701'], [1001, '1001']]);
   openSheet(`<div class="gsh"><h3>${({ b: 'Briškula', t: 'Trešeta', h: 'Bela' })[game]}</h3><button class="link" id="gRules">${t.rules}</button></div>
     <div class="gsegs">${body}</div>
-    <div class="btns"><button class="play wide" id="gPlay">${t.start}</button></div>`, v => {
+    <div class="btns">${hasSave(game) ? `<button class="sec" id="gCont">${t.sol.cont}</button>` : ''}<button class="play wide" id="gPlay">${t.start}</button></div>`, v => {
     v.onclick = e => { if (e.target === v) closeSheet(); };
+    { const c = v.querySelector('#gCont'); if (c) c.onclick = () => startGame(game, true); }
     v.querySelectorAll('.seg button').forEach(b => b.onclick = () => {
       let val = b.dataset.v; val = isNaN(+val) ? val : +val;
       S[b.dataset.k] = val; save(); renderHome();
@@ -4255,8 +4296,9 @@ function showPokerSheet() {
     <div class="gsep"></div><div class="glab">${u.players}</div>${seg('pPlayers', [2, 3, 4, 5, 6].map(n => [n, n]))}
     <div class="gsep"></div><div class="glab">${t.level}</div><div class="seg dark levels" role="group">${AI.LEVELS.map(l => `<button data-k="pLevel" data-v="${l}" aria-pressed="${S.pLevel === l}">${t.lv[l]}</button>`).join('')}</div>
     <div class="gsep"></div><div class="glab">${u.blindsUp}</div>${seg('pBlinds', [['slow', u.slow], ['fast', u.fast]])}</div>
-    <div class="btns"><button class="play wide" id="gPlay">${t.start}</button></div>`, v => {
+    <div class="btns">${PokerUI.hasSaved() ? `<button class="sec" id="gCont">${t.sol.cont}</button>` : ''}<button class="play wide" id="gPlay">${t.start}</button></div>`, v => {
     v.onclick = e => { if (e.target === v) closeSheet(); };
+    { const c = v.querySelector('#gCont'); if (c) c.onclick = () => PokerUI.resume(); }
     v.querySelectorAll('.seg button').forEach(b => b.onclick = () => {
       let val = b.dataset.v; val = isNaN(+val) ? val : +val;
       S[b.dataset.k] = val; save();
@@ -4276,8 +4318,9 @@ function showUnoSheet() {
     <div class="gsep"></div><div class="glab">${t.level}</div><div class="seg dark levels" role="group">${AI.LEVELS.map(l => `<button data-k="uLevel" data-v="${l}" aria-pressed="${S.uLevel === l}">${t.lv[l]}</button>`).join('')}</div>
     <div class="gsep"></div><div class="glab">${u.target}</div>${seg('uTarget', [[500, '500'], [250, '250'], [0, u.one]])}
     <div class="gsep"></div><div class="glab">${u.house}</div><div class="rules-list" id="uRulesList">${rules()}</div></div>
-    <div class="btns"><button class="play wide" id="gPlay">${t.start}</button></div>`, v => {
+    <div class="btns">${UnoUI.hasSaved() ? `<button class="sec" id="gCont">${t.sol.cont}</button>` : ''}<button class="play wide" id="gPlay">${t.start}</button></div>`, v => {
     v.onclick = e => { if (e.target === v) closeSheet(); };
+    { const c = v.querySelector('#gCont'); if (c) c.onclick = () => UnoUI.resume(); }
     const bindT = () => v.querySelectorAll('input[data-opt]').forEach(i => i.onchange = () => { S[i.dataset.opt] = i.checked; save(); });
     v.querySelectorAll('.seg button').forEach(b => b.onclick = () => {
       let val = b.dataset.v; val = isNaN(+val) ? val : +val;
@@ -4324,7 +4367,7 @@ function showSettings() {
     <h4>${t.deckF}</h4><div class="decks">${Object.keys(Cards.FR).map(k => `<button class="deck" data-fd="${k}" aria-pressed="${Cards.frDeck(S.fDeck) === k}"><span class="dk-cards">${['Hk', 'Sq', 'Dj'].map(c => `<span class="svgc">${Cards.frFace(c, k)}</span>`).join('')}</span><span class="dk-name"><b>${Cards.FR[k].name[S.lang]}</b><small>${Cards.FR[k].maker}</small></span></button>`).join('')}</div>
     ${Cards.FR[Cards.frDeck(S.fDeck)].backs.length > 1 ? `<div class="fbacks">${Cards.FR[Cards.frDeck(S.fDeck)].backs.map(c => `<button class="fback" data-fb="${c}" aria-pressed="${S.fBack === c}" aria-label="${c}">${Cards.frBack(S.fDeck, c)}</button>`).join('')}</div>` : ''}
     <h4>${t.speed}</h4>${seg('speed', [['normal', t.normal], ['fast', t.fast]])}
-    <p class="muted credit">${t.credit} · v47</p>
+    <p class="muted credit">${t.credit} · v48</p>
     <div class="btns"><button class="pri" id="sx">${t.close}</button></div>`, v => {
     v.querySelector('#sx').onclick = () => { closeSheet(); if (G) renderAll(); else renderHome(); };
     v.onclick = e => { if (e.target === v) { closeSheet(); if (G) renderAll(); else renderHome(); } };
@@ -4664,8 +4707,23 @@ async function aiMove(fn) {
   if (left > 0) await sleep(left);
   return r;
 }
-function startGame(game) {
+// an offline match is saved on this phone at every turn, so it can be picked up again after leaving it
+const serG = g => JSON.stringify(g, (k, v) => v instanceof Set ? { __set: [...v] } : v);
+const deserG = j => JSON.parse(j, (k, v) => v && typeof v === 'object' && Array.isArray(v.__set) ? new Set(v.__set) : v);
+function ckpt(at) { if (!G || G.online) return; S.offSaves = S.offSaves || {}; S.offSaves[G.game] = { at, G: serG(G), t: Date.now() }; save(); }
+function clearSave() { if (G && S.offSaves && S.offSaves[G.game]) { delete S.offSaves[G.game]; save(); } }
+const hasSave = game => !!(S.offSaves && S.offSaves[game]);
+function startGame(game, resume) {
   token++; pending = null; sel = null; closeSheet();
+  const saved = resume && hasSave(game) ? S.offSaves[game] : null;
+  if (saved) {
+    G = deserG(saved.G);
+    $('#home').hidden = true; $('#table').hidden = false; $('#center').innerHTML = '';
+    const my = token;
+    requestAnimationFrame(() => { layoutSizes(); });
+    (game === 'b' ? briskulaMatch(my, saved.at) : game === 't' ? tresetaMatch(my, saved.at) : belaMatch(my, saved.at)).catch(e => { if (!(e instanceof Abort)) { console.error(e); } });
+    return;
+  }
   if (game === 'b') { G = E.bNew({ ...B_MODES[S.bMode], target: S.bTarget, reveal: S.bMode === 'p4' && S.bReveal }); }
   else if (game === 't') { G = E.tNew({ players: S.tMode, target: S.tTarget, akuze: S.tAkuze, longNap: S.tLongNap, thirdsToLast: S.tThirdsLast, signals: S.tSignals, clockwise: S.tClockwise }); }
   else { G = E.hNew({ target: S.hTarget }); }
@@ -4679,6 +4737,11 @@ function startGame(game) {
   (game === 'b' ? briskulaMatch(my) : game === 't' ? tresetaMatch(my) : belaMatch(my)).catch(e => { if (!(e instanceof Abort)) { console.error(e); } });
 }
 
+function restoreTable() {
+  $('#center').innerHTML = ''; renderAll(); status('');
+  const tr = G.trick; G.trick = [];
+  for (const x of tr) { G.trick.push(x); placeTrickCard(x.seat, x.card); }
+}
 async function turnTo(seat) {
   G.turn = seat; renderSeats();
   if (seat === 0) status(L().yourTurn);
@@ -4686,16 +4749,21 @@ async function turnTo(seat) {
 }
 
 // ================= BRIŠKULA =================
-async function briskulaMatch(my) {
+async function briskulaMatch(my, cont) {
   const t = () => L();
   while (true) {
-    G.dealer = E.nextSeat(G, G.dealer);
-    E.bDeal(G); G.turn = null;
-    $('#center').innerHTML = '';
-    renderAll(); status('');
-    await sleep(SPEED().deal); check(my);
+    if (cont === 'turn') { restoreTable(); await sleep(250); check(my); }
+    else {
+      G.dealer = E.nextSeat(G, G.dealer);
+      E.bDeal(G); G.turn = null;
+      $('#center').innerHTML = '';
+      renderAll(); status('');
+      await sleep(SPEED().deal); check(my);
+    }
+    cont = null;
     while (!E.bHandOver(G)) {
       const s = E.bToPlay(G);
+      ckpt('turn');
       await turnTo(s);
       let card;
       if (s === 0) card = await humanPick(G.hands[0].map(c => c.id));
@@ -4721,6 +4789,7 @@ async function briskulaMatch(my) {
     G.history.push(pts);
     renderBar();
     const over = G.wins.some(w => w >= G.opts.target);
+    if (over) clearSave(); else ckpt('handEnd');
     const marks = w => '|'.repeat(w) || '–';
     const head = over ? (G.wins[0] === Math.max(...G.wins) ? t().matchWon : t().matchLost) : verdict;
     if (over) recordMatch(G.wins[0] === Math.max(...G.wins));
@@ -4736,18 +4805,25 @@ async function briskulaMatch(my) {
 }
 
 // ================= BELA =================
-async function belaMatch(my) {
+async function belaMatch(my, cont) {
   const t = () => L();
   while (true) {
-    G.dealer = E.nextSeat(G, G.dealer);
-    E.hDeal(G); G.phase = 'bid'; G.turn = null; G.myPts = 0;
-    $('#center').innerHTML = '';
-    renderAll(); status('');
-    await sleep(SPEED().deal); check(my);
+    const resumed = cont === 'turn' || cont === 'bid';
+    if (resumed) { restoreTable(); await sleep(250); check(my); }
+    else {
+      G.dealer = E.nextSeat(G, G.dealer);
+      E.hDeal(G); G.phase = 'bid'; G.turn = null; G.myPts = 0;
+      $('#center').innerHTML = '';
+      renderAll(); status('');
+      await sleep(SPEED().deal); check(my);
+    }
+    cont = null;
+    if (!resumed || G.phase === 'bid') {
     // ---- bidding ----
     let calledSuit = -1;
     while (calledSuit < 0) {
       const s = G.bidder; G.turn = s; renderSeats();
+      ckpt('bid');
       let b;
       if (s === 0) b = await humanBid(s === G.dealer);
       else { status(t().bidWait(esc(name(s))), true); await sleep(SPEED().ai); b = AI.bid(G, s, lvOf(s)); }
@@ -4768,7 +4844,7 @@ async function belaMatch(my) {
       G.score[w] = Math.max(G.score[w], G.opts.target);
       renderBar();
       await sleep(1400);
-      recordMatch(w === 0);
+      recordMatch(w === 0); clearSave();
       const go = await waitSheet(`<h3>${w === 0 ? t().matchWon : t().matchLost}</h3><p>${t().belotWin(esc(name(D.belotSeat)))}</p>
         <div class="btns"><button class="sec" data-go="home">${t().home}</button><button class="pri" data-go="again">${t().again}</button></div>`);
       if (go === 'home') return showHome(); return startGame('h');
@@ -4784,9 +4860,11 @@ async function belaMatch(my) {
       await sleep(ms + 150); check(my);
     }
     if (any) { renderBar(); await sleep(SPEED().trick * 0.5); check(my); }
+    }
     // ---- tricks ----
     while (!E.hHandOver(G)) {
       const s = E.hToPlay(G);
+      ckpt('turn');
       await turnTo(s);
       let card;
       let callBela = true;
@@ -4809,7 +4887,7 @@ async function belaMatch(my) {
     const row = E.hScoreHand(G);
     renderBar();
     const mw = E.hMatchWinner(G);
-    if (mw >= 0) recordMatch(mw === 0);
+    if (mw >= 0) { recordMatch(mw === 0); clearSave(); } else ckpt('handEnd');
     const go = await waitSheet(scoreSheetHTML(row, mw));
     check(my);
     if (go === 'home') return showHome();
@@ -4908,17 +4986,22 @@ function tTable() {
     ${G.rows.map((r, i) => `<tr><td class="n">${i + 1}</td><td>${r.add[0]}</td><td>${r.add[1]}</td><td class="note">${(r.akuze[0] + r.akuze[1]) ? `${t.akuzaPts} ${r.akuze[0]}:${r.akuze[1]}` : ''}</td></tr>`).join('')}
     <tr class="tot"><td></td><td>${G.score[0]}</td><td>${G.score[1]}</td><td class="note">${t.target(G.opts.target)}</td></tr></tbody></table></div>`;
 }
-async function tresetaMatch(my) {
+async function tresetaMatch(my, cont) {
   const t = () => L();
   while (true) {
-    G.dealer = E.nextSeat(G, G.dealer);
-    E.tDeal(G); G.turn = null;
-    $('#center').innerHTML = '';
-    renderAll(); status('');
-    await sleep(SPEED().deal); check(my);
+    const resumed = cont === 'turn';
+    if (resumed) { restoreTable(); await sleep(250); check(my); }
+    else {
+      G.dealer = E.nextSeat(G, G.dealer);
+      E.tDeal(G); G.turn = null;
+      $('#center').innerHTML = '';
+      renderAll(); status('');
+      await sleep(SPEED().deal); check(my);
+    }
+    cont = null;
     // akuže are announced before the first card
     let any = false;
-    for (const s of E.roundFrom(G, G.leader)) {
+    if (!resumed) for (const s of E.roundFrom(G, G.leader)) {
       const ds = G.akuze[s]; if (!ds.length) continue;
       any = true;
       bubble(s, `${t().akuza}: ${ds.map(d => t().akuzaName(d)).join(', ')} +${ds.reduce((x, d) => x + d.val, 0)}`, true, 2600);
@@ -4927,6 +5010,7 @@ async function tresetaMatch(my) {
     if (any) { await sleep(SPEED().trick); check(my); }
     while (!E.tHandOver(G)) {
       const s = E.tToPlay(G);
+      ckpt('turn');
       await turnTo(s);
       let card;
       let sig = null;
@@ -4951,7 +5035,7 @@ async function tresetaMatch(my) {
     const r = E.tScoreHand(G);
     renderBar();
     const mw = E.tMatchWinner(G);
-    if (mw >= 0) recordMatch(mw === 0);
+    if (mw >= 0) { recordMatch(mw === 0); clearSave(); } else ckpt('handEnd');
     const head = mw >= 0 ? (mw === 0 ? t().matchWon : t().matchLost) : t().handTitle(G.rows.length);
     const go = await waitSheet(`<h3>${head}</h3>
       <div class="decl"><div><span>${t().cardsPts}</span><b>${r.cardPts[0]} : ${r.cardPts[1]}</b></div>
