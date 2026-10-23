@@ -592,7 +592,10 @@ const Engine = (() => {
     const pullForJack = partnerCalled && !naMus && !jackOut && !iHaveJack && oppsMayTrump;
     // with no trumps left against us, keep leading trumps only if every card we hold is a winner
     const allMasters = hand.every(x => !unk.some(y => (y.s === x.s && hStr(y, T) > hStr(x, T)) || (x.s !== T && y.s === T && oppsMayTrump)));
-    const PULL = { A: 14, '10': 12, K: 11, O: 10, '8': 8, '7': 8, '9': 3 };
+    // pulling for the caller's jack: king or ober first (the next opponent has to beat it, often with the ace or 10,
+    // which the caller then takes); the 9 is never a pull card, it backs up the caller's jack
+    const PULL = { K: 14, O: 13, '8': 9, '7': 9, '10': 5, A: 5, '9': -6 };
+    const partnerSeat = (seat + 2) % 4;
     let best = null;
     for (const c of legal) {
       let pts = tablePts + hPts(c, T) + after.length * 3;
@@ -604,7 +607,13 @@ const Engine = (() => {
       else pWin = partnerAfter ? 0.3 : 0;
       let ev = (2 * pWin - 1) * pts;
       if (c.s === T) ev -= (tricksLeft / 8) * (1.5 + T_STR[c.r] * 0.9);
-      if (!iWin && isMaster(c) && c.s !== T && hPts(c, T) >= 10) ev -= 4;
+      // padding: partner's non-trump ace is winning, so drop my 10 of that suit on it
+      // (as defenders especially: the callers would trump that 10 later)
+      const partnerAce = curW && curW.seat === partnerSeat && curW.card.s !== T && curW.card.r === 'A' && c.s === curW.card.s && c.r === '10';
+      if (partnerAce) ev += callerTeam ? 4 : 9;
+      else if (!iWin && isMaster(c) && c.s !== T && hPts(c, T) >= 10) ev -= 4;
+      // the caller's partner keeps the trump 9 to back up the caller's jack
+      if (partnerCalled && c.s === T && c.r === '9' && !jackOut && legal.length > 1 && !(iWin && pos === 3 && tablePts >= 20)) ev -= 7;
       if (pos === 0) {
         if (c.s === T && isMaster(c) && oppsMayTrump && (callerTeam || myTrumps >= 3)) ev += 8 + unkT.length;
         // caller's partner leads a fairly high trump: the next opponent must overtrump if they can, then the caller's jack takes it
@@ -1485,7 +1494,7 @@ function showSettings() {
     <h4>${t.deckB}</h4><div class="decks">${deckRow('b', pickB, 'bDeck')}</div>
     <h4>${t.deckH}</h4><div class="decks">${deckRow('h', pickH, 'hDeck')}</div>
     <h4>${t.speed}</h4>${seg('speed', [['normal', t.normal], ['fast', t.fast]])}
-    <p class="muted credit">${t.credit} · v17</p>
+    <p class="muted credit">${t.credit} · v18</p>
     <div class="btns"><button class="pri" id="sx">${t.close}</button></div>`, v => {
     v.querySelector('#sx').onclick = () => { closeSheet(); if (G) renderAll(); else renderHome(); };
     v.onclick = e => { if (e.target === v) { closeSheet(); if (G) renderAll(); else renderHome(); } };
