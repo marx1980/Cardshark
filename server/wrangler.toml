@@ -1,0 +1,19 @@
+name = "cardshark"
+main = "src/worker.js"
+compatibility_date = "2024-11-01"
+
+[[durable_objects.bindings]]
+name = "TABLE"
+class_name = "Table"
+
+[[durable_objects.bindings]]
+name = "LOBBY"
+class_name = "Lobby"
+
+[[durable_objects.bindings]]
+name = "REGISTRY"
+class_name = "Registry"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["Table", "Lobby", "Registry"]
