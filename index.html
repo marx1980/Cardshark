@@ -503,6 +503,18 @@ const Engine = (() => {
     const isMaster = c => !unk.some(x => x.s === c.s && hStr(x, T) > hStr(c, T)) && (c.s === T || true);
     const myTrumps = hand.filter(c => c.s === T).length;
     const callerTeam = st.caller % 2 === me;
+    // card counting: can either opponent still hold a trump?
+    const oppSeats = st.seats.filter(s => s % 2 !== me);
+    const oppsMayTrump = unkT.length > 0 && oppSeats.some(o => !st.void[o][T]);
+    const jackOut = st.seen.has('h' + T + 'U');
+    const iHaveJack = hand.some(x => x.s === T && x.r === 'U');
+    // "na mus": the dealer was forced to call after three passes, so the call says little about their hand
+    const naMus = st.caller === st.dealer && st.bids.filter(b => b.suit < 0).length === 3;
+    const partnerCalled = st.caller !== seat && st.caller % 2 === me;
+    const pullForJack = partnerCalled && !naMus && !jackOut && !iHaveJack && oppsMayTrump;
+    // with no trumps left against us, keep leading trumps only if every card we hold is a winner
+    const allMasters = hand.every(x => !unk.some(y => (y.s === x.s && hStr(y, T) > hStr(x, T)) || (x.s !== T && y.s === T && oppsMayTrump)));
+    const PULL = { A: 14, '10': 12, K: 11, O: 10, '8': 8, '7': 8, '9': 3 };
     let best = null;
     for (const c of legal) {
       let pts = tablePts + hPts(c, T) + after.length * 3;
@@ -516,7 +528,10 @@ const Engine = (() => {
       if (c.s === T) ev -= (tricksLeft / 8) * (1.5 + T_STR[c.r] * 0.9);
       if (!iWin && isMaster(c) && c.s !== T && hPts(c, T) >= 10) ev -= 4;
       if (pos === 0) {
-        if (c.s === T && isMaster(c) && unkT.length > 0 && (callerTeam || myTrumps >= 3)) ev += 8 + unkT.length;
+        if (c.s === T && isMaster(c) && oppsMayTrump && (callerTeam || myTrumps >= 3)) ev += 8 + unkT.length;
+        // caller's partner leads a fairly high trump: the next opponent must overtrump if they can, then the caller's jack takes it
+        if (pullForJack && c.s === T) ev += PULL[c.r];
+        if (c.s === T && !oppsMayTrump && !allMasters) ev -= 8;
         if (c.s !== T && isMaster(c) && unk.some(x => x.s === c.s)) ev += 3;
         if (c.s === T && !isMaster(c) && !callerTeam) ev -= 4;
       }
@@ -1117,7 +1132,7 @@ function renderHome() {
     </article>
     <button class="ghost set" id="goSet"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>${t.settings}</button>
     <div class="prefs"><button class="ghost" id="rB">${t.rulesB}</button><button class="ghost" id="rH">${t.rulesH}</button></div>
-    <p class="foot">${t.foot} · v8</p>
+    <p class="foot">${t.foot} · v9</p>
   </div>`;
   $('#home').querySelectorAll('.seg button').forEach(b => b.onclick = () => {
     const k = b.dataset.k; let v = b.dataset.v;
@@ -1206,7 +1221,8 @@ function layoutSizes() {
   const r = Cards.ratio(G ? G.game : 'b');
   const cy = f.height * 0.56;
   // the top card of the trick must stay clear of the partner's badge and cards (~92px)
-  const tw = Math.max(52, Math.min(124, f.width * 0.27, (cy - 92) / 0.95 / r));
+  let tw = Math.max(52, Math.min(124, f.width * 0.27, (cy - 92) / 0.95 / r));
+  if (G && G.opts.double && G.seats.length === 4) tw *= 0.88;
   TL = { W: f.width, H: f.height, tw, ch: tw * r, cx: f.width / 2, cy };
   felt().style.setProperty('--tw', tw + 'px');
   renderHand();
@@ -1218,7 +1234,9 @@ const SLOT2 = { 0: [0.32, 0.1], 1: [0.2, 0.22], 2: [-0.32, -0.1], 3: [-0.2, -0.2
 const ORIGIN = { 0: [50, 125], 1: [125, 45], 2: [50, -25], 3: [-25, 45] };
 function slotFor(seat, nth) {
   let [ox, oy] = SLOT[seat];
-  if (nth) { ox += SLOT2[seat][0]; oy += SLOT2[seat][1]; }
+  if (G.opts.double && G.seats.length === 2) ox += nth ? 0.56 : -0.56;      // head to head: both cards side by side
+  else if (G.opts.double) { ox += nth ? 0.3 : -0.12; oy += nth ? 0.16 : -0.06; } // second card shifts down-right so the first card's index stays visible
+  else if (nth) { ox += SLOT2[seat][0]; oy += SLOT2[seat][1]; }
   const x = (TL.cx + ox * TL.tw) / TL.W * 100, y = (TL.cy + oy * TL.ch) / TL.H * 100;
   return { x, y, r: nth ? 9 - seat * 5 : (seat * 7 % 9) - 4 };
 }
