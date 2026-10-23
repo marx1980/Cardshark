@@ -291,7 +291,10 @@ table.pis{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;
 
 <script>// ===================== ENGINE (pure game logic + AI) =====================
 const Engine = (() => {
-  const shuffle = (a) => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  const shuffle = (a, rng = Math.random) => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rng() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  // dealing can use its own random source, so simulations can replay identical decks for two versions of a player
+  let DEAL_RNG = Math.random;
+  const setDealRng = f => { DEAL_RNG = f || Math.random; };
   const sum = (a, f) => a.reduce((x, y) => x + f(y), 0);
 
   // ---------- shared seat helpers ----------
@@ -316,7 +319,7 @@ const Engine = (() => {
   }
   function bDeal(st) {
     st.removed = st.seats.length === 3 ? 'b02' : null;
-    const deck = shuffle(bDeck().filter(c => c.id !== st.removed));
+    const deck = shuffle(bDeck().filter(c => c.id !== st.removed), DEAL_RNG);
     const hs = st.opts.double ? 4 : 3;
     st.hands = {}; st.seats.forEach(s => st.hands[s] = []);
     let s = nextSeat(st, st.dealer);
@@ -405,7 +408,7 @@ const Engine = (() => {
 
   function hNew(opts) { return { game: 'h', opts, seats: [0, 1, 2, 3], dealer: 3, score: [0, 0], hang: 0, rows: [] }; }
   function hDeal(st) {
-    const deck = shuffle(hDeck());
+    const deck = shuffle(hDeck(), DEAL_RNG);
     st.hands = {}; st.talon = {};
     for (const s of st.seats) { st.hands[s] = deck.splice(0, 6); st.talon[s] = deck.splice(0, 2); }
     st.trump = null; st.caller = null; st.bidder = nextSeat(st, st.dealer); st.bids = [];
@@ -427,11 +430,11 @@ const Engine = (() => {
     return v;
   }
   // returns suit index, or -1 to pass
-  function hAIBid(st, seat) {
+  function hAIBid(st, seat, thr = 38) {
     const hand = st.hands[seat]; let best = 0, bv = -1;
     for (let s = 0; s < 4; s++) { const v = hBidValue(hand, s); if (v > bv) { bv = v; best = s; } }
     const forced = seat === st.dealer;
-    return (forced || bv >= 38) ? best : -1;
+    return (forced || bv >= thr) ? best : -1;
   }
   function hBid(st, seat, suit) {
     st.bids.push({ seat, suit });
@@ -694,7 +697,7 @@ const Engine = (() => {
     return out;
   }
   function tDeal(st) {
-    const deck = shuffle(bDeck());
+    const deck = shuffle(bDeck(), DEAL_RNG);
     st.hands = {}; st.seats.forEach(s => st.hands[s] = []);
     let s = nextSeat(st, st.dealer);
     for (let i = 0; i < 10 * st.seats.length; i++) { st.hands[s].push(deck.pop()); s = nextSeat(st, s); }
@@ -828,7 +831,7 @@ const Engine = (() => {
   }
 
   return {
-    shuffle, teamOf, nextSeat, roundFrom,
+    shuffle, setDealRng, teamOf, nextSeat, roundFrom,
     B_RANKS, bDeck, bNew, bDeal, bOrder, bToPlay, bBeats, bWinnerIdx, bPlay, bFinishTrick, bHandOver, bPoints, bAI,
     H_KEYS, hDeck, hStr, hPts, hNew, hDeal, hAIBid, hBid, hFindDecls, hLegal, hWinnerIdx, hToPlay, hPlay, hFinishTrick, hHandOver, hScoreHand, hMatchWinner, hAI, hBidValue, hBelaEligible, hAIBela,
     tStr, tThirds, tNew, tDeal, tToPlay, tLegal, tWinnerIdx, tPlay, tFinishTrick, tHandOver, tScoreHand, tMatchWinner, tAI, tFindAkuze, tAISignal
@@ -872,12 +875,37 @@ const AI = (() => {
     if (win.length && table >= 10) return minBy(win, c => c.st);
     return cheap(hand);
   }
+  // Briškula, Marko's face-up card habit: in the trick before the last draw, the side that LOSES the trick draws the
+  // face-up trump card and also plays last in the next trick. With two sides (pairs or 2-player double) take that trick
+  // only if what lies on the table is worth more than the face-up card plus the last position.
+  function faceUpStake(st) {
+    if (!st.stock || !st.stock.length || st.teams !== 2 || st.seats.length !== 4) return 0;   // tested: helps in pairs, not in 2-player double
+    const perRound = st.seats.length * (st.opts.double ? 2 : 1);
+    if (st.stock.length !== perRound) return 0;
+    return st.stock[0].p + 2 + st.stock[0].st * 0.4;
+  }
+  function bAverageFU(st, seat) {
+    const V = faceUpStake(st); if (!V || !st.trick.length) return bAverage(st, seat);
+    const hand = st.hands[seat], T = st.trump, me = E.teamOf(st, seat);
+    const w = st.trick[E.bWinnerIdx(st.trick, T)];
+    if (E.teamOf(st, w.seat) === me) return bAverage(st, seat);
+    const table = sum(st.trick, t => t.card.p);
+    const lose = hand.filter(c => !E.bBeats(c, w.card, T));
+    const win = hand.filter(c => E.bBeats(c, w.card, T));
+    // taking it gains the table and my card's points, but hands the opponents the face-up card and the last position
+    const bestTake = win.length ? minBy(win, c => c.st + (c.s === T ? 20 : 0)) : null;
+    if (bestTake && table + bestTake.p > V * 1.5) return bestTake;
+    if (lose.length) return minBy(lose, c => c.p * 10 + c.st + (c.s === T ? 50 : 0));
+    return bAverage(st, seat);
+  }
   // Bela: lead aces, take tricks worth taking, give partner points when he wins, otherwise cheapest legal card
   function hAverage(st, seat) {
     const legal = E.hLegal(st, seat); if (legal.length === 1) return legal[0];
     const T = st.trump, pts = c => E.hPts(c, T), str = c => E.hStr(c, T);
     const cheap = cs => minBy(cs, c => pts(c) * 10 + str(c));
     if (!st.trick.length) {
+      // the caller holding the jack leads it to draw the trumps
+      if (st.caller === seat) { const j = legal.find(c => c.s === T && c.r === 'U'); if (j) return j; }
       const aces = legal.filter(c => c.s !== T && c.r === 'A');
       if (aces.length) return aces[0];
       if (st.caller % 2 === seat % 2) { const tr = legal.filter(c => c.s === T); if (tr.length >= 3) return maxBy(tr, str); }
@@ -925,6 +953,7 @@ const AI = (() => {
     return cheap(legal);
   }
   // Bela's follow-suit / overtrump rules already narrow the choice, so the Bela novice picks at random more often
+  const NOVICE_P = { b: 0.25, t: 0.6, h: 0.9 };     // share of random cards (calibrated: Average beats Novice ~65-74%)
   const novice = (f, legal, p = 0.5) => Math.random() < p ? rnd(legal) : f();
 
   // ================================================================ PRO (determinized Monte-Carlo)
@@ -1015,7 +1044,7 @@ const AI = (() => {
     return r.add[me] - r.add[1 - me];
   }
   const ROLL = { b: (w, s) => bAverage(w, s), t: (w, s) => tAverage(w, s), h: (w, s) => hAverage(w, s) };
-  const SAMPLES = { b: 24, t: 16, h: 12 };
+  const SAMPLES = { b: 24, t: 6, h: 12 };           // Pro (calibrated: beats Average ~65-72%)
   // a dealt world with the full game state (card memory, voids, bids, signals) for playouts by the Cardshark rules
   function determinizeFull(g, st, seat) {
     const lite = determinize(g, st, seat), w = clone(st);
@@ -1054,13 +1083,26 @@ const AI = (() => {
   // briškula hands are won or lost, not scored by margin: value winning the hand, with the margin only as a tie-breaker
   const winValue = d => (d > 0 ? 40 : d < 0 ? -40 : 0) + d * 0.2;
   const ddReady = (g, w) => g === 'b' && w.teams === 2 && w.seats.length === 4 && !w.opts.double && w.stock.length === 0;
+  function hSane(st, seat, legal) {
+    if (st.trick.length || st.caller % 2 === seat % 2) return legal;
+    const T = st.trump, mine = new Set(st.hands[seat].map(c => c.id));
+    const beatable = c => DECKS.h.some(x => x.s === T && !mine.has(x.id) && !st.seen.has(x.id) && E.hStr(x, T) > E.hStr(c, T));
+    const f = legal.filter(c => c.s !== T || !beatable(c));
+    return f.length ? f : legal;
+  }
   function pro(g, st, seat, opts = {}) {
-    const legal = opts.legal || legalOf(g, st, seat);
+    let legal = opts.legal || legalOf(g, st, seat);
+    if (g === 'h' && !opts.noSane) legal = hSane(st, seat, legal);
     if (legal.length === 1) return legal[0];
-    const n = opts.samples || SAMPLES[g], roll = opts.rollout || ROLL[g];
+    const n = opts.samples || SAMPLES[g];
+    // optional per-seat models: imagine each other seat playing like its real level
+    const base = opts.rollout || ROLL[g], M = opts.models;
+    if (M && !opts.full && Object.values(M).includes(CS_ROLL[g])) opts = { ...opts, full: true };
+    const roll = M ? (w, s) => (M[s] || base)(w, s) : base;
     const deal = opts.full ? determinizeFull : determinize, copy = opts.full ? clone : cloneLite;
-    const vals = legal.map(() => []);
+    const vals = legal.map(() => []), t0 = Date.now();
     for (let k = 0; k < n; k++) {
+      if (opts.timeMs && k >= 6 && Date.now() - t0 > opts.timeMs) break;   // keep the phone responsive
       const world = deal(g, st, seat);
       legal.forEach((c, i) => {
         const w = copy(world);
@@ -1114,25 +1156,97 @@ const AI = (() => {
     return opts[vals.indexOf(Math.max(...vals))];
   }
 
+  // playout policy that imitates a level (Pro and Cardshark are too slow to imagine, so the closest fast player stands in)
+  // (Cardshark's lookahead in Briškula and Bela behaves like the Average-style playouts it uses; in Trešeta like its own rules)
+  const MODELS = {};
+  function modelOf(g, level) {
+    const k = g + level;
+    if (!MODELS[k]) MODELS[k] = level === 'novice' ? (w, s) => novice(() => ROLL[g](w, s), legalOf(g, w, s), NOVICE_P[g])
+      : level === 'cardshark' && g === 't' ? CS_ROLL.t : ROLL[g];
+    return MODELS[k];
+  }
+  // models for every seat given each seat's level (null = default)
+  function modelsFor(g, levels) {
+    const m = {}; for (const s in levels) m[s] = modelOf(g, levels[s]); return m;
+  }
+
+  // ================================================================ CARDSHARK
+  // Lookahead like Pro but much deeper, plus Marko's Bela rules where they apply.
+  // Briškula and Bela imagine Average-style players (tested best); Trešeta imagines Cardshark's own rules (tested best).
+  const CS_SAMPLES = { b: 192, t: 16, h: 96 };      // Cardshark (beats Pro ~60-68%)
+  let CS_FACEUP = true;                               // Briškula pairs: Marko's face-up card habit in Cardshark's imagined players (tested: 56% vs without)
+  const setFaceUp = v => { CS_FACEUP = v; };
+  // Marko's Bela rules: some pick the card outright, some rule cards out and leave the choice to the lookahead
+  function hRules(st, seat, legal) {
+    const T = st.trump, hand = st.hands[seat], pos = st.trick.length, me = seat % 2;
+    const known = new Set([...st.seen, ...hand.map(c => c.id)]);
+    const unk = DECKS.h.filter(c => !known.has(c.id)), unkT = unk.filter(c => c.s === T);
+    const str = c => E.hStr(c, T), pts = c => E.hPts(c, T);
+    const oppsMayTrump = unkT.length > 0 && [0, 1, 2, 3].filter(s => s % 2 !== me).some(o => !st.void[o][T]);
+    const jackOut = st.seen.has('h' + T + 'U'), iHaveJack = hand.some(x => x.s === T && x.r === 'U');
+    const naMus = st.caller === st.dealer && st.bids.filter(b => b.suit < 0).length === 3;
+    const partnerCalled = st.caller !== seat && st.caller % 2 === me;
+    const isMaster = c => !unk.some(x => x.s === c.s && str(x) > str(c));
+    const partnerSeat = (seat + 2) % 4;
+    const curW = pos ? st.trick[E.hWinnerIdx(st.trick, T)] : null;
+    const tablePts = sum(st.trick, t => pts(t.card));
+    // trump pull: the caller's partner leads the king or ober of trumps so the caller's jack can take the next opponent's trump
+    if (pos === 0 && partnerCalled && !naMus && !jackOut && !iHaveJack && oppsMayTrump) {
+      const kq = legal.filter(c => c.s === T && (c.r === 'K' || c.r === 'O'));
+      if (kq.length) return { pick: kq.find(c => c.r === 'K') || kq[0] };
+    }
+    // pad: partner's plain ace is winning, drop my 10 of that suit on it
+    if (curW && curW.seat === partnerSeat && curW.card.s !== T && curW.card.r === 'A') {
+      const ten = legal.find(c => c.s === curW.card.s && c.r === '10');
+      if (ten) return { pick: ten };
+    }
+    // bank: partner's trick is safe and I hold the top two of a suit, drop the top one
+    if (curW && curW.seat === partnerSeat) {
+      const opps = [0, 1, 2, 3].filter(s => s % 2 !== me && !st.trick.some(t => t.seat === s));
+      const safe = !opps.length || (isMaster(curW.card) && (curW.card.s === T || !unkT.length || opps.every(o => st.void[o][T])));
+      if (safe) for (const c of legal) {
+        if (c.s === T || pts(c) < 10 || !isMaster(c)) continue;
+        const next = hand.filter(x => x.s === c.s && x.id !== c.id).sort((x, y) => str(y) - str(x))[0];
+        if (next && !unk.some(y => y.s === c.s && str(y) > str(next))) return { pick: c };
+      }
+    }
+    let cand = legal;
+    // keep the trump 9 to back up the caller's jack
+    if (partnerCalled && !jackOut && !(pos === 3 && tablePts >= 20)) { const f = cand.filter(c => !(c.s === T && c.r === '9')); if (f.length) cand = f; }
+    // trump counting: opponents are out of trumps, stop leading trumps unless every card I hold is a winner
+    if (pos === 0 && !oppsMayTrump && !hand.every(x => !unk.some(y => y.s === x.s && str(y) > str(x)))) { const f = cand.filter(c => c.s !== T); if (f.length) cand = f; }
+    return { cand };
+  }
+  function cardshark(g, st, seat, opts = {}) {
+    let legal = legalOf(g, st, seat);
+    if (legal.length === 1) return legal[0];
+    if (g === 'h') { const r = hRules(st, seat, legal); if (r.pick) return r.pick; legal = r.cand; if (legal.length === 1) return legal[0]; }
+    const o = { ...opts, legal, samples: CS_SAMPLES[g] };
+    if (g === 't') { o.full = true; o.rollout = CS_ROLL.t; }
+    if (g === 'b' && CS_FACEUP) o.rollout = bAverageFU;
+    return pro(g, st, seat, o);
+  }
+
   // ================================================================ dispatch
   const LEVELS = ['novice', 'average', 'pro', 'cardshark'];
   const EXTRA = {};   // experimental players for the simulations (not shown in the app)
-  function play(g, st, seat, level) {
+  function play(g, st, seat, level, opts = {}) {
     if (EXTRA[level]) return EXTRA[level](g, st, seat);
-    if (level === 'cardshark') return g === 'b' ? E.bAI(st, seat) : g === 't' ? E.tAI(st, seat) : E.hAI(st, seat);
-    if (level === 'pro') return pro(g, st, seat);
+    if (level === 'cardshark') return cardshark(g, st, seat, opts);
+    if (level === 'pro') return pro(g, st, seat, opts);
     const avg = () => g === 'b' ? bAverage(st, seat) : g === 't' ? tAverage(st, seat) : hAverage(st, seat);
-    if (level === 'novice') return novice(avg, legalOf(g, st, seat), g === 'h' ? 0.8 : 0.5);
+    if (level === 'novice') return novice(avg, legalOf(g, st, seat), NOVICE_P[g]);
     return avg();
   }
   function bid(st, seat, level) {
     if (EXTRA[level] && EXTRA[level].bid) return EXTRA[level].bid(st, seat);
     if (level === 'novice') return hNoviceBid(st, seat);
     if (level === 'average') return hAverageBid(st, seat);
+    if (level === 'cardshark') return E.hAIBid(st, seat, 33);   // tested: calling a little more often pays
     return E.hAIBid(st, seat);
   }
   const callBela = (st, seat, level) => { const x = EXTRA[level]; if (x && x.bela === false) return true; return level === 'cardshark' || level === 'pro' || x ? E.hAIBela(st, seat) : true; };
-  return { LEVELS, EXTRA, CS_ROLL, determinizeFull, hSimBid, play, bid, callBela, pro, determinize, clone, cloneLite, bAverage, hAverage, tAverage, SAMPLES, ROLL };
+  return { LEVELS, EXTRA, CS_ROLL, CS_SAMPLES, setFaceUp, bAverageFU, faceUpStake, modelOf, modelsFor, cardshark, hRules, determinizeFull, hSimBid, play, bid, callBela, pro, determinize, clone, cloneLite, bAverage, hAverage, tAverage, SAMPLES, ROLL };
 })();
 if (typeof module !== 'undefined') module.exports = AI;
 </script>
@@ -1847,7 +1961,7 @@ function showSettings() {
     <h4>${t.deckB}</h4><div class="decks">${deckRow('b', pickB, 'bDeck')}</div>
     <h4>${t.deckH}</h4><div class="decks">${deckRow('h', pickH, 'hDeck')}</div>
     <h4>${t.speed}</h4>${seg('speed', [['normal', t.normal], ['fast', t.fast]])}
-    <p class="muted credit">${t.credit} · v25</p>
+    <p class="muted credit">${t.credit} · v26</p>
     <div class="btns"><button class="pri" id="sx">${t.close}</button></div>`, v => {
     v.querySelector('#sx').onclick = () => { closeSheet(); if (G) renderAll(); else renderHome(); };
     v.onclick = e => { if (e.target === v) { closeSheet(); if (G) renderAll(); else renderHome(); } };
@@ -2083,6 +2197,14 @@ function recordMatch(won) {
   const k = G.lv.partner + '|' + G.lv.opp, m = S.stats[G.game] = S.stats[G.game] || {};
   m[k] = m[k] || [0, 0]; m[k][won ? 0 : 1]++; save();
 }
+// computer move: let the screen update, think (capped so a phone never stalls), then wait out the rest of the usual delay
+const AIO = { timeMs: 900 };
+async function aiMove(fn) {
+  await sleep(40);
+  const t0 = performance.now(), r = fn(), left = SPEED().ai - 40 - (performance.now() - t0);
+  if (left > 0) await sleep(left);
+  return r;
+}
 function startGame(game) {
   token++; pending = null; sel = null; closeSheet();
   if (game === 'b') { G = E.bNew({ ...B_MODES[S.bMode], target: S.bTarget, reveal: S.bMode === 'p4' && S.bReveal }); }
@@ -2117,7 +2239,7 @@ async function briskulaMatch(my) {
       await turnTo(s);
       let card;
       if (s === 0) card = await humanPick(G.hands[0].map(c => c.id));
-      else { await sleep(SPEED().ai); card = AI.play('b', G, s, lvOf(s)); }
+      else { card = await aiMove(() => AI.play('b', G, s, lvOf(s), AIO)); }
       check(my);
       const done = E.bPlay(G, s, card);
       placeTrickCard(s, card); renderSeats(); renderHand();
@@ -2209,7 +2331,7 @@ async function belaMatch(my) {
       let card;
       let callBela = true;
       if (s === 0) { const legal = E.hLegal(G, 0); showBelaChoice(legal); card = await humanPick(legal.map(c => c.id)); callBela = myBela; }
-      else { await sleep(SPEED().ai); card = AI.play('h', G, s, lvOf(s)); callBela = E.hBelaEligible(G, s, card) ? AI.callBela(G, s, lvOf(s)) : true; }
+      else { card = await aiMove(() => AI.play('h', G, s, lvOf(s), AIO)); callBela = E.hBelaEligible(G, s, card) ? AI.callBela(G, s, lvOf(s)) : true; }
       check(my);
       const r = E.hPlay(G, s, card, callBela);
       placeTrickCard(s, card); renderSeats(); renderHand();
@@ -2349,7 +2471,7 @@ async function tresetaMatch(my) {
       let card;
       let sig = null;
       if (s === 0) { showSignals(); card = await humanPick(E.tLegal(G, 0).map(c => c.id)); sig = mySig; mySig = null; }
-      else { await sleep(SPEED().ai); card = AI.play('t', G, s, lvOf(s)); sig = E.tAISignal(G, s, card); }
+      else { card = await aiMove(() => AI.play('t', G, s, lvOf(s), AIO)); sig = E.tAISignal(G, s, card); }
       check(my);
       if (sig && G.opts.signals && G.seats.length === 4) bubble(s, t().sigName[sig], sig === 'kucam', 1600);
       const done = E.tPlay(G, s, card, sig);
