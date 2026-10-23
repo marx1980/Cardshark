@@ -51,6 +51,17 @@ button{font:inherit;color:inherit}
 .seg.dark button{background:#fff;border-color:var(--sheet-line);color:var(--sheet-ink)}
 .seg.dark button[aria-pressed="true"]{background:var(--felt);color:var(--ink);border-color:var(--felt)}
 .credit{font-size:12.5px;margin-top:16px}
+.namef{display:flex;flex-direction:column;gap:4px;margin:4px 0 10px;font-size:13px;color:var(--sheet-muted);font-weight:700}
+.namef input{font:600 16px var(--ui,inherit);padding:10px 12px;border-radius:10px;border:1px solid var(--sheet-line);background:#fff;color:var(--sheet-ink)}
+.tlist{display:flex;flex-direction:column;gap:8px;max-height:38vh;overflow:auto;margin:6px 0}
+.trow{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;align-items:baseline;text-align:left;background:rgba(0,0,0,.05);border:0;border-radius:12px;padding:10px 12px;color:var(--sheet-ink);cursor:pointer}
+.trow b{font-size:16px}.trow small{color:var(--sheet-muted);font-size:12.5px}.trow .tseats{grid-column:1/3;font-size:13.5px}
+.wtable{display:grid;grid-template-rows:auto auto auto;gap:10px;margin:12px 0;justify-items:center}
+.w13{display:flex;gap:10px;width:100%;justify-content:space-between}.w13 .wseat{width:46%}
+.wseat{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:46%;padding:10px 8px;border-radius:12px;border:1.5px dashed var(--sheet-line);background:#fff;color:var(--sheet-ink);cursor:pointer}
+.wseat small{font-size:11px;color:var(--sheet-muted);font-weight:700;text-transform:uppercase;letter-spacing:.06em;min-height:1em}
+.wseat b{font-size:15px}.wseat.taken{border-style:solid;cursor:default;background:rgba(0,0,0,.04)}.wseat.me{border-color:var(--felt,#1d4a3a);border-width:2px}
+#awayPill{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:8;background:var(--brass);color:var(--brass-ink);border:0;border-radius:99px;padding:10px 16px;font-weight:700;font-size:14px;box-shadow:0 6px 18px rgba(0,0,0,.45);white-space:nowrap;cursor:pointer}
 table.stats{width:100%;border-collapse:separate;border-spacing:4px;table-layout:fixed;margin:2px 0 8px}
 table.stats th{font-size:12px;font-weight:700;color:var(--sheet-muted);text-align:center;padding:2px}
 table.stats tbody th{text-align:left}
@@ -1657,6 +1668,7 @@ const STR = {
     matchTo: 'Partija do', winsN: n => `${n} dobivene`,
     reveal: 'Partner pokazuje karte kad se špil potroši',
     hTo: 'Igra se do', start: 'Igraj',
+    online: 'Online', tables: 'Stolovi', newTable: 'Novi stol', noTables: 'Nema otvorenih stolova', yourName: 'Tvoje ime', sit: 'Sjedni', free: 'Slobodno', startT: 'Započni', waitHost: 'Čeka se domaćin', invite: 'Pozovi', leaveT: 'Izađi', botPlays: 'Bot igra za tebe', takeOver: 'Preuzmi', rating: 'Rejting', offline: 'Nema veze sa serverom', reconnecting: 'Ponovno spajanje…', copied: 'Poveznica kopirana', bots: 'Prazna mjesta igraju botovi', create: 'Otvori stol',
     level: 'Protivnici', partner: 'Partner', stats: 'Statistika', lvShort: { novice: 'Poč.', average: 'Pros.', pro: 'Pro', cardshark: 'Shark' }, lv: { novice: 'Početnik', average: 'Prosječan', pro: 'Pro', cardshark: 'Cardshark' },
     speed: 'Brzina', normal: 'Normalno', fast: 'Brzo', tap: 'Igranje karte', tap1: 'Jedan dodir', tap2: 'Dva dodira',
     rules: 'Pravila', rulesB: 'Pravila briškule', rulesH: 'Pravila bele',
@@ -1708,6 +1720,7 @@ const STR = {
     matchTo: 'Match to', winsN: n => `${n} hands won`,
     reveal: 'Partner shows their cards once the deck runs out',
     hTo: 'Play to', start: 'Play',
+    online: 'Online', tables: 'Tables', newTable: 'New table', noTables: 'No open tables', yourName: 'Your name', sit: 'Sit', free: 'Free', startT: 'Start', waitHost: 'Waiting for the host', invite: 'Invite', leaveT: 'Leave', botPlays: 'A bot is playing for you', takeOver: 'Take over', rating: 'Rating', offline: 'Can’t reach the server', reconnecting: 'Reconnecting…', copied: 'Link copied', bots: 'Empty seats are played by bots', create: 'Open table',
     level: 'Opponents', partner: 'Partner', stats: 'Stats', lvShort: { novice: 'Nov.', average: 'Avg.', pro: 'Pro', cardshark: 'Shark' }, lv: { novice: 'Novice', average: 'Average', pro: 'Pro', cardshark: 'Cardshark' },
     speed: 'Speed', normal: 'Normal', fast: 'Fast', tap: 'Playing a card', tap1: 'One tap', tap2: 'Two taps',
     rules: 'Rules', rulesB: 'Briškula rules', rulesH: 'Bela rules',
@@ -1877,7 +1890,8 @@ let G = null, token = 0, pending = null, sel = null;
 class Abort extends Error { }
 const sleep = ms => { const t = token; return new Promise((res, rej) => setTimeout(() => t === token ? res() : rej(new Abort()), ms)); };
 const check = t => { if (t !== token) throw new Abort(); };
-const name = s => (G && G.seats.length === 2 ? L().names2 : L().names)[s];
+const name = s => G && G.names ? botName(G.names[s] || '') : (G && G.seats.length === 2 ? L().names2 : L().names)[s];
+const botName = n => n[0] === '@' ? (L().lv[n.slice(1)] || n.slice(1)) : n;
 // score-column labels: pairs/head-to-head use Us/Them, three players use their names
 const sideLabels = () => G.teams > 2 ? G.seats.map(s => name(s)) : [L().we, L().they];
 const team = s => E.teamOf(G, s);
@@ -1893,6 +1907,7 @@ function renderHome() {
   const arrow = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 5l8 7-8 7"/></svg>';
   $('#home').innerHTML = `<div class="wrap">
     <header class="hbar"><div class="logo"><svg viewBox="0 0 120 120" aria-hidden="true"><path d="M16 76C22 46 46 32 70 33C90 34 102 50 106 76Z" fill="#5b7186"/><path d="M42 36C46 22 54 12 68 6C64 18 64 28 66 35Z" fill="#5b7186"/><circle cx="84" cy="55" r="7" fill="#fbf6ea"/><circle cx="81" cy="57" r="3.5" fill="#1f1a14"/><path d="M75 45Q84 41 93 46" fill="none" stroke="#1f1a14" stroke-width="3" stroke-linecap="round"/><g transform="rotate(-22 60 140)"><rect x="38" y="64" width="44" height="64" rx="6" fill="#8e2a24" stroke="#0e241c" stroke-width="2.5"/><rect x="42" y="68" width="36" height="56" rx="4" fill="none" stroke="#e8d7a8" stroke-width="1.2"/><path transform="translate(48 77) scale(.1)" d="M0,40C-58,2 -42,-50 0,-22C42,-50 58,2 0,40Z" fill="#e8d7a8"/></g><g><rect x="38" y="64" width="44" height="64" rx="6" fill="#8e2a24" stroke="#0e241c" stroke-width="2.5"/><rect x="42" y="68" width="36" height="56" rx="4" fill="none" stroke="#e8d7a8" stroke-width="1.2"/><path transform="translate(48 77) scale(.1)" d="M0,40C-58,2 -42,-50 0,-22C42,-50 58,2 0,40Z" fill="#e8d7a8"/></g><g transform="rotate(22 60 140)"><rect x="38" y="64" width="44" height="64" rx="6" fill="#8e2a24" stroke="#0e241c" stroke-width="2.5"/><rect x="42" y="68" width="36" height="56" rx="4" fill="none" stroke="#e8d7a8" stroke-width="1.2"/><path transform="translate(60 92) scale(.26)" d="M0,40C-58,2 -42,-50 0,-22C42,-50 58,2 0,40Z" fill="#e8d7a8"/></g></svg></div><h1>Card<span>shark</span></h1>
+      ${SERVER ? `<button class="ib" id="goOnline" aria-label="${t.online}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z"/></svg></button>` : ''}
       <button class="ib" id="goStats" aria-label="${t.stats}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M5 20V11M12 20V5M19 20v-6"/></svg></button>
       <button class="ib" id="goSet" aria-label="${t.settings}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button></header>
     <button class="poster pb" id="goB">${fan('b', fanB)}<span class="pcap"><span><b>Briškula</b><small>${t.sumB()} · ${t.lv[S.bLevel]}</small></span><span class="go">${arrow}</span></span></button>
@@ -1901,6 +1916,7 @@ function renderHome() {
   </div>`;
   $('#goSet').onclick = showSettings;
   $('#goStats').onclick = showStats;
+  if (SERVER) $('#goOnline').onclick = showLobby;
   $('#goB').onclick = () => showGameSheet('b');
   $('#goH').onclick = () => showGameSheet('h');
   $('#goT').onclick = () => showGameSheet('t');
@@ -1961,7 +1977,7 @@ function showSettings() {
     <h4>${t.deckB}</h4><div class="decks">${deckRow('b', pickB, 'bDeck')}</div>
     <h4>${t.deckH}</h4><div class="decks">${deckRow('h', pickH, 'hDeck')}</div>
     <h4>${t.speed}</h4>${seg('speed', [['normal', t.normal], ['fast', t.fast]])}
-    <p class="muted credit">${t.credit} · v26</p>
+    <p class="muted credit">${t.credit} · v27</p>
     <div class="btns"><button class="pri" id="sx">${t.close}</button></div>`, v => {
     v.querySelector('#sx').onclick = () => { closeSheet(); if (G) renderAll(); else renderHome(); };
     v.onclick = e => { if (e.target === v) { closeSheet(); if (G) renderAll(); else renderHome(); } };
@@ -2008,6 +2024,7 @@ function showLastTrick() {
 function askQuit() {
   const t = L();
   if (!G) return showHome();
+  if (G.online) return openSheet(`<h3>${t.leaveT}?</h3><div class="btns"><button class="sec" id="qy">${t.leaveT}</button><button class="pri" id="qn">${t.no}</button></div>`, v => { v.querySelector('#qy').onclick = leaveOnline; v.querySelector('#qn').onclick = closeSheet; });
   openSheet(`<h3>${t.quit}</h3><p class="muted">${t.quitSub}</p><div class="btns"><button class="sec" id="qy">${t.yes}</button><button class="pri" id="qn">${t.no}</button></div>`, v => {
     v.querySelector('#qy').onclick = showHome; v.querySelector('#qn').onclick = closeSheet;
   });
@@ -2058,7 +2075,7 @@ function renderSeats() {
     let mini = '';
     if (reveal) mini = `<div class="mini open">${G.hands[s].map(c => cardHTML('b', c)).join('')}</div>`;
     else { let talon = (G.phase === 'bid' ? 2 : 0); mini = `<div class="mini">${Array.from({ length: Math.min(n + talon, 10) }, () => backHTML(G.game)).join('')}</div>`; }
-    el.innerHTML = `<div class="who"><span class="av">${esc(name(s)[0])}</span>${esc(name(s))}${tags.join('')}</div>${mini}`;
+    el.innerHTML = `<div class="who"><span class="av">${esc((name(s) || " ")[0])}</span>${esc(name(s))}${tags.join('')}</div>${mini}`;
   }
 }
 function renderStock() {
@@ -2503,6 +2520,218 @@ async function tresetaMatch(my) {
     if (go === 'again') return startGame('t');
   }
 }
+
+// ================= ONLINE =================
+// the server deals and checks every move; this phone only shows its own view and sends taps
+const SERVER = S.server || "https://cardshark.radenovicm.workers.dev".replace('/*SER' + 'VER*/', '');
+if (!S.pid) { S.pid = Array.from(crypto.getRandomValues(new Uint8Array(12)), b => b.toString(16).padStart(2, '0')).join(''); save(); }
+let NET = null;   // { id, ws, info, mySeat, q, busy, closing }
+const wsURL = id => SERVER.replace(/^http/, 'ws') + `/api/table/${id}/ws`;
+const gameName = g => ({ b: 'Briškula', t: 'Trešeta', h: 'Bela' })[g];
+const optsLine = (g, o) => g === 'b' ? L().target(o.target || 3) : `${L().hTo} ${o.target || (g === 't' ? 41 : 1001)}`;
+async function showLobby() {
+  const t = L();
+  let alive = true, timer = null;
+  const list = async () => {
+    try {
+      const r = await (await fetch(SERVER + '/api/tables')).json();
+      const el = document.querySelector('#tList'); if (!el) return;
+      el.innerHTML = r.tables.length ? r.tables.map(x => `<button class="trow" data-id="${x.id}"><b>${gameName(x.game)}</b><small>${esc(optsLine(x.game, x.opts))}</small><span class="tseats">${x.seats.map(n => n ? esc(botName(n)) : '·').join(' · ')}</span></button>`).join('') : `<p class="muted">${t.noTables}</p>`;
+      el.querySelectorAll('.trow').forEach(b => b.onclick = () => { alive = false; clearInterval(timer); joinTable(b.dataset.id); });
+    } catch (e) { const el = document.querySelector('#tList'); if (el) el.innerHTML = `<p class="muted">${t.offline}</p>`; }
+  };
+  const seg = (key, opts) => `<div class="seg dark" role="group">${opts.map(([v, lab]) => `<button data-k="${key}" data-v="${v}" aria-pressed="${S[key] === v}">${lab}</button>`).join('')}</div>`;
+  if (!S.onGame) S.onGame = 'h';
+  openSheet(`<h3>${t.tables}</h3>
+    <label class="namef"><span>${t.yourName}</span><input id="nm" maxlength="16" value="${esc(S.name || '')}" autocomplete="nickname"></label>
+    <div class="tlist" id="tList"><p class="muted">…</p></div>
+    <div class="gsep"></div><div class="glab">${t.newTable}</div>
+    ${seg('onGame', [['b', 'Briškula'], ['t', 'Trešeta'], ['h', 'Bela']])}
+    <div class="btns"><button class="sec" id="lx">${t.close}</button><button class="pri" id="lnew">${t.create}</button></div>`, v => {
+    const nm = v.querySelector('#nm');
+    nm.oninput = () => { S.name = nm.value.trim().slice(0, 16); save(); };
+    v.querySelectorAll('.seg button').forEach(b => b.onclick = () => { S.onGame = b.dataset.v; save(); b.parentNode.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b)); });
+    v.querySelector('#lx').onclick = () => { alive = false; clearInterval(timer); closeSheet(); };
+    v.querySelector('#lnew').onclick = async () => {
+      if (!S.name) { nm.focus(); return; }
+      const g = S.onGame;
+      const opts = g === 'b' ? { target: S.bTarget } : g === 't' ? { target: S.tTarget, akuze: S.tAkuze, longNap: S.tLongNap, thirdsToLast: S.tThirdsLast, signals: S.tSignals, clockwise: S.tClockwise } : { target: S.hTarget };
+      try {
+        const r = await (await fetch(SERVER + '/api/tables', { method: 'POST', body: JSON.stringify({ game: g, opts, pid: S.pid, name: S.name }) })).json();
+        alive = false; clearInterval(timer); joinTable(r.id, true);
+      } catch (e) { status(t.offline); }
+    };
+  });
+  list(); timer = setInterval(() => alive ? list() : clearInterval(timer), 4000);
+}
+function joinTable(id, autoSit) {
+  if (!S.name) { S.name = 'Player'; save(); }
+  if (NET && NET.ws) { NET.closing = true; try { NET.ws.close(); } catch (e) { } }
+  NET = { id, ws: null, info: null, mySeat: -1, q: [], busy: false, closing: false, autoSit, started: false };
+  connect();
+}
+function connect() {
+  const n = NET; if (!n || n.closing) return;
+  const ws = new WebSocket(wsURL(n.id)); n.ws = ws;
+  ws.onopen = () => ws.send(JSON.stringify({ a: 'hello', pid: S.pid, name: S.name }));
+  ws.onmessage = e => { if (NET !== n) return; let m; try { m = JSON.parse(e.data); } catch (x) { return; } onNet(m); };
+  ws.onclose = () => { if (NET !== n || n.closing) return; setTimeout(connect, 1500); if (n.started) status(L().reconnecting, true); };
+}
+const netSend = m => { if (NET && NET.ws && NET.ws.readyState === 1) NET.ws.send(JSON.stringify(m)); };
+document.addEventListener('visibilitychange', () => { if (!document.hidden && NET && !NET.closing && (!NET.ws || NET.ws.readyState > 1)) connect(); });
+function onNet(m) {
+  if (m.t === 'table') {
+    NET.info = m.info; NET.mySeat = m.mySeat;
+    if (m.info.status === 'waiting') {
+      if (NET.autoSit && m.mySeat < 0) { NET.autoSit = false; const f = m.info.seats.findIndex(x => !x); if (f >= 0) netSend({ a: 'sit', seat: f, name: S.name }); }
+      showWaiting();
+    }
+    return;
+  }
+  NET.q.push(m); pump();
+}
+function showWaiting() {
+  const t = L(), i = NET.info, me = NET.mySeat;
+  const rel = s => me < 0 ? s : ((s - me) % 4 + 4) % 4;                  // 0 = me, 2 = partner
+  const lab = s => rel(s) === 0 ? t.names[0] : rel(s) === 2 ? t.partner : t.level;
+  const seatBtn = s => { const x = i.seats[s]; return `<button class="wseat${x ? ' taken' : ''}${s === me ? ' me' : ''}" data-seat="${s}" ${x ? 'disabled' : ''}><small>${me >= 0 ? lab(s) : ''}</small><b>${x ? esc(botName(x.name)) : t.free}</b></button>`; };
+  const host = i.host === S.pid;
+  openSheet(`<div class="gsh"><h3>${gameName(i.game)}</h3><button class="link" id="wInv">${t.invite}</button></div>
+    <p class="muted">${esc(optsLine(i.game, i.opts))} · ${i.id.toUpperCase()}</p>
+    <div class="wtable"><div class="w2">${seatBtn((me < 0 ? 0 : me) + 2 & 3)}</div><div class="w13">${seatBtn((me < 0 ? 0 : me) + 3 & 3)}${seatBtn((me < 0 ? 0 : me) + 1 & 3)}</div><div class="w0">${seatBtn(me < 0 ? 0 : me)}</div></div>
+    <p class="muted">${host ? t.bots : t.waitHost}</p>
+    <div class="btns"><button class="sec" id="wl">${t.leaveT}</button>${host ? `<button class="pri" id="ws" ${me < 0 ? 'disabled' : ''}>${t.startT}</button>` : ''}</div>`, v => {
+    v.querySelectorAll('.wseat:not(.taken)').forEach(b => b.onclick = () => netSend({ a: 'sit', seat: +b.dataset.seat, name: S.name }));
+    v.querySelector('#wl').onclick = () => { netSend({ a: 'stand' }); leaveOnline(); };
+    const st = v.querySelector('#ws'); if (st) st.onclick = () => netSend({ a: 'start' });
+    v.querySelector('#wInv').onclick = async () => {
+      const url = location.origin + location.pathname + '?t=' + i.id;
+      try { if (navigator.share) await navigator.share({ title: 'Cardshark', text: gameName(i.game), url }); else { await navigator.clipboard.writeText(url); status(t.copied); } } catch (e) { }
+    };
+  });
+}
+function leaveOnline() {
+  if (NET) { NET.closing = true; try { NET.ws.close(); } catch (e) { } }
+  NET = null; showHome();
+}
+async function pump() {
+  if (!NET || NET.busy) return;
+  NET.busy = true;
+  try { while (NET && NET.q.length) await handleNet(NET.q.shift()); }
+  catch (e) { if (!(e instanceof Abort)) console.error(e); }
+  if (NET) NET.busy = false;
+}
+async function handleNet(m) {
+  const t = L();
+  if (m.t === 'start') {
+    NET.started = true; NET.names = m.names; NET.myPts = 0;
+    closeSheet(); token++; pending = null; sel = null;
+    $('#home').hidden = true; $('#table').hidden = false; $('#center').innerHTML = '';
+    return;
+  }
+  if (m.t === 'state') {
+    if (!NET.started) { NET.started = true; closeSheet(); token++; $('#home').hidden = true; $('#table').hidden = false; }
+    if (m.names) NET.names = m.names;
+    G = m.view; G.online = true; G.names = NET.names; G.myPts = NET.myPts || 0;
+    $('#center').innerHTML = ''; layoutSizes(); renderAll();
+    G.trick.forEach(x => placeTrickCard(x.seat, x.card));
+    return;
+  }
+  if (m.t === 'ask') return askHuman(m.req);
+  if (m.t === 'away') { pending = null; renderHand(); showAway(true); return; }
+  if (m.t === 'rating') { const c = m.change; const el = document.querySelector('#ratingLine'); if (el && c) el.textContent = `${t.rating} ${c.r} (${c.d >= 0 ? '+' : ''}${c.d})`; NET.rating = c; return; }
+  if (m.t === 'error') { status(esc(m.msg || 'error')); return; }
+  if (m.t !== 'ev') return;
+  const ev = m.ev, prev = G;
+  G = m.view; G.online = true; G.names = NET.names;
+  if (ev.k === 'deal') { NET.myPts = 0; closeSheet(); $('#center').innerHTML = ''; }
+  G.myPts = NET.myPts;
+  if (prev === null || ev.k === 'deal') { layoutSizes(); renderAll(); status(''); return; }
+  switch (ev.k) {
+    case 'turn':
+      renderSeats();
+      if (ev.seat !== 0) status(ev.bid ? t.bidWait(esc(name(ev.seat))) : t.thinking(esc(name(ev.seat))), true);
+      break;
+    case 'bid':
+      if (ev.suit < 0) bubble(ev.seat, t.pass); else bubble(ev.seat, `${Cards.suitIcon('h', ev.suit, 18)}${t.called(suitName('h', ev.suit))}`, true, 2000);
+      renderAll(); break;
+    case 'called': renderAll(); status(t.calls(esc(name(ev.seat)), `<b>${suitName('h', ev.suit)}</b>`)); break;
+    case 'belot': bubble(ev.seat, t.belot, true, 3000); renderBar(); break;
+    case 'decl': {
+      const groups = ev.ds.map(d => `<span class="zb-grp">${declCardIds(d).map(id => `<span class="svgc">${face('h', E.hDeck().find(c => c.id === id))}</span>`).join('')}</span>`).join('');
+      reveal(ev.seat, `<div class="zb-head">${esc(name(ev.seat))}</div><div class="zb-cards">${groups}</div>`, 3000);
+      renderBar(); break;
+    }
+    case 'akuza': bubble(ev.seat, `${t.akuza}: ${ev.ds.map(d => t.akuzaName(d)).join(', ')} +${ev.ds.reduce((x, d) => x + d.val, 0)}`, true, 2600); break;
+    case 'play':
+      pending = null;
+      if (ev.sig && G.opts.signals) bubble(ev.seat, t.sigName[ev.sig], ev.sig === 'kucam', 1600);
+      placeTrickCard(ev.seat, ev.card); renderSeats(); renderHand();
+      if (ev.bela) { bubble(ev.seat, t.belaCall, true); renderBar(); }
+      if (G.trick.length === G.seats.length) status('');
+      break;
+    case 'collect':
+      if (G.game === 'h' && ev.winner === 0) { NET.myPts += G.lastTrick.pts + (G.trickNo === 8 ? 10 : 0); G.myPts = NET.myPts; }
+      { const keep = G; G = prev; await collectTrick(ev.winner); G = keep; }
+      renderAll(); break;
+    case 'handEnd': case 'matchEnd': {
+      const over = ev.k === 'matchEnd';
+      if (G.game === 'b' && !over) {
+        const pts = ev.pts, verdict = ev.team < 0 ? t.handDraw : ev.team === 0 ? t.handWon : t.handLost;
+        onlineSheet(`<h3>${verdict}</h3><div class="big">${pts.map((p, i) => `<div>${p}<small>${i ? t.they : t.we}</small></div>`).join('<span class="sep">:</span>')}</div>
+          <div class="tally">${G.wins.map((w, i) => `<div><span class="muted">${i ? t.they : t.we}</span><b class="marks">${'|'.repeat(w) || '–'}</b></div>`).join('')}<div><span class="muted">${t.matchTo}</span><b>${G.opts.target}</b></div></div>`, over);
+      } else if (G.game === 'h' && !over) {
+        onlineSheet(scoreSheetHTML(G.rows[G.rows.length - 1], -1).replace(/<div class="btns">[\s\S]*$/, ''), over);
+      } else if (G.game === 't' && !over) {
+        const r = G.rows[G.rows.length - 1];
+        onlineSheet(`<h3>${t.handTitle(G.rows.length)}</h3><div class="decl"><div><span>${t.cardsPts}</span><b>${r.cardPts[0]} : ${r.cardPts[1]}</b></div><div><span>${t.akuzaPts}</span><b>${r.akuze[0]} : ${r.akuze[1]}</b></div></div>${tTable()}`, over);
+      } else {
+        const won = ev.team === 0;
+        onlineSheet(`<h3>${won ? t.matchWon : t.matchLost}</h3><p class="muted" id="ratingLine">${NET.rating ? `${t.rating} ${NET.rating.r} (${NET.rating.d >= 0 ? '+' : ''}${NET.rating.d})` : ''}</p>`, true);
+      }
+      break;
+    }
+  }
+}
+function onlineSheet(html, over) {
+  const t = L();
+  openSheet(html + `<div class="btns">${over ? `<button class="sec" id="ox">${t.home}</button><button class="pri" id="ot">${t.tables}</button>` : `<button class="pri" id="on">${t.next}</button>`}</div>`, v => {
+    if (over) { v.querySelector('#ox').onclick = leaveOnline; v.querySelector('#ot').onclick = () => { leaveOnline(); showLobby(); }; }
+    else v.querySelector('#on').onclick = () => { netSend({ a: 'next' }); v.querySelector('#on').disabled = true; };
+  });
+}
+// stays on the table until tapped: a bot plays your turns meanwhile
+function showAway(on) {
+  let el = document.querySelector('#awayPill');
+  if (!on) { if (el) el.remove(); return; }
+  if (!el) { el = document.createElement('button'); el.id = 'awayPill'; felt().appendChild(el); }
+  el.innerHTML = `${L().botPlays} · <b>${L().takeOver}</b>`;
+  el.onclick = () => { netSend({ a: 'back' }); showAway(false); };
+}
+async function askHuman(req) {
+  const t = L();
+  showAway(false);
+  if (req.kind === 'bid') {
+    G.turn = 0; renderSeats();
+    humanBid(!!req.dealer).then(suit => netSend({ a: 'move', suit })); return;
+  }
+  G.turn = 0; renderSeats();
+  status(t.yourTurn);
+  if (G.game === 'h' && req.bela && req.bela.length) {
+    myBela = true;
+    setAction(`<div class="msg">${t.yourTurn}</div><div class="sigs"><button class="sig" id="belaTog" aria-pressed="true">${t.belaToggle}</button></div><div class="msg"><span class="m">${t.belaHint}</span></div>`);
+    $('#belaTog').onclick = () => { myBela = !myBela; $('#belaTog').setAttribute('aria-pressed', myBela); };
+  }
+  if (G.game === 't' && req.sigs && req.sigs.length) {
+    mySig = null;
+    setAction(`<div class="msg">${t.yourTurn}</div><div class="sigs">${req.sigs.map(k => `<button class="sig" data-sig="${k}" aria-pressed="false">${t.sigName[k]}</button>`).join('')}</div>`);
+    $('#action').querySelectorAll('.sig').forEach(b => b.onclick = () => { mySig = mySig === b.dataset.sig ? null : b.dataset.sig; $('#action').querySelectorAll('.sig').forEach(x => x.setAttribute('aria-pressed', x.dataset.sig === mySig)); });
+  }
+  // the card is sent; the server's play event places it (so the queue keeps going while we wait for the tap)
+  humanPick(req.legal).then(card => { netSend({ a: 'move', card: card.id, bela: myBela, sig: mySig }); mySig = null; status(''); });
+}
+// open a table from an invite link (…?t=abcd)
+{ const q = new URLSearchParams(location.search).get('t'); if (q && SERVER && /^[a-z0-9]{4}$/.test(q)) setTimeout(() => joinTable(q, true), 300); }
 
 // ================= WIRING =================
 $('#defs').innerHTML = Cards.DEFS;
