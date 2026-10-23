@@ -173,6 +173,7 @@ export class Table {
     if (m.a === 'move') { if (this.away.delete(seat)) this.pushBots(); const a = this.asks.get(seat); if (a) { clearTimeout(a.timer); this.asks.delete(seat); a.resolve(m); } return; }
     if (m.a === 'back') { this.away.delete(seat); this.pushBots(); return; }
     if (m.a === 'next' && this.nextVotes) { this.nextVotes.add(seat); this.checkNext(); return; }
+    if (m.a === 'again' && i.status === 'over') { (this.againVotes = this.againVotes || new Set()).add(seat); await this.checkAgain(); return; }
   }
   async onLeave(pid) {
     const i = this.info; if (!i || !pid) return;
@@ -184,6 +185,19 @@ export class Table {
       else await this.announce();
     }
     if (i.status === 'playing' && seat >= 0) { const a = this.asks.get(seat); if (a) { clearTimeout(a.timer); this.asks.delete(seat); a.resolve(null); } this.pushBots(); }
+    if (i.status === 'over' && this.againVotes && this.againVotes.size) await this.checkAgain();
+  }
+  // a finished table plays again, same seats and options, once every connected player has asked for it
+  async checkAgain() {
+    const i = this.info; if (!this.againVotes) return;
+    const need = this.humanSeats().filter(s => this.socks.has(i.seats[s].pid));
+    const n = need.filter(s => this.againVotes.has(s)).length;
+    for (const s of need) this.sendSeat(s, { t: 'again', n, of: need.length });
+    if (!need.length || n < need.length) return;
+    this.againVotes = null; this.away.clear(); this.asks.clear(); this.runner = null; this.nextVotes = null;
+    // bots are picked afresh; players who left the table give their seat to a bot
+    for (let s = 0; s < 4; s++) { const x = i.seats[s]; if (x && (x.bot || !this.socks.has(x.pid))) i.seats[s] = null; }
+    await this.start();
   }
   botted() { return this.humanSeats().filter(s => this.away.has(s) || !this.socks.has(this.info.seats[s].pid)); }
   pushBots() {
@@ -256,7 +270,7 @@ export class Table {
     let changes = {};
     if (this.humanSeats().length) changes = await (await this.registry().fetch('https://do/result', { method: 'POST', body: JSON.stringify({ game: g, teams, winner }) })).json();
     for (const s of this.humanSeats()) this.sendSeat(s, { t: 'rating', change: changes[i.seats[s].pid] || null });
-    i.status = 'done'; await this.save();
+    i.status = 'over'; this.againVotes = new Set(); await this.save();
     await this.lobby().fetch('https://do/remove', { method: 'POST', body: JSON.stringify({ id: i.id }) });
   }
 }

@@ -3797,7 +3797,7 @@ const STR = {
       cols: { r: 'Crvena', y: 'Žuta', g: 'Zelena', b: 'Plava', p: 'Ružičasta', t: 'Tirkizna', o: 'Narančasta', v: 'Ljubičasta' } },
     sol: { name: 'Pasijans', score: 'Bodovi', time: 'Vrijeme', moves: 'Potezi', newGame: 'Nova igra', restart: 'Ista podjela', hint: 'Savjet', undo: 'Natrag', auto: 'Završi', won: 'Pasijans je složen!', noMoves: 'Nema više poteza', home: 'Izbornik',
       draw: 'Vučenje', draw1: '1 karta', draw3: '3 karte', passes: 'Prolazi kroz špil', inf: 'Bez ograničenja', scoring: 'Bodovanje', standard: 'Standardno', vegas: 'Vegas', none: 'Bez bodova', timed: 'Bodovi ovise o vremenu', tapMove: 'Dodir sam premješta kartu', left: 'Špil na desnoj strani', cont: 'Nastavi', played: 'Odigrano', wonN: 'Riješeno', best: 'Najbolje vrijeme', bestScore: 'Najviše bodova', streak: 'Niz pobjeda' },
-    online: 'Online', tables: 'Stolovi', newTable: 'Novi stol', noTables: 'Nema otvorenih stolova', yourName: 'Tvoje ime', sit: 'Sjedni', free: 'Slobodno', startT: 'Započni', waitHost: 'Čeka se domaćin', invite: 'Pozovi', leaveT: 'Izađi', botPlays: 'Bot igra za tebe', takeOver: 'Preuzmi', rating: 'Rejting', offline: 'Nema veze sa serverom', reconnecting: 'Ponovno spajanje…', copied: 'Poveznica kopirana', bots: 'Prazna mjesta igraju botovi', create: 'Otvori stol',
+    online: 'Online', playAgain: 'Igraj opet', waitOthers: (n, m) => `Čeka se ostale · ${n}/${m}`, tables: 'Stolovi', newTable: 'Novi stol', noTables: 'Nema otvorenih stolova', yourName: 'Tvoje ime', sit: 'Sjedni', free: 'Slobodno', startT: 'Započni', waitHost: 'Čeka se domaćin', invite: 'Pozovi', leaveT: 'Izađi', botPlays: 'Bot igra za tebe', takeOver: 'Preuzmi', rating: 'Rejting', offline: 'Nema veze sa serverom', reconnecting: 'Ponovno spajanje…', copied: 'Poveznica kopirana', bots: 'Prazna mjesta igraju botovi', create: 'Otvori stol',
     level: 'Protivnici', partner: 'Partner', stats: 'Statistika', lvShort: { novice: 'Poč.', average: 'Pros.', pro: 'Pro', cardshark: 'Shark' }, lv: { novice: 'Početnik', average: 'Prosječan', pro: 'Pro', cardshark: 'Cardshark' },
     speed: 'Brzina', normal: 'Normalno', fast: 'Brzo', tap: 'Igranje karte', tap1: 'Jedan dodir', tap2: 'Dva dodira',
     rules: 'Pravila', rulesB: 'Pravila briškule', rulesH: 'Pravila bele',
@@ -3859,7 +3859,7 @@ const STR = {
       cols: { r: 'Red', y: 'Yellow', g: 'Green', b: 'Blue', p: 'Pink', t: 'Teal', o: 'Orange', v: 'Purple' } },
     sol: { name: 'Solitaire', score: 'Score', time: 'Time', moves: 'Moves', newGame: 'New game', restart: 'Same deal', hint: 'Hint', undo: 'Undo', auto: 'Finish', won: 'Solved!', noMoves: 'No more moves', home: 'Menu',
       draw: 'Draw', draw1: '1 card', draw3: '3 cards', passes: 'Passes through the stock', inf: 'Unlimited', scoring: 'Scoring', standard: 'Standard', vegas: 'Vegas', none: 'None', timed: 'Timed scoring', tapMove: 'Tap moves the card for you', left: 'Stock on the right', cont: 'Continue', played: 'Played', wonN: 'Solved', best: 'Best time', bestScore: 'Best score', streak: 'Win streak' },
-    online: 'Online', tables: 'Tables', newTable: 'New table', noTables: 'No open tables', yourName: 'Your name', sit: 'Sit', free: 'Free', startT: 'Start', waitHost: 'Waiting for the host', invite: 'Invite', leaveT: 'Leave', botPlays: 'A bot is playing for you', takeOver: 'Take over', rating: 'Rating', offline: 'Can’t reach the server', reconnecting: 'Reconnecting…', copied: 'Link copied', bots: 'Empty seats are played by bots', create: 'Open table',
+    online: 'Online', playAgain: 'Play again', waitOthers: (n, m) => `Waiting for others · ${n}/${m}`, tables: 'Tables', newTable: 'New table', noTables: 'No open tables', yourName: 'Your name', sit: 'Sit', free: 'Free', startT: 'Start', waitHost: 'Waiting for the host', invite: 'Invite', leaveT: 'Leave', botPlays: 'A bot is playing for you', takeOver: 'Take over', rating: 'Rating', offline: 'Can’t reach the server', reconnecting: 'Reconnecting…', copied: 'Link copied', bots: 'Empty seats are played by bots', create: 'Open table',
     level: 'Opponents', partner: 'Partner', stats: 'Stats', lvShort: { novice: 'Nov.', average: 'Avg.', pro: 'Pro', cardshark: 'Shark' }, lv: { novice: 'Novice', average: 'Average', pro: 'Pro', cardshark: 'Cardshark' },
     speed: 'Speed', normal: 'Normal', fast: 'Fast', tap: 'Playing a card', tap1: 'One tap', tap2: 'Two taps',
     rules: 'Rules', rulesB: 'Briškula rules', rulesH: 'Bela rules',
@@ -4255,7 +4255,7 @@ function showSettings() {
     <h4>${t.deckF}</h4><div class="decks">${Object.keys(Cards.FR).map(k => `<button class="deck" data-fd="${k}" aria-pressed="${Cards.frDeck(S.fDeck) === k}"><span class="dk-cards">${['Hk', 'Sq', 'Dj'].map(c => `<span class="svgc">${Cards.frFace(c, k)}</span>`).join('')}</span><span class="dk-name"><b>${Cards.FR[k].name[S.lang]}</b><small>${Cards.FR[k].maker}</small></span></button>`).join('')}</div>
     ${Cards.FR[Cards.frDeck(S.fDeck)].backs.length > 1 ? `<div class="fbacks">${Cards.FR[Cards.frDeck(S.fDeck)].backs.map(c => `<button class="fback" data-fb="${c}" aria-pressed="${S.fBack === c}" aria-label="${c}">${Cards.frBack(S.fDeck, c)}</button>`).join('')}</div>` : ''}
     <h4>${t.speed}</h4>${seg('speed', [['normal', t.normal], ['fast', t.fast]])}
-    <p class="muted credit">${t.credit} · v41</p>
+    <p class="muted credit">${t.credit} · v42</p>
     <div class="btns"><button class="pri" id="sx">${t.close}</button></div>`, v => {
     v.querySelector('#sx').onclick = () => { closeSheet(); if (G) renderAll(); else renderHome(); };
     v.onclick = e => { if (e.target === v) { closeSheet(); if (G) renderAll(); else renderHome(); } };
@@ -4915,7 +4915,7 @@ async function pump() {
 async function handleNet(m) {
   const t = L();
   if (m.t === 'start') {
-    NET.started = true; NET.names = m.names; NET.myPts = 0;
+    NET.started = true; NET.names = m.names; NET.myPts = 0; NET.rating = null;
     closeSheet(); token++; pending = null; sel = null;
     $('#home').hidden = true; $('#table').hidden = false; $('#center').innerHTML = '';
     return;
@@ -4932,6 +4932,7 @@ async function handleNet(m) {
   if (m.t === 'away') { pending = null; renderHand(); showAway(true); return; }
   if (m.t === 'bots') { NET.botSeats = m.seats; if (G && G.online) renderSeats(); return; }
   if (m.t === 'rating') { const c = m.change; const el = document.querySelector('#ratingLine'); if (el && c) el.textContent = `${t.rating} ${c.r} (${c.d >= 0 ? '+' : ''}${c.d})`; NET.rating = c; return; }
+  if (m.t === 'again') { NET.againOf = m.of; const b = document.querySelector('#oa'); if (b && b.disabled) b.textContent = t.waitOthers(m.n, m.of); return; }
   if (m.t === 'error') { status(esc(m.msg || 'error')); return; }
   if (m.t !== 'ev') return;
   const ev = m.ev, prev = G;
@@ -4987,8 +4988,11 @@ async function handleNet(m) {
 }
 function onlineSheet(html, over) {
   const t = L();
-  openSheet(html + `<div class="btns">${over ? `<button class="sec" id="ox">${t.home}</button><button class="pri" id="ot">${t.tables}</button>` : `<button class="pri" id="on">${t.next}</button>`}</div>`, v => {
-    if (over) { v.querySelector('#ox').onclick = leaveOnline; v.querySelector('#ot').onclick = () => { leaveOnline(); showLobby(); }; }
+  openSheet(html + `<div class="btns">${over ? `<button class="sec" id="ox">${t.home}</button><button class="sec" id="ot">${t.tables}</button><button class="pri" id="oa">${t.playAgain}</button>` : `<button class="pri" id="on">${t.next}</button>`}</div>`, v => {
+    if (over) {
+      v.querySelector('#ox').onclick = leaveOnline; v.querySelector('#ot').onclick = () => { leaveOnline(); showLobby(); };
+      v.querySelector('#oa').onclick = () => { netSend({ a: 'again' }); const b = v.querySelector('#oa'); b.disabled = true; b.textContent = t.waitOthers(1, NET.againOf || 1); };
+    }
     else v.querySelector('#on').onclick = () => { netSend({ a: 'next' }); v.querySelector('#on').disabled = true; };
   });
 }
