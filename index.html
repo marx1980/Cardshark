@@ -3095,7 +3095,7 @@ const Poker = (() => {
     else if (st.seats[st.dealer].out) st.dealer = nextAlive(st, st.dealer);
     st.deck = shuffle(FULL.map(c => ({ ...c })), rng); st.muck = [];
     st.board = []; st.pots = null; st.winners = null; st.result = null;
-    for (const s of st.seats) { s.hand = []; s.folded = s.out; s.allin = false; s.bet = 0; s.total = 0; s.acted = false; s.drew = null; s.shown = false; s.last = null; s.history = []; }
+    for (const s of st.seats) { s.hand = []; s.folded = s.out; s.allin = false; s.bet = 0; s.total = 0; s.acted = false; s.drew = null; s.shown = false; s.last = null; s.history = []; s.post = []; }
     const heads = alive(st).length === 2;
     st.sbSeat = heads ? st.dealer : nextAlive(st, st.dealer);
     st.bbSeat = nextAlive(st, st.sbSeat);
@@ -3149,6 +3149,7 @@ const Poker = (() => {
       }
     }
     s.acted = true; s.history.push(s.last.a);
+    if (st.street !== 'pre' && st.street !== 'bet1') s.post.push(s.last.a);
     advance(st, i);
   }
   function roundOver(st) {
@@ -3264,7 +3265,7 @@ const PokerAI = (() => {
     novice: { samples: 0, ranges: false, bluff: 0, semi: 0, loose: 0.12, raiseAt: 0.82, size: 0.5, push: false },
     average: { samples: 120, ranges: false, bluff: 0.03, semi: 0.1, loose: 0.03, raiseAt: 0.42, size: 0.6, push: false },
     pro: { samples: 260, ranges: true, bluff: 0.09, semi: 0.45, loose: 0, raiseAt: 0.36, size: 0.7, push: true },
-    cardshark: { samples: 420, ranges: true, model: true, adv: true, bluff: 0.11, semi: 0.55, loose: 0, raiseAt: 0.34, size: 0.72, push: true }
+    cardshark: { samples: 420, ranges: true, model: true, adv: true, board: true, bluff: 0.11, semi: 0.55, loose: 0, raiseAt: 0.34, size: 0.72, push: true }
   };
 
   // ---- preflop strength (Chen formula) as a percentile 0..1
@@ -3310,10 +3311,11 @@ const PokerAI = (() => {
   }
 
   // ---- what each opponent has shown this hand: how tight their range is (0 = any two cards)
-  function tightness(st, j, model) {
+  function tightness(st, j, model, boardAwareT) {
     const s = st.seats[j]; let t = 0;
     const acts = s.history || [];
-    for (const a of acts) {
+    const pre_ = boardAwareT ? (st.seats[j].history || []).slice(0, (st.seats[j].history || []).length - (st.seats[j].post || []).length) : acts;
+    for (const a of pre_) {
       if (a === 'raise' || a === 'bet' || a === 'allin') t += a === 'allin' ? 0.45 : 0.3;
       else if (a === 'call') t += 0.12;
     }
@@ -3321,13 +3323,54 @@ const PokerAI = (() => {
     return Math.max(0, Math.min(0.88, t));
   }
 
+  // how a Hold'em hand fits the board: 0 nothing, 1 a draw, 2 a pair, 3 two pair or better
+  function fit(h, board) {
+    const v = P.evaluate(h.concat(board)), cat = P.category(v);
+    if (cat >= 2) {
+      // a pair on the board does not count for the hand
+      const bc = P.category(P.evaluate(board.length >= 5 ? board : board.concat([]))), bcat = board.length >= 2 ? bc : 0;
+      return cat > bcat ? 3 : 2;
+    }
+    if (cat === 1) { const pr = h.some(c => board.some(b => b.r === c.r)) || h[0].r === h[1].r; return pr ? 2 : 0; }
+    if (board.length < 5) {
+      const all = h.concat(board), sc = {}; all.forEach(c => sc[c.s] = (sc[c.s] || 0) + 1);
+      if (h.some(c => sc[c.s] >= 4)) return 1;
+      const rs = new Set(all.map(c => c.r)); if (rs.has(14)) rs.add(1);
+      for (let lo = 1; lo <= 11; lo++) if ([0, 1, 2, 3].every(k => rs.has(lo + k)) && h.some(c => c.r >= lo && c.r <= lo + 3)) return 1;
+    }
+    return 0;
+  }
+  // chance a sampled hand fits what the opponent did after the flop
+  function postOk(st, j, h, board, loose = 0) {
+    const post = st.seats[j].post || []; if (!post.length) return true;
+    const aggr = post.filter(a => a === 'bet' || a === 'raise' || a === 'allin').length, calls = post.filter(a => a === 'call').length;
+    if (!aggr && !calls) return true;
+    const f = fit(h, board);
+    if (aggr >= 2) return f >= 3 || (f === 2 && Math.random() < 0.45) || Math.random() < 0.08;
+    if (aggr === 1) return f >= 2 || (f === 1 && Math.random() < 0.6) || Math.random() < 0.15;
+    if (calls >= 2) return f >= 2 || (f === 1 && Math.random() < 0.5) || Math.random() < 0.1;
+    return f >= 1 || Math.random() < 0.3;
+  }
+  // five-card draw: does a final hand fit the betting after the draw?
+  function drawPostOk(st, j, h) {
+    const post = (st.seats[j].post || []).filter((a, k, arr) => true);
+    const after = st.street === 'bet2' ? post : [];
+    if (!after.length) return true;
+    const aggr = after.filter(a => a === 'bet' || a === 'raise' || a === 'allin').length, calls = after.filter(a => a === 'call').length;
+    const cat = P.category(P.evaluate(h));
+    if (aggr >= 2) return cat >= 3 || Math.random() < 0.1;
+    if (aggr === 1) return cat >= 2 || (cat === 1 && Math.random() < 0.35) || Math.random() < 0.12;
+    if (calls) return cat >= 1 || Math.random() < 0.3;
+    return true;
+  }
+  const vpipOf = (model, j) => model && model[j] && model[j].hands >= 6 ? model[j].vp / model[j].hands : null;
   // ---- winning chances by simulation
-  function equity(st, i, samples, useRanges, model) {
+  function equity(st, i, samples, useRanges, model, boardAware) {
     const me = st.seats[i], opps = [];
     for (let j = 0; j < st.n; j++) if (j !== i && P.inHand(st, j)) opps.push(j);
     const seen = new Set(me.hand.concat(st.board || []).map(P.key));
     const unseen = P.FULL.filter(c => !seen.has(P.key(c)));
-    const tight = opps.map(j => useRanges ? tightness(st, j, model) : 0);
+    const tight = opps.map(j => useRanges ? tightness(st, j, model, boardAware && st.variant === 'holdem') : 0);
     let win = 0;
     const draw = st.variant === 'draw', preDraw = draw && (st.street === 'bet1' || st.street === 'draw');
     for (let k = 0; k < samples; k++) {
@@ -3341,11 +3384,19 @@ const PokerAI = (() => {
           h = draw ? [take(), take(), take(), take(), take()] : [take(), take()];
           const last = tries === 11;
           if (!draw) {
-            if (last || tight[o] === 0 || pre(h[0], h[1]) >= tight[o] - 0.1 * Math.random()) break;
+            const preOk = tight[o] === 0 || pre(h[0], h[1]) >= tight[o] - 0.1 * Math.random();
+            if (last || (preOk && (!boardAware || !st.board.length || postOk(st, opps[o], h, st.board)))) break;
           } else if (!preDraw && drew !== null && drew !== undefined) {
             // after the draw: a hand that would have drawn as many cards as they did, then their new cards
             const dc = drawChoice(h);
-            if (dc.length === drew || last) { for (const x of dc) h[x] = take(); break; }
+            if (dc.length === drew || last) {
+              const thrown = dc.map(x => h[x]);
+              for (const x of dc) h[x] = take();
+              if (last || !boardAware || drawPostOk(st, opps[o], h)) break;
+              for (let q = 0; q < h.length; q++) d[p++] = h[q];
+              for (const c of thrown) d[p++] = c;
+              continue;
+            }
           } else {
             const need = tight[o] > 0.5 ? 2 : tight[o] > 0.2 ? 1 : 0;
             if (last || P.category(P.evaluate(h)) >= need || Math.random() < 0.15) { if (preDraw) for (const x of drawChoice(h)) h[x] = take(); break; }
@@ -3381,7 +3432,7 @@ const PokerAI = (() => {
     const opps = st.seats.filter((x, j) => j !== i && P.inHand(st, j)).length;
     const bb = st.bb, stackBB = (s.chips + s.bet) / bb;
     const preflop = st.street === 'pre' || st.street === 'bet1';
-    let e = c.samples ? equity(st, i, c.samples, c.ranges, c.model ? model : null) : feel(st, i);
+    let e = c.samples ? equity(st, i, c.samples, c.ranges, c.model ? model : null, c.board) : feel(st, i);
     const fair = 1 / (opps + 1);
     // relative strength: 0 = as weak as an average hand would be, 1 = certain winner
     const rel = (e - fair) / (1 - fair);
@@ -3398,18 +3449,19 @@ const PokerAI = (() => {
     const call = () => ({ a: o.check ? 'check' : 'call' });
     const fold = () => o.check ? { a: 'check' } : { a: 'fold' };
     // Cardshark, Hold'em before the flop: opening ranges by position, 3-bets and calls by hand rank
-    if (c.adv && st.street === 'pre' && stackBB > 11) {
+    const tableV = (() => { const vs = st.seats.map((x, j) => j).filter(j => j !== i && P.inHand(st, j)).map(j => vpipOf(model, j)).filter(v => v !== null); return vs.length ? vs.reduce((x, y) => x + y, 0) / vs.length : null; })();
+    if (c.adv && st.street === 'pre' && stackBB > 11 && !(tableV !== null && tableV > 0.45)) {
       const pct = pre(s.hand[0], s.hand[1]);
       const behind = st.seats.filter((x, j) => j !== i && P.inHand(st, j) && !x.acted && !x.allin).length;
       const unraised = st.currentBet <= bb;
       if (unraised) {
-        const open = behind >= 4 ? 0.16 : behind === 3 ? 0.2 : behind === 2 ? 0.27 : behind === 1 ? 0.4 : 0.5;
+        let open = behind >= 4 ? 0.16 : behind === 3 ? 0.2 : behind === 2 ? 0.27 : behind === 1 ? 0.4 : 0.5;
         if (pct >= 1 - open && o.minTo !== undefined) return raiseTo(0);
         return o.check ? { a: 'check' } : fold();
       }
       // facing a raise: how loose is the raiser?
       const r = st.lastRaiser, m = model && model[r];
-      const loose = m && m.hands >= 8 ? Math.max(0, m.vp / m.hands - 0.25) : 0;
+      const loose = m && m.hands >= 8 ? Math.max(0, m.raise / m.hands - 0.25) : 0;
       const big = toCall > s.chips * 0.4;
       if (pct >= 0.95 - loose * 0.3 && o.minTo !== undefined && !big) return raiseTo(0);
       if (big) return e > potOdds + 0.04 ? call() : fold();
@@ -3426,16 +3478,22 @@ const PokerAI = (() => {
       if (toCall > 0 && e > potOdds * 1.05 && toCall < s.chips * 0.25) return call();
       return fold();
     }
+    // Cardshark: how loose is the table? bluff less and bet bigger against players who call a lot
+    let bluffK = 1, sizeK = 0;
+    if (c.model && model) {
+      const vs = st.seats.map((x, j) => j).filter(j => j !== i && P.inHand(st, j) && model[j] && model[j].hands >= 6).map(j => model[j].vp / model[j].hands);
+      if (vs.length) { const v = vs.reduce((x, y) => x + y, 0) / vs.length; if (v > 0.45) { bluffK = 0.3; sizeK = 0.25; } else if (v < 0.22) { bluffK = 1.5; sizeK = -0.1; } }
+    }
     // value raise
     if (rel > c.raiseAt + (toCall > 0 ? 0.08 : 0) && o.minTo !== undefined) {
       if (level === 'novice' && Math.random() < 0.5) return call();
-      return raiseTo(rel > 0.75 ? c.size + 0.25 : c.size) || call();
+      return raiseTo((rel > 0.75 ? c.size + 0.25 : c.size) + sizeK) || call();
     }
     // semi-bluff with a draw (Hold'em flop/turn): decent equity but not ahead
-    if (st.variant === 'holdem' && (st.street === 'flop' || st.street === 'turn') && e > 0.3 && rel < c.raiseAt && Math.random() < c.semi * 0.5 && o.minTo !== undefined && opps <= 2) return raiseTo(0.6) || call();
+    if (st.variant === 'holdem' && (st.street === 'flop' || st.street === 'turn') && e > 0.3 && rel < c.raiseAt && Math.random() < c.semi * 0.5 * bluffK && o.minTo !== undefined && opps <= 2) return raiseTo(0.6) || call();
     // bluff when checked to with few opponents
     const lateStreet = st.street === 'turn' || st.street === 'river' || st.street === 'bet2';
-    if (toCall === 0 && o.minTo !== undefined && opps <= 2 && !preflop && Math.random() < c.bluff * (opps === 1 ? 1.6 : 1) * (lateStreet ? c.lateBluff || 1 : 1)) return raiseTo(c.bluffSize || 0.55);
+    if (toCall === 0 && o.minTo !== undefined && opps <= 2 && !preflop && Math.random() < c.bluff * bluffK * (opps === 1 ? 1.6 : 1) * (lateStreet ? c.lateBluff || 1 : 1)) return raiseTo(c.bluffSize || 0.55);
     if (toCall === 0) return { a: 'check' };
     // call when the price is right (a little implied value for draws before the river)
     const implied = st.variant === 'holdem' && (st.street === 'flop' || st.street === 'turn') ? 0.03 : 0;
@@ -4197,7 +4255,7 @@ function showSettings() {
     <h4>${t.deckF}</h4><div class="decks">${Object.keys(Cards.FR).map(k => `<button class="deck" data-fd="${k}" aria-pressed="${Cards.frDeck(S.fDeck) === k}"><span class="dk-cards">${['Hk', 'Sq', 'Dj'].map(c => `<span class="svgc">${Cards.frFace(c, k)}</span>`).join('')}</span><span class="dk-name"><b>${Cards.FR[k].name[S.lang]}</b><small>${Cards.FR[k].maker}</small></span></button>`).join('')}</div>
     ${Cards.FR[Cards.frDeck(S.fDeck)].backs.length > 1 ? `<div class="fbacks">${Cards.FR[Cards.frDeck(S.fDeck)].backs.map(c => `<button class="fback" data-fb="${c}" aria-pressed="${S.fBack === c}" aria-label="${c}">${Cards.frBack(S.fDeck, c)}</button>`).join('')}</div>` : ''}
     <h4>${t.speed}</h4>${seg('speed', [['normal', t.normal], ['fast', t.fast]])}
-    <p class="muted credit">${t.credit} · v40</p>
+    <p class="muted credit">${t.credit} · v41</p>
     <div class="btns"><button class="pri" id="sx">${t.close}</button></div>`, v => {
     v.querySelector('#sx').onclick = () => { closeSheet(); if (G) renderAll(); else renderHome(); };
     v.onclick = e => { if (e.target === v) { closeSheet(); if (G) renderAll(); else renderHome(); } };
