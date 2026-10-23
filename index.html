@@ -177,6 +177,12 @@ table.stats td b{display:inline-block;min-width:1.4em;font-size:15px}
 .pcap b{display:block;font:800 clamp(30px,9vw,40px)/1 var(--display)}
 .pcap small{display:block;font-size:15px;color:#e8e0cc;margin-top:4px}
 .go{width:54px;height:54px;flex:none;border-radius:50%;background:var(--brass);color:var(--brass-ink);display:grid;place-items:center;box-shadow:0 3px 0 #8a6a28}
+.poster .go{box-shadow:0 3px 8px rgba(0,0,0,.35)}
+.poster.pb .go{background:#bfe3cf;color:#173f31}
+.poster.pt .go{background:#c4d6f2;color:#14284a}
+.poster.ph .go{background:#f1c7bf;color:#3b1512}
+.poster.ps .go{background:#d8cdf2;color:#1f1638}
+.poster.pu .go{background:#fff3c4;color:#5a3c00}
 .go svg{width:24px;height:24px}
 .gsh{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
 .link{background:none;border:0;color:var(--felt);font:700 15px var(--body);text-decoration:underline;cursor:pointer;padding:6px 0}
@@ -309,7 +315,6 @@ table.pis{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;
 .rank div{display:flex;justify-content:space-between;border-bottom:1px dashed var(--sheet-line)}
 /* colour game */
 .poster.pu{background:radial-gradient(90% 90% at 50% 18%,#f2c230,#b9810c)}
-.poster.pu .go{background:#1f1a14;color:#f2c230;box-shadow:0 3px 0 #000}
 .poster.pu .pfan .svgc > svg{aspect-ratio:60/90}
 #uno{position:fixed;inset:0;z-index:20;display:flex;flex-direction:column;background:radial-gradient(120% 90% at 50% 38%,#2c3652,#111522);user-select:none;-webkit-user-select:none;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);overflow:hidden;--pw:min(26vw,118px,15vh)}
 #uno[hidden]{display:none}
@@ -3421,7 +3426,7 @@ function showSettings() {
     <h4>${t.deckF}</h4><div class="decks">${Object.keys(Cards.FR).map(k => `<button class="deck" data-fd="${k}" aria-pressed="${Cards.frDeck(S.fDeck) === k}"><span class="dk-cards">${['Hk', 'Sq', 'Dj'].map(c => `<span class="svgc">${Cards.frFace(c, k)}</span>`).join('')}</span><span class="dk-name"><b>${Cards.FR[k].name[S.lang]}</b><small>${Cards.FR[k].maker}</small></span></button>`).join('')}</div>
     ${Cards.FR[Cards.frDeck(S.fDeck)].backs.length > 1 ? `<div class="fbacks">${Cards.FR[Cards.frDeck(S.fDeck)].backs.map(c => `<button class="fback" data-fb="${c}" aria-pressed="${S.fBack === c}" aria-label="${c}">${Cards.frBack(S.fDeck, c)}</button>`).join('')}</div>` : ''}
     <h4>${t.speed}</h4>${seg('speed', [['normal', t.normal], ['fast', t.fast]])}
-    <p class="muted credit">${t.credit} · v34</p>
+    <p class="muted credit">${t.credit} · v35</p>
     <div class="btns"><button class="pri" id="sx">${t.close}</button></div>`, v => {
     v.querySelector('#sx').onclick = () => { closeSheet(); if (G) renderAll(); else renderHome(); };
     v.onclick = e => { if (e.target === v) { closeSheet(); if (G) renderAll(); else renderHome(); } };
