@@ -4258,7 +4258,7 @@ function showSettings() {
     <h4>${t.deckF}</h4><div class="decks">${Object.keys(Cards.FR).map(k => `<button class="deck" data-fd="${k}" aria-pressed="${Cards.frDeck(S.fDeck) === k}"><span class="dk-cards">${['Hk', 'Sq', 'Dj'].map(c => `<span class="svgc">${Cards.frFace(c, k)}</span>`).join('')}</span><span class="dk-name"><b>${Cards.FR[k].name[S.lang]}</b><small>${Cards.FR[k].maker}</small></span></button>`).join('')}</div>
     ${Cards.FR[Cards.frDeck(S.fDeck)].backs.length > 1 ? `<div class="fbacks">${Cards.FR[Cards.frDeck(S.fDeck)].backs.map(c => `<button class="fback" data-fb="${c}" aria-pressed="${S.fBack === c}" aria-label="${c}">${Cards.frBack(S.fDeck, c)}</button>`).join('')}</div>` : ''}
     <h4>${t.speed}</h4>${seg('speed', [['normal', t.normal], ['fast', t.fast]])}
-    <p class="muted credit">${t.credit} · v43</p>
+    <p class="muted credit">${t.credit} · v44</p>
     <div class="btns"><button class="pri" id="sx">${t.close}</button></div>`, v => {
     v.querySelector('#sx').onclick = () => { closeSheet(); if (G) renderAll(); else renderHome(); };
     v.onclick = e => { if (e.target === v) { closeSheet(); if (G) renderAll(); else renderHome(); } };
@@ -4945,7 +4945,7 @@ async function handleNet(m) {
   if (m.t !== 'ev') return;
   const ev = m.ev, prev = G;
   G = m.view; G.online = true; G.names = NET.names;
-  if (ev.k === 'deal') { NET.myPts = 0; closeSheet(); $('#center').innerHTML = ''; }
+  if (ev.k === 'deal') { NET.myPts = 0; NET.lastHand = null; closeSheet(); $('#center').innerHTML = ''; }
   G.myPts = NET.myPts;
   if (prev === null || ev.k === 'deal') { layoutSizes(); renderAll(); status(''); return; }
   switch (ev.k) {
@@ -4978,18 +4978,25 @@ async function handleNet(m) {
     case 'handEnd': case 'matchEnd': {
       const over = ev.k === 'matchEnd';
       if (over && S.netTable) { S.netTable = null; save(); }
+      let hand = '';
       if (G.game === 'b' && !over) {
         const pts = ev.pts, verdict = ev.team < 0 ? t.handDraw : ev.team === 0 ? t.handWon : t.handLost;
-        onlineSheet(`<h3>${verdict}</h3><div class="big">${pts.map((p, i) => `<div>${p}<small>${i ? t.they : t.we}</small></div>`).join('<span class="sep">:</span>')}</div>
-          <div class="tally">${G.wins.map((w, i) => `<div><span class="muted">${i ? t.they : t.we}</span><b class="marks">${'|'.repeat(w) || '–'}</b></div>`).join('')}<div><span class="muted">${t.matchTo}</span><b>${G.opts.target}</b></div></div>`, over);
+        hand = `<h3>${verdict}</h3><div class="big">${pts.map((p, i) => `<div>${p}<small>${i ? t.they : t.we}</small></div>`).join('<span class="sep">:</span>')}</div>
+          <div class="tally">${G.wins.map((w, i) => `<div><span class="muted">${i ? t.they : t.we}</span><b class="marks">${'|'.repeat(w) || '–'}</b></div>`).join('')}<div><span class="muted">${t.matchTo}</span><b>${G.opts.target}</b></div></div>`;
       } else if (G.game === 'h' && !over) {
-        onlineSheet(scoreSheetHTML(G.rows[G.rows.length - 1], -1).replace(/<div class="btns">[\s\S]*$/, ''), over);
+        hand = scoreSheetHTML(G.rows[G.rows.length - 1], -1).replace(/<div class="btns">[\s\S]*$/, '');
       } else if (G.game === 't' && !over) {
         const r = G.rows[G.rows.length - 1];
-        onlineSheet(`<h3>${t.handTitle(G.rows.length)}</h3><div class="decl"><div><span>${t.cardsPts}</span><b>${r.cardPts[0]} : ${r.cardPts[1]}</b></div><div><span>${t.akuzaPts}</span><b>${r.akuze[0]} : ${r.akuze[1]}</b></div></div>${tTable()}`, over);
+        hand = `<h3>${t.handTitle(G.rows.length)}</h3><div class="decl"><div><span>${t.cardsPts}</span><b>${r.cardPts[0]} : ${r.cardPts[1]}</b></div><div><span>${t.akuzaPts}</span><b>${r.akuze[0]} : ${r.akuze[1]}</b></div></div>${tTable()}`;
+      }
+      if (!over) {
+        NET.lastHand = hand;
+        // the last hand of the match: its result stays on the match sheet that follows
+        if (!ev.over) onlineSheet(hand, false);
       } else {
-        const won = ev.team === 0;
-        onlineSheet(`<h3>${won ? t.matchWon : t.matchLost}</h3><p class="muted" id="ratingLine">${NET.rating ? `${t.rating} ${NET.rating.r} (${NET.rating.d >= 0 ? '+' : ''}${NET.rating.d})` : ''}</p>`, true);
+        const won = ev.team === 0, last = NET.lastHand ? NET.lastHand.replace(/<h3>/g, '<h4>').replace(/<\/h3>/g, '</h4>') : '';
+        NET.lastHand = null;
+        onlineSheet(`<h3>${won ? t.matchWon : t.matchLost}</h3><p class="muted" id="ratingLine">${NET.rating ? `${t.rating} ${NET.rating.r} (${NET.rating.d >= 0 ? '+' : ''}${NET.rating.d})` : ''}</p>${last}`, true);
       }
       break;
     }
