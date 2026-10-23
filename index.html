@@ -164,15 +164,16 @@ button{font:inherit;color:inherit}
 .tag.call{background:var(--brass);color:var(--brass-ink);padding:2px 4px;border-radius:7px;display:inline-grid;place-items:center;line-height:0}
 #trumpChip{cursor:default}
 .zv{font-size:11.5px;font-weight:800;letter-spacing:.04em;background:var(--brass);color:var(--brass-ink);border-radius:99px;padding:2px 7px;margin-left:2px}
-.zlist{display:flex;flex-direction:column;gap:10px;margin:10px 0}
+.zlist{display:flex;flex-direction:column;gap:16px;margin:6px 0 14px}
 .zseat{display:flex;flex-direction:column;gap:4px}
 .zname{font-weight:800;display:flex;gap:8px;align-items:baseline}
 .zname small{font-weight:600;color:var(--sheet-muted);font-size:12.5px;text-transform:uppercase;letter-spacing:.08em}
 .zrow{display:flex;align-items:center;gap:10px;border-bottom:1px dashed var(--sheet-line);padding:4px 0}
 .zrow.off{opacity:.45}
 .zrow .zd{flex:1;font-size:14.5px}
+.zgroups{display:flex;flex-wrap:wrap;gap:14px}
 .zcards{display:flex}
-.zcards .svgc{width:38px;margin-left:-14px;filter:drop-shadow(0 1px 1px rgba(0,0,0,.25))}
+.zcards .svgc{width:52px;margin-left:-20px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.3))}
 .zcards .svgc:first-child{margin-left:0}
 .sheet .small{font-size:12.5px}
 .mini{display:flex;height:34px}
@@ -1760,7 +1761,7 @@ function showSettings() {
     <h4>${t.deckB}</h4><div class="decks">${deckRow('b', pickB, 'bDeck')}</div>
     <h4>${t.deckH}</h4><div class="decks">${deckRow('h', pickH, 'hDeck')}</div>
     <h4>${t.speed}</h4>${seg('speed', [['normal', t.normal], ['fast', t.fast]])}
-    <p class="muted credit">${t.credit} · v23</p>
+    <p class="muted credit">${t.credit} · v24</p>
     <div class="btns"><button class="pri" id="sx">${t.close}</button></div>`, v => {
     v.querySelector('#sx').onclick = () => { closeSheet(); if (G) renderAll(); else renderHome(); };
     v.onclick = e => { if (e.target === v) { closeSheet(); if (G) renderAll(); else renderHome(); } };
@@ -2086,13 +2087,10 @@ async function belaMatch(my) {
       // show the declared cards to the table for a few seconds
       const groups = ds.filter(d => d.type !== 'belot').map(d => `<span class="zb-grp">${declCardIds(d).map(id => `<span class="svgc">${face('h', E.hDeck().find(c => c.id === id))}</span>`).join('')}</span>`).join('');
       const ms = S.speed === 'fast' ? 2400 : 3200;
-      reveal(s, `<div class="zb-head">${esc(name(s))} · ${ds.map(d => d.val).join(' + ')}</div><div class="zb-cards">${groups}</div>`, ms);
+      reveal(s, `<div class="zb-head">${esc(name(s))}</div><div class="zb-cards">${groups}</div>`, ms);
       await sleep(ms + 150); check(my);
     }
-    if (any) {
-      status(D.team >= 0 ? t().declWin(D.team === team(0) ? t().we : t().they, D.total) : t().declNone);
-      await sleep(SPEED().trick * 1.2); check(my);
-    }
+    if (any) { renderBar(); await sleep(SPEED().trick * 0.5); check(my); }
     // ---- tricks ----
     while (!E.hHandOver(G)) {
       const s = E.hToPlay(G);
@@ -2170,21 +2168,15 @@ function showZvanja() {
   if (!G || G.game !== 'h') return;
   const close = `<div class="btns"><button class="pri" id="sx">${t.close}</button></div>`;
   const bind = v => { v.querySelector('#sx').onclick = closeSheet; v.onclick = e => { if (e.target === v) closeSheet(); }; };
-  if (!G.decls) return openSheet(`<h3>${t.zvTitle}</h3><p class="muted">${t.zvNotYet}</p>${close}`, bind);
-  const D = G.decls, K = E.H_KEYS;
-  const declCards = declCardIds;
-  const deck = E.hDeck(), byId = id => deck.find(c => c.id === id);
-  const shown = D.team < 0 ? [] : D.order.filter(s => s % 2 === D.team && D.per[s].some(d => d.type !== 'belot'));
-  const rows = shown.map(s => {
-    const items = D.per[s].filter(d => d.type !== 'belot').map(d => `<div class="zrow"><span class="zcards">${declCards(d).map(id => `<span class="svgc">${face('h', byId(id))}</span>`).join('')}</span><span class="zd">${t.declDesc(d)}</span><b>${d.val}</b></div>`).join('');
-    return `<div class="zseat"><div class="zname">${esc(name(s))}<small>${s % 2 === team(0) ? t.we : t.they}</small></div>${items}</div>`;
-  }).join('');
-  const bela = G.belaCalled ? `<div class="zrow"><span class="zd"><b>Bela</b> · ${esc(name(G.belaSeat))}</span><b>20</b></div>` : '';
-  const tot = [0, 1].map(tm => (D.team === tm ? D.total : 0) + (G.belaCalled && G.belaSeat % 2 === tm ? 20 : 0));
-  openSheet(`<h3>${t.zvTitle}</h3>
-    <p class="muted">${D.team >= 0 ? t.declWin(D.team === team(0) ? t.we : t.they, D.total) : t.declNone}</p>
-    <div class="zlist">${rows || bela ? rows + bela : `<p class="muted">${t.declNone}</p>`}</div>
-    <div class="decl"><div><span>${t.we} : ${t.they}</span><b>${tot[0]} : ${tot[1]}</b></div></div>${close}`, bind);
+  if (!G.decls) return openSheet(`<p class="muted">${t.zvNotYet}</p>${close}`, bind);
+  const D = G.decls, deck = E.hDeck(), byId = id => deck.find(c => c.id === id);
+  const group = ids => `<span class="zcards">${ids.map(id => `<span class="svgc">${face('h', byId(id))}</span>`).join('')}</span>`;
+  // name and cards only: each declaring player of the pair whose zvanja count, plus bela if called
+  const per = {};
+  if (D.team >= 0) for (const s of D.order) if (s % 2 === D.team) for (const d of D.per[s]) if (d.type !== 'belot') (per[s] = per[s] || []).push(declCardIds(d));
+  if (G.belaCalled) (per[G.belaSeat] = per[G.belaSeat] || []).push(['K', 'O'].map(r => 'h' + G.trump + r));
+  const rows = Object.keys(per).map(s => `<div class="zseat"><div class="zname">${esc(name(+s))}</div><div class="zgroups">${per[s].map(group).join('')}</div></div>`).join('');
+  openSheet(`<div class="zlist">${rows || `<p class="muted">${t.declNone}</p>`}</div>${close}`, bind);
 }
 function showScore() {
   if (!G) return;
