@@ -15,9 +15,15 @@ function rotEvent(ev, me) {
   return r;
 }
 
+// engine state <-> JSON (the engine keeps a couple of Sets of card ids)
+const ser = st => JSON.stringify(st, (k, v) => v instanceof Set ? { __set: [...v] } : v);
+const deser = j => JSON.parse(j, (k, v) => v && typeof v === 'object' && Array.isArray(v.__set) ? new Set(v.__set) : v);
+
 class Runner {
   // io: { sleep(ms), send(seat, msg), ask(seat, req) -> Promise<answer|null>, level(seat), waitNext(ms), isHuman(seat) }
-  constructor(game, opts, io) { this.game = game; this.opts = opts; this.io = io; this.st = null; this.turn = null; }
+  constructor(game, opts, io, saved = null) { this.game = game; this.opts = opts; this.io = io; this.st = null; this.turn = null; this.saved = saved; }
+  // a checkpoint the table keeps in storage, so a restarted server can carry on from here
+  async checkpoint(at) { if (this.io.save) await this.io.save({ at, st: ser(this.st), turn: this.turn }); }
 
   emit(ev) {
     for (const s of [0, 1, 2, 3]) {
@@ -67,12 +73,17 @@ class Runner {
     if (g === 'b') this.st = E.bNew({ players: 4, target: o.target || 3, reveal: false });
     else if (g === 't') this.st = E.tNew({ players: 4, target: o.target || 41, akuze: o.akuze !== false, longNap: !!o.longNap, thirdsToLast: !!o.thirdsToLast, signals: o.signals !== false, clockwise: !!o.clockwise });
     else this.st = E.hNew({ target: o.target || 1001 });
+    let cont = null;
+    if (this.saved) { this.st = deser(this.saved.st); cont = this.saved.at; this.saved = null; }
+    else this.st.dealer = this.st.seats[Math.floor(Math.random() * 4)];
     const st = this.st;
-    st.dealer = st.seats[Math.floor(Math.random() * 4)];
     while (true) {
-      st.dealer = E.nextSeat(st, st.dealer);
-      const res = g === 'b' ? await this.briskulaHand() : g === 't' ? await this.tresetaHand() : await this.belaHand();
+      const mid = cont === 'turn' || cont === 'bid';
+      if (!mid) st.dealer = E.nextSeat(st, st.dealer);
+      cont = null;
+      const res = g === 'b' ? await this.briskulaHand(mid) : g === 't' ? await this.tresetaHand(mid) : await this.belaHand(mid);
       if (res.matchWinner >= 0) { this.turn = null; this.emit({ k: 'matchEnd', team: res.matchWinner }); return res.matchWinner; }
+      await this.checkpoint('handEnd');
       await this.io.waitNext(12000);
     }
   }
@@ -82,6 +93,7 @@ class Runner {
     while (!over()) {
       const s = this.game === 'b' ? E.bToPlay(st) : this.game === 't' ? E.tToPlay(st) : E.hToPlay(st);
       this.turn = s; this.emit({ k: 'turn', seat: s });
+      await this.checkpoint('turn');
       const done = await play(s);
       if (done) {
         this.turn = null;
@@ -94,10 +106,9 @@ class Runner {
     this.turn = null;
   }
 
-  async briskulaHand() {
+  async briskulaHand(cont) {
     const st = this.st;
-    E.bDeal(st); this.turn = null;
-    this.emit({ k: 'deal' }); await this.io.sleep(PACE.deal);
+    if (!cont) { E.bDeal(st); this.turn = null; this.emit({ k: 'deal' }); await this.io.sleep(PACE.deal); }
     await this.playTrick(async s => {
       const { card } = await this.decide(s, 'play', st.hands[s].slice());
       const done = E.bPlay(st, s, card);
@@ -114,11 +125,10 @@ class Runner {
     return { matchWinner: mw };
   }
 
-  async tresetaHand() {
+  async tresetaHand(cont) {
     const st = this.st;
-    E.tDeal(st); this.turn = null;
-    this.emit({ k: 'deal' }); await this.io.sleep(PACE.deal);
-    for (const s of E.roundFrom(st, st.leader)) {
+    if (!cont) { E.tDeal(st); this.turn = null; this.emit({ k: 'deal' }); await this.io.sleep(PACE.deal); }
+    if (!cont) for (const s of E.roundFrom(st, st.leader)) {
       if (!st.akuze[s].length) continue;
       this.emit({ k: 'akuza', seat: s, ds: st.akuze[s] }); await this.io.sleep(PACE.akuza);
     }
@@ -137,22 +147,24 @@ class Runner {
     return { matchWinner: mw };
   }
 
-  async belaHand() {
+  async belaHand(cont) {
     const st = this.st;
-    E.hDeal(st); st.phase = 'bid'; this.turn = null;
-    this.emit({ k: 'deal' }); await this.io.sleep(PACE.deal);
-    let called = false;
+    if (!cont) { E.hDeal(st); st.phase = 'bid'; this.turn = null; this.emit({ k: 'deal' }); await this.io.sleep(PACE.deal); }
+    const bidding = st.phase === 'bid';
+    let called = !bidding;
     while (!called) {
       const s = st.bidder; this.turn = s; this.emit({ k: 'turn', seat: s, bid: true });
+      await this.checkpoint('bid');
       const { suit } = await this.decide(s, 'bid', null, { dealer: s === st.dealer });
       const sv = s === st.dealer && suit < 0 ? 0 : suit;
       called = E.hBid(st, s, sv);
       this.emit({ k: 'bid', seat: s, suit: sv });
       if (!called) await this.io.sleep(300);
     }
+    const D = st.decls;
+    if (bidding) {
     st.phase = 'play'; this.turn = null;
     this.emit({ k: 'called', seat: st.caller, suit: st.trump }); await this.io.sleep(PACE.called);
-    const D = st.decls;
     if (D.belotSeat !== null) {
       const w = D.belotSeat % 2;
       st.score[w] = Math.max(st.score[w], st.opts.target);
@@ -163,6 +175,7 @@ class Runner {
     for (const s of D.order) {
       const ds = D.per[s]; if (!ds.length || s % 2 !== D.team) continue;
       this.emit({ k: 'decl', seat: s, ds: ds.filter(d => d.type !== 'belot') }); await this.io.sleep(PACE.decl);
+    }
     }
     await this.playTrick(async s => {
       const legal = E.hLegal(st, s);
@@ -178,4 +191,4 @@ class Runner {
     return { matchWinner: mw };
   }
 }
-module.exports = { Runner, PACE };
+module.exports = { Runner, PACE, ser, deser };

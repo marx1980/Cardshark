@@ -151,6 +151,7 @@ export class Table {
       setPid(pid); this.socks.set(pid, ws);
       const seat = this.seatOf(pid);
       if (seat >= 0) { i.seats[seat].name = clean(m.name); this.away.delete(seat); this.pushBots(); }
+      if (i.status === 'playing' && !this.runner) await this.resume();
       this.sendWs(ws, { t: 'table', info: this.publicInfo(), mySeat: seat });
       if (i.status === 'playing' && seat >= 0 && this.runner) {
         const view = this.runner.snapshot(seat);
@@ -231,15 +232,33 @@ export class Table {
     }
     await this.announce();
     for (let s = 0; s < 4; s++) this.sendSeat(s, { t: 'start', names: this.namesFor(s) });
-    const io = {
+    i.levels = { ...this.levels }; await this.save(); await this.state.storage.delete('game');
+    this.runner = new Runner(i.game, i.opts, this.makeIo());
+    this.runner.run().then(w => this.finish(w)).catch(e => this.crashed(e));
+  }
+  makeIo() {
+    const i = this.info;
+    return {
       sleep, send: (seat, msg) => this.sendSeat(seat, { ...msg, names: undefined }),
       isHuman: seat => !!(i.seats[seat] && i.seats[seat].pid),
       level: seat => this.levels[seat],
       ask: (seat, req) => this.ask(seat, req),
       waitNext: ms => this.waitNext(ms),
+      save: data => this.state.storage.put('game', data),
     };
-    this.runner = new Runner(i.game, i.opts, io);
-    this.runner.run().then(w => this.finish(w)).catch(e => { for (const ws of this.socks.values()) this.sendWs(ws, { t: 'error', msg: String(e && e.message) }); });
+  }
+  crashed(e) { this.runner = null; for (const ws of this.socks.values()) this.sendWs(ws, { t: 'error', msg: String(e && e.message) }); }
+  // the server restarted mid-match (a deploy, or the platform moving the table): carry on from the last checkpoint
+  async resume() {
+    if (this.runner) return;
+    if (!this.resuming) this.resuming = (async () => {
+      const i = this.info, saved = await this.state.storage.get('game');
+      if (!saved) { i.status = 'done'; await this.save(); return; }
+      this.levels = i.levels || {};
+      this.runner = new Runner(i.game, i.opts, this.makeIo(), saved);
+      this.runner.run().then(w => this.finish(w)).catch(e => this.crashed(e));
+    })().finally(() => { this.resuming = null; });
+    await this.resuming;
   }
   ask(seat, req) {
     const s = this.info.seats[seat], ws = s && s.pid && this.socks.get(s.pid);
@@ -270,7 +289,7 @@ export class Table {
     let changes = {};
     if (this.humanSeats().length) changes = await (await this.registry().fetch('https://do/result', { method: 'POST', body: JSON.stringify({ game: g, teams, winner }) })).json();
     for (const s of this.humanSeats()) this.sendSeat(s, { t: 'rating', change: changes[i.seats[s].pid] || null });
-    i.status = 'over'; this.againVotes = new Set(); await this.save();
+    i.status = 'over'; this.againVotes = new Set(); await this.save(); await this.state.storage.delete('game');
     await this.lobby().fetch('https://do/remove', { method: 'POST', body: JSON.stringify({ id: i.id }) });
   }
 }

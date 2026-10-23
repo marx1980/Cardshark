@@ -116,8 +116,9 @@ table.stats td b{display:inline-block;min-width:1.4em;font-size:15px}
 /* home: two posters */
 #home .wrap{min-height:100%;box-sizing:border-box;gap:12px;display:grid;grid-template-columns:1fr 1fr;grid-auto-rows:min-content;align-content:start}
 #home .hbar{grid-column:1/-1}
+.rejoin{grid-column:1/-1;display:flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:14px;padding:12px;background:var(--brass);color:var(--brass-ink);font:800 16px var(--display);cursor:pointer;box-shadow:0 3px 0 #8a6a28}
+.rejoin svg{width:20px;height:20px}
 #home .poster{flex:none;min-height:0;aspect-ratio:3/4;border-radius:20px}
-#home .poster:last-of-type:nth-child(even){grid-column:1/-1;justify-self:center;width:calc((100% - 12px)/2)}
 #home .pfan{height:48%;top:10%}
 #home .poster.pu .pfan{height:42%;top:12%}
 #home .pcap{padding:12px 12px}
@@ -3797,7 +3798,7 @@ const STR = {
       cols: { r: 'Crvena', y: 'Žuta', g: 'Zelena', b: 'Plava', p: 'Ružičasta', t: 'Tirkizna', o: 'Narančasta', v: 'Ljubičasta' } },
     sol: { name: 'Pasijans', score: 'Bodovi', time: 'Vrijeme', moves: 'Potezi', newGame: 'Nova igra', restart: 'Ista podjela', hint: 'Savjet', undo: 'Natrag', auto: 'Završi', won: 'Pasijans je složen!', noMoves: 'Nema više poteza', home: 'Izbornik',
       draw: 'Vučenje', draw1: '1 karta', draw3: '3 karte', passes: 'Prolazi kroz špil', inf: 'Bez ograničenja', scoring: 'Bodovanje', standard: 'Standardno', vegas: 'Vegas', none: 'Bez bodova', timed: 'Bodovi ovise o vremenu', tapMove: 'Dodir sam premješta kartu', left: 'Špil na desnoj strani', cont: 'Nastavi', played: 'Odigrano', wonN: 'Riješeno', best: 'Najbolje vrijeme', bestScore: 'Najviše bodova', streak: 'Niz pobjeda' },
-    online: 'Online', playAgain: 'Igraj opet', waitOthers: (n, m) => `Čeka se ostale · ${n}/${m}`, tables: 'Stolovi', newTable: 'Novi stol', noTables: 'Nema otvorenih stolova', yourName: 'Tvoje ime', sit: 'Sjedni', free: 'Slobodno', startT: 'Započni', waitHost: 'Čeka se domaćin', invite: 'Pozovi', leaveT: 'Izađi', botPlays: 'Bot igra za tebe', takeOver: 'Preuzmi', rating: 'Rejting', offline: 'Nema veze sa serverom', reconnecting: 'Ponovno spajanje…', copied: 'Poveznica kopirana', bots: 'Prazna mjesta igraju botovi', create: 'Otvori stol',
+    online: 'Online', rejoin: 'Nastavi online igru', gameGone: 'Ta igra više ne postoji', playAgain: 'Igraj opet', waitOthers: (n, m) => `Čeka se ostale · ${n}/${m}`, tables: 'Stolovi', newTable: 'Novi stol', noTables: 'Nema otvorenih stolova', yourName: 'Tvoje ime', sit: 'Sjedni', free: 'Slobodno', startT: 'Započni', waitHost: 'Čeka se domaćin', invite: 'Pozovi', leaveT: 'Izađi', botPlays: 'Bot igra za tebe', takeOver: 'Preuzmi', rating: 'Rejting', offline: 'Nema veze sa serverom', reconnecting: 'Ponovno spajanje…', copied: 'Poveznica kopirana', bots: 'Prazna mjesta igraju botovi', create: 'Otvori stol',
     level: 'Protivnici', partner: 'Partner', stats: 'Statistika', lvShort: { novice: 'Poč.', average: 'Pros.', pro: 'Pro', cardshark: 'Shark' }, lv: { novice: 'Početnik', average: 'Prosječan', pro: 'Pro', cardshark: 'Cardshark' },
     speed: 'Brzina', normal: 'Normalno', fast: 'Brzo', tap: 'Igranje karte', tap1: 'Jedan dodir', tap2: 'Dva dodira',
     rules: 'Pravila', rulesB: 'Pravila briškule', rulesH: 'Pravila bele',
@@ -3859,7 +3860,7 @@ const STR = {
       cols: { r: 'Red', y: 'Yellow', g: 'Green', b: 'Blue', p: 'Pink', t: 'Teal', o: 'Orange', v: 'Purple' } },
     sol: { name: 'Solitaire', score: 'Score', time: 'Time', moves: 'Moves', newGame: 'New game', restart: 'Same deal', hint: 'Hint', undo: 'Undo', auto: 'Finish', won: 'Solved!', noMoves: 'No more moves', home: 'Menu',
       draw: 'Draw', draw1: '1 card', draw3: '3 cards', passes: 'Passes through the stock', inf: 'Unlimited', scoring: 'Scoring', standard: 'Standard', vegas: 'Vegas', none: 'None', timed: 'Timed scoring', tapMove: 'Tap moves the card for you', left: 'Stock on the right', cont: 'Continue', played: 'Played', wonN: 'Solved', best: 'Best time', bestScore: 'Best score', streak: 'Win streak' },
-    online: 'Online', playAgain: 'Play again', waitOthers: (n, m) => `Waiting for others · ${n}/${m}`, tables: 'Tables', newTable: 'New table', noTables: 'No open tables', yourName: 'Your name', sit: 'Sit', free: 'Free', startT: 'Start', waitHost: 'Waiting for the host', invite: 'Invite', leaveT: 'Leave', botPlays: 'A bot is playing for you', takeOver: 'Take over', rating: 'Rating', offline: 'Can’t reach the server', reconnecting: 'Reconnecting…', copied: 'Link copied', bots: 'Empty seats are played by bots', create: 'Open table',
+    online: 'Online', rejoin: 'Rejoin online game', gameGone: 'That game no longer exists', playAgain: 'Play again', waitOthers: (n, m) => `Waiting for others · ${n}/${m}`, tables: 'Tables', newTable: 'New table', noTables: 'No open tables', yourName: 'Your name', sit: 'Sit', free: 'Free', startT: 'Start', waitHost: 'Waiting for the host', invite: 'Invite', leaveT: 'Leave', botPlays: 'A bot is playing for you', takeOver: 'Take over', rating: 'Rating', offline: 'Can’t reach the server', reconnecting: 'Reconnecting…', copied: 'Link copied', bots: 'Empty seats are played by bots', create: 'Open table',
     level: 'Opponents', partner: 'Partner', stats: 'Stats', lvShort: { novice: 'Nov.', average: 'Avg.', pro: 'Pro', cardshark: 'Shark' }, lv: { novice: 'Novice', average: 'Average', pro: 'Pro', cardshark: 'Cardshark' },
     speed: 'Speed', normal: 'Normal', fast: 'Fast', tap: 'Playing a card', tap1: 'One tap', tap2: 'Two taps',
     rules: 'Rules', rulesB: 'Briškula rules', rulesH: 'Bela rules',
@@ -4101,6 +4102,7 @@ function renderHome() {
       ${SERVER ? `<button class="ib" id="goOnline" aria-label="${t.online}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z"/></svg></button>` : ''}
       <button class="ib" id="goStats" aria-label="${t.stats}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M5 20V11M12 20V5M19 20v-6"/></svg></button>
       <button class="ib" id="goSet" aria-label="${t.settings}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button></header>
+    ${SERVER && S.netTable && Date.now() - S.netTable.at < 6 * 3600e3 ? `<button class="rejoin" id="goRejoin"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.7"/><path d="M20 4v5h-5"/></svg>${t.rejoin} · ${({ b: 'Briškula', t: 'Trešeta', h: 'Bela' })[S.netTable.game] || ''}</button>` : ''}
     <button class="poster pb" id="goB">${fan('b', fanB)}<span class="pcap"><span><b>Briškula</b></span><span class="go">${arrow}</span></span></button>
     <button class="poster pt" id="goT">${fan('b', fanT)}<span class="pcap"><span><b>Trešeta</b></span><span class="go">${arrow}</span></span></button>
     <button class="poster ph" id="goH">${fan('h', fanH)}<span class="pcap"><span><b>Bela</b></span><span class="go">${arrow}</span></span></button>
@@ -4110,6 +4112,7 @@ function renderHome() {
   </div>`;
   fitTitle(); if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitTitle);
   $('#goSet').onclick = showSettings;
+  { const r = $('#goRejoin'); if (r) r.onclick = () => { joinTable(S.netTable.id, false, true); status(L().reconnecting, true); $('#home').hidden = true; $('#table').hidden = false; }; }
   $('#goStats').onclick = showStats;
   if (SERVER) $('#goOnline').onclick = showLobby;
   $('#goB').onclick = () => showGameSheet('b');
@@ -4255,7 +4258,7 @@ function showSettings() {
     <h4>${t.deckF}</h4><div class="decks">${Object.keys(Cards.FR).map(k => `<button class="deck" data-fd="${k}" aria-pressed="${Cards.frDeck(S.fDeck) === k}"><span class="dk-cards">${['Hk', 'Sq', 'Dj'].map(c => `<span class="svgc">${Cards.frFace(c, k)}</span>`).join('')}</span><span class="dk-name"><b>${Cards.FR[k].name[S.lang]}</b><small>${Cards.FR[k].maker}</small></span></button>`).join('')}</div>
     ${Cards.FR[Cards.frDeck(S.fDeck)].backs.length > 1 ? `<div class="fbacks">${Cards.FR[Cards.frDeck(S.fDeck)].backs.map(c => `<button class="fback" data-fb="${c}" aria-pressed="${S.fBack === c}" aria-label="${c}">${Cards.frBack(S.fDeck, c)}</button>`).join('')}</div>` : ''}
     <h4>${t.speed}</h4>${seg('speed', [['normal', t.normal], ['fast', t.fast]])}
-    <p class="muted credit">${t.credit} · v42</p>
+    <p class="muted credit">${t.credit} · v43</p>
     <div class="btns"><button class="pri" id="sx">${t.close}</button></div>`, v => {
     v.querySelector('#sx').onclick = () => { closeSheet(); if (G) renderAll(); else renderHome(); };
     v.onclick = e => { if (e.target === v) { closeSheet(); if (G) renderAll(); else renderHome(); } };
@@ -4855,10 +4858,10 @@ async function showLobby() {
   });
   list(); timer = setInterval(() => alive ? list() : clearInterval(timer), 4000);
 }
-function joinTable(id, autoSit) {
+function joinTable(id, autoSit, rejoin) {
   if (!S.name) { S.name = 'Player'; save(); }
   if (NET && NET.ws) { NET.closing = true; try { NET.ws.close(); } catch (e) { } }
-  NET = { id, ws: null, info: null, mySeat: -1, q: [], busy: false, closing: false, autoSit, started: false };
+  NET = { id, ws: null, info: null, mySeat: -1, q: [], busy: false, closing: false, autoSit, started: false, rejoin: !!rejoin };
   connect();
 }
 function connect() {
@@ -4873,6 +4876,9 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden && NE
 function onNet(m) {
   if (m.t === 'table') {
     NET.info = m.info; NET.mySeat = m.mySeat;
+    // rejoining a table whose game could not be carried on, or that I am no longer seated at
+    if ((m.info.status === 'done' || (m.info.status === 'playing' && m.mySeat < 0)) && NET.rejoin) { toast(L().gameGone); leaveOnline(); return; }
+    if (m.info.status === 'playing' && m.mySeat >= 0 && !NET.started) { S.netTable = { id: NET.id, game: m.info.game, at: Date.now() }; save(); }
     if (m.info.status === 'waiting') {
       if (NET.autoSit && m.mySeat < 0) { NET.autoSit = false; const f = m.info.seats.findIndex(x => !x); if (f >= 0) netSend({ a: 'sit', seat: f, name: S.name }); }
       showWaiting();
@@ -4902,6 +4908,7 @@ function showWaiting() {
   });
 }
 function leaveOnline() {
+  if (S.netTable) { S.netTable = null; save(); }
   if (NET) { NET.closing = true; try { NET.ws.close(); } catch (e) { } }
   NET = null; showHome();
 }
@@ -4916,6 +4923,7 @@ async function handleNet(m) {
   const t = L();
   if (m.t === 'start') {
     NET.started = true; NET.names = m.names; NET.myPts = 0; NET.rating = null;
+    S.netTable = { id: NET.id, game: NET.info && NET.info.game, at: Date.now() }; save();
     closeSheet(); token++; pending = null; sel = null;
     $('#home').hidden = true; $('#table').hidden = false; $('#center').innerHTML = '';
     return;
@@ -4969,6 +4977,7 @@ async function handleNet(m) {
       renderAll(); break;
     case 'handEnd': case 'matchEnd': {
       const over = ev.k === 'matchEnd';
+      if (over && S.netTable) { S.netTable = null; save(); }
       if (G.game === 'b' && !over) {
         const pts = ev.pts, verdict = ev.team < 0 ? t.handDraw : ev.team === 0 ? t.handWon : t.handLost;
         onlineSheet(`<h3>${verdict}</h3><div class="big">${pts.map((p, i) => `<div>${p}<small>${i ? t.they : t.we}</small></div>`).join('<span class="sep">:</span>')}</div>
