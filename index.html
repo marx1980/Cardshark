@@ -272,6 +272,9 @@ table.stats td b{display:inline-block;min-width:1.4em;font-size:15px}
 .action{min-height:52px;display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;padding-block:8px 4px;text-align:center}
 .msg{font-size:15px;color:var(--ink)}
 .msg .m{color:var(--muted)}
+.why{display:inline-flex;align-items:center;gap:7px;color:var(--brass);font-size:14px;line-height:1.25;text-align:left}
+.why svg{width:17px;height:17px;flex:none}
+.why .m{display:block;color:var(--muted);font-size:12.5px;margin-top:2px}
 .bid{display:grid;grid-template-columns:1fr 1fr 14px 1fr;gap:12px;width:100%;max-width:400px;margin:0 auto}
 .bid button:nth-child(1){grid-area:1/1}.bid button:nth-child(2){grid-area:1/2}.bid button:nth-child(3){grid-area:2/1}.bid button:nth-child(4){grid-area:2/2}
 .bid button.pass{grid-column:4;grid-row:1/3;justify-content:center}
@@ -282,7 +285,7 @@ table.stats td b{display:inline-block;min-width:1.4em;font-size:15px}
 .hc{position:absolute;bottom:0;width:var(--cw);transition:transform .16s ease, filter .16s;cursor:pointer;filter:drop-shadow(0 3px 5px rgba(0,0,0,.45));border:0;background:none;padding:0}
 .hc.sel{transform:translateY(-22%)}
 .hc.off{filter:brightness(.55) saturate(.6);cursor:default}
-.hc.hint{transform:translateY(-16%);outline:3px solid var(--brass);outline-offset:1px;border-radius:calc(var(--cw)*.06);filter:drop-shadow(0 0 10px rgba(214,171,82,.85))}
+.hc.hint{outline:3px solid var(--brass);outline-offset:1px;border-radius:calc(var(--cw)*.06);filter:drop-shadow(0 0 10px rgba(214,171,82,.85))}
 .hc.talon{filter:brightness(.8)}
 @media (hover:hover) and (pointer:fine){.hand.live .hc:not(.off):not(.sel):hover{transform:translateY(-8%)}}
 .hc{touch-action:manipulation;-webkit-user-select:none;user-select:none}
@@ -1312,7 +1315,7 @@ const AI = (() => {
       }
     }
     const means = vals.map(v => v.reduce((x, y) => x + y, 0) / v.length);
-    if (opts.withValues) return { legal, means };
+    if (opts.withValues) return { legal, means, n: vals[0].length };
     return legal[means.indexOf(Math.max(...means))];
   }
 
@@ -1379,12 +1382,12 @@ const AI = (() => {
     // trump pull: the caller's partner leads the king or ober of trumps so the caller's jack can take the next opponent's trump
     if (pos === 0 && partnerCalled && !naMus && !jackOut && !iHaveJack && oppsMayTrump) {
       const kq = legal.filter(c => c.s === T && (c.r === 'K' || c.r === 'O'));
-      if (kq.length) return { pick: kq.find(c => c.r === 'K') || kq[0] };
+      if (kq.length) return { pick: kq.find(c => c.r === 'K') || kq[0], rule: 'pull' };
     }
     // pad: partner's plain ace is winning, drop my 10 of that suit on it
     if (curW && curW.seat === partnerSeat && curW.card.s !== T && curW.card.r === 'A') {
       const ten = legal.find(c => c.s === curW.card.s && c.r === '10');
-      if (ten) return { pick: ten };
+      if (ten) return { pick: ten, rule: 'pad' };
     }
     // bank: partner's trick is safe and I hold the top two of a suit, drop the top one
     if (curW && curW.seat === partnerSeat) {
@@ -1393,7 +1396,7 @@ const AI = (() => {
       if (safe) for (const c of legal) {
         if (c.s === T || pts(c) < 10 || !isMaster(c)) continue;
         const next = hand.filter(x => x.s === c.s && x.id !== c.id).sort((x, y) => str(y) - str(x))[0];
-        if (next && !unk.some(y => y.s === c.s && str(y) > str(next))) return { pick: c };
+        if (next && !unk.some(y => y.s === c.s && str(y) > str(next))) return { pick: c, rule: 'bank' };
       }
     }
     let cand = legal;
@@ -3814,6 +3817,7 @@ applyDecks();
 const SPEED = () => S.speed === 'fast' ? { ai: 320, trick: 600, deal: 200 } : { ai: 700, trick: 1100, deal: 400 };
 
 // ---------- strings ----------
+const hrBod = n => n % 10 === 1 && n % 100 !== 11 ? 'bod' : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % 100 > 14) ? 'boda' : 'bodova';
 const STR = {
   hr: {
     tagline: 'Briškula i bela za kafanskim stolom — ti i tri igrača s druge strane.',
@@ -3863,6 +3867,19 @@ const STR = {
     belaToggle: 'Zovi belu', belaHint: 'Isključi ako ne želiš zvati belu s ovom kartom',
     zvTitle: 'Zvanja', zvShort: 'Zv.', zvNotYet: 'Zvanja se vide kad je adut zvan.', zvMyBela: 'Imaš belu – zove se kad odigraš kralja ili babu aduta',
    
+    why: {
+      only: 'Jedina karta koju smiješ igrati.', last: 'Zadnja karta u ruci.',
+      unload: 'Ovaj štih je već vaš — istovari bodove na njega.',
+      faceUp: 'Pusti ovaj štih — tko ga izgubi, vuče otvorenog aduta ispod špila.',
+      pull: 'Partner je zvao — igraj kralja ili babu u adutu da izvučeš adute za njegovog dečka.',
+      pad: 'Partnerov as nosi štih — baci mu desetku te boje.',
+      bank: 'Partnerov štih je siguran — baci mu najjaču u toj boji, tvoja sljedeća postaje najjača.',
+      take: n => n ? `Igraš zadnji: najjeftinijom kartom koja nosi uzimaš ${n} ${hrBod(n)}.` : 'Igraš zadnji: najjeftinija karta koja nosi štih.',
+      cantWin: 'Nijedna tvoja karta ne nosi ovaj štih — daj najmanje.',
+      search: (n, d) => `Najbolja nakon ${n} simuliranih podjela, ${String(d).replace('.', ',')} ${Number.isInteger(d) ? hrBod(d) : 'boda'} ispred sljedeće.`,
+      close: n => `Najbolja nakon ${n} simuliranih podjela, ali tijesno.`,
+      short: (n, d) => `${n} simuliranih podjela · ${d === null ? 'skoro izjednačeno' : `+${String(d).replace('.', ',')} ${Number.isInteger(d) ? hrBod(d) : 'boda'} ispred sljedeće`}`
+    },
     lastTrick: 'Zadnji štih', noLast: 'Još nije odigran nijedan štih.', took: n => `Nosi: ${n}`, pts: 'bodova',
     handWon: 'Dobili ste ruku!', handLost: 'Izgubili ste ruku.', handDraw: 'Neriješeno, 60 : 60.',
     matchWon: 'Partija je vaša!', matchLost: 'Partija je izgubljena.',
@@ -3925,6 +3942,19 @@ const STR = {
     belaToggle: 'Call bela', belaHint: 'Switch off to keep quiet about bela with this card',
     zvTitle: 'Declarations', zvShort: 'Decl.', zvNotYet: 'Declarations are shown once trump is called.', zvMyBela: 'You hold bela – it is called when you play the trump king or ober',
    
+    why: {
+      only: 'Your only legal card.', last: 'Your last card.',
+      unload: 'Your side has this trick won — unload points onto it.',
+      faceUp: 'Let this trick go — the side that loses it draws the face-up trump.',
+      pull: 'Your partner called — lead the king or ober of trumps to pull trumps for their jack.',
+      pad: "Your partner's ace takes this trick — drop your 10 of that suit on it.",
+      bank: "Your partner's trick is safe — drop your top card of this suit; your next one becomes the highest.",
+      take: n => n ? `Last to play: the cheapest card that wins takes ${n} points.` : 'Last to play: the cheapest card that takes the trick.',
+      cantWin: 'None of your cards wins this trick — give away the least.',
+      search: (n, d) => `Best in ${n} simulated deals, ${d} ${d === 1 ? 'point' : 'points'} ahead of the next-best card.`,
+      close: n => `Best in ${n} simulated deals, but only just.`,
+      short: (n, d) => `${n} simulated deals · ${d === null ? 'nearly a tie' : `+${d} ${d === 1 ? 'point' : 'points'} vs next best`}`
+    },
     lastTrick: 'Last trick', noLast: 'No trick has been played yet.', took: n => `Taken by: ${n}`, pts: 'points',
     handWon: 'You won the hand!', handLost: 'You lost the hand.', handDraw: 'Draw, 60 : 60.',
     matchWon: 'The match is yours!', matchLost: 'Match lost.',
@@ -4294,7 +4324,7 @@ function showSettings() {
     <h4>${t.deckF}</h4><div class="decks">${Object.keys(Cards.FR).map(k => `<button class="deck" data-fd="${k}" aria-pressed="${Cards.frDeck(S.fDeck) === k}"><span class="dk-cards">${['Hk', 'Sq', 'Dj'].map(c => `<span class="svgc">${Cards.frFace(c, k)}</span>`).join('')}</span><span class="dk-name"><b>${Cards.FR[k].name[S.lang]}</b><small>${Cards.FR[k].maker}</small></span></button>`).join('')}</div>
     ${Cards.FR[Cards.frDeck(S.fDeck)].backs.length > 1 ? `<div class="fbacks">${Cards.FR[Cards.frDeck(S.fDeck)].backs.map(c => `<button class="fback" data-fb="${c}" aria-pressed="${S.fBack === c}" aria-label="${c}">${Cards.frBack(S.fDeck, c)}</button>`).join('')}</div>` : ''}
     <h4>${t.speed}</h4>${seg('speed', [['normal', t.normal], ['fast', t.fast]])}
-    <p class="muted credit">${t.credit} · v46</p>
+    <p class="muted credit">${t.credit} · v47</p>
     <div class="btns"><button class="pri" id="sx">${t.close}</button></div>`, v => {
     v.querySelector('#sx').onclick = () => { closeSheet(); if (G) renderAll(); else renderHome(); };
     v.onclick = e => { if (e.target === v) { closeSheet(); if (G) renderAll(); else renderHome(); } };
@@ -4517,7 +4547,7 @@ async function collectTrick(winner) {
 
 // human input
 function humanPick(legalIds) {
-  return new Promise(res => { pending = { legal: new Set(legalIds), res }; sel = null; hintId = null; renderHand(); });
+  return new Promise(res => { pending = { legal: new Set(legalIds), res }; sel = null; hintId = null; hintMsg = null; renderHand(); });
 }
 function playFromHand(e) {
   const b = e.target.closest('.hc'); if (!b || !pending || !b.dataset.id) return;
@@ -4525,7 +4555,7 @@ function playFromHand(e) {
   if (!pending.legal.has(id)) return;
   e.preventDefault();
   const card = G.hands[0].find(c => c.id === id);
-  const p = pending; pending = null; sel = null; hintId = null;
+  const p = pending; pending = null; sel = null; hintId = null; hintMsg = null;
   $('#bHint').hidden = true;
   p.res(card);
 }
@@ -4535,18 +4565,83 @@ $('#hand').addEventListener('touchstart', e => playFromHand(e), { passive: false
 $('#hand').addEventListener('click', playFromHand);
 $('#center').addEventListener('click', () => { });
 // hint: the Cardshark player picks a card for my seat from what I can see (hidden hands are re-dealt, never peeked at)
+// why the hint card. Two parts:
+//  1. a named rule, only when it truly applies to this card (the same tests the computer players use)
+//  2. what actually decided it: the result of the simulated deals (or the Bela rule that picked the card outright)
+function hintWhy(card, legal, res) {
+  const t = L().why, g = G.game, T = g === 't' ? null : G.trump, hand = G.hands[0], trick = G.trick, pos = trick.length;
+  const order = g === 'b' ? E.bOrder(G) : E.roundFrom(G, G.leader), lastToPlay = pos === order.length - 1;
+  const pts = c => g === 'b' ? c.p : g === 'h' ? E.hPts(c, T) : E.tThirds(c);
+  const rank = c => g === 'b' ? c.st : g === 'h' ? E.hStr(c, T) : E.tStr(c);
+  const cost = c => pts(c) * 1000 + (T !== null && c.s === T ? 500 : 0) + rank(c) % 100;
+  const winIdx = tr => g === 'b' ? E.bWinnerIdx(tr, T) : g === 'h' ? E.hWinnerIdx(tr, T) : E.tWinnerIdx(tr);
+  // cards nobody has shown yet: everything except my hand, cards played, the face-up card and a removed card
+  const known = new Set([...G.seen, ...hand.map(c => c.id)]);
+  if (g === 'b' && G.stock && G.stock.length) known.add(G.trumpCard.id);
+  const unk = (g === 'h' ? E.hDeck() : E.bDeck()).filter(c => !known.has(c.id) && c.id !== G.removed);
+  const trumpsOut = T === null ? 0 : unk.filter(c => c.s === T).length;
+  const isTop = c => !unk.some(x => x.s === c.s && rank(x) > rank(c));
+  const mate = s => s !== 0 && hasPartner() && E.teamOf(G, s) === E.teamOf(G, 0);
+  const oppsAfter = order.slice(pos + 1).filter(s => s !== 0 && !mate(s));
+  const safe = c => !oppsAfter.length || (isTop(c) && (T === null || c.s === T || !trumpsOut));
+  const tablePts = trick.reduce((x, y) => x + pts(y.card), 0);
+  let rule = '';
+  if (res.rule) rule = t[res.rule];
+  else if (legal.length === 1) rule = hand.length === 1 ? t.last : t.only;
+  else if (pos > 0) {
+    const cur = trick[winIdx(trick)];
+    const wins = c => winIdx(trick.concat([{ seat: 0, card: c }])) === pos;
+    const winners = legal.filter(wins), iWin = wins(card);
+    if (!iWin && mate(cur.seat) && safe(cur.card) && pts(card) > 0) rule = t.unload;
+    else if (g === 'b' && !iWin && winners.length && cur.seat !== 0 && !mate(cur.seat) && AI.faceUpStake(G) > 0) rule = t.faceUp;
+    else if (iWin && lastToPlay && tablePts > 0 && winners.every(c => cost(c) >= cost(card))) rule = t.take(g === 't' ? 0 : tablePts);
+    else if (!winners.length && legal.every(c => pts(c) >= pts(card))) rule = t.cantWin;
+  }
+  let sim = '';
+  if (res.means) {
+    const m = res.means, i = res.legal.findIndex(c => c.id === card.id);
+    const gap = Math.max(0, m[i] - Math.max(...m.filter((_, j) => j !== i)));
+    const d = g === 't' ? Math.round(gap * 10) / 10 : Math.round(gap);
+    const tie = gap < ({ b: 1, h: 2, t: 0.15 })[g];
+    sim = rule ? t.short(res.n, tie ? null : d) : tie ? t.close(res.n) : t.search(res.n, d);
+  }
+  const bulb = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/></svg>';
+  if (!rule && !sim) return '';
+  return `<span class="why">${bulb}<span>${rule || sim}${rule && sim ? `<span class="m">${sim}</span>` : ''}</span></span>`;
+}
+let hintMsg = null;   // the action line the hint replaced, put back when the hint is closed
+function clearHint() {
+  if (!hintId) return;
+  hintId = null;
+  const m = $('#action .msg'); if (m) m.innerHTML = hintMsg !== null ? hintMsg : L().yourTurn;
+  hintMsg = null;
+}
 function showHint() {
   const b = $('#bHint');
   if (!pending || !G || G.online || b.classList.contains('busy')) return;
-  if (hintId) { hintId = null; renderHand(); return; }
+  if (hintId) { clearHint(); renderHand(); return; }
   const p = pending, my = token;
   b.classList.add('busy');
   setTimeout(() => {
-    let card = null;
-    try { card = AI.play(G.game, G, 0, 'cardshark', { timeMs: 1200 }); } catch (e) { console.error(e); }
+    const g = G.game, legal = g === 'h' ? E.hLegal(G, 0) : g === 't' ? E.tLegal(G, 0) : G.hands[0].slice();
+    let card = null, res = {};
+    try {
+      // the same steps as the Cardshark player: Marko's Bela rules first, then the simulated deals
+      const r = g === 'h' && legal.length > 1 ? AI.hRules(G, 0, legal) : null;
+      if (r && r.pick) { card = r.pick; res = { rule: r.rule }; }
+      else {
+        const s = AI.cardshark(g, G, 0, { timeMs: 1200, withValues: true });
+        if (s && s.means) { res = s; card = s.legal[s.means.indexOf(Math.max(...s.means))]; } else card = s;
+      }
+    } catch (e) { console.error(e); }
     b.classList.remove('busy');
     if (pending !== p || token !== my || !card || !p.legal.has(card.id)) return;
     hintId = card.id; renderHand();
+    let why = '';
+    try { why = hintWhy(card, legal, res); } catch (e) { console.error(e); }
+    if (!why) return;
+    const msg = $('#action .msg');
+    if (msg) { hintMsg = msg.innerHTML; msg.innerHTML = why; } else { hintMsg = null; setAction(`<div class="msg">${why}</div>`); }
   }, 60);
 }
 $('#bHint').onclick = showHint;
