@@ -51,6 +51,7 @@ button{font:inherit;color:inherit}
 .seg.dark button{background:#fff;border-color:var(--sheet-line);color:var(--sheet-ink)}
 .seg.dark button[aria-pressed="true"]{background:var(--felt);color:var(--ink);border-color:var(--felt)}
 .credit{font-size:12.5px;margin-top:16px}
+.lvnote{font-size:12.5px;margin:6px 2px 0;min-height:2.6em}
 .ix{font:700 12px Georgia, "Times New Roman", serif} .ixr{font:700 12px Georgia, "Times New Roman", serif}
 .lbl{font:800 7.2px var(--display);text-anchor:middle;letter-spacing:.4px}
 
@@ -801,6 +802,232 @@ const Engine = (() => {
 })();
 
 </script>
+<script>// ===================== AI TIERS (Novice, Average, Pro, Cardshark) =====================
+// Cardshark = the hand-tuned players in engine.js (bAI / tAI / hAI).
+// Average  = simple table rules, no card counting.
+// Novice   = half the time a random legal card, otherwise Average.
+// Pro      = Monte-Carlo search: deals the unseen cards many ways that fit everything it knows,
+//            plays each candidate card out to the end of the hand, keeps the best average.
+const AI = (() => {
+  const E = (typeof Engine !== 'undefined') ? Engine : require('./engine.js');
+  const rnd = a => a[Math.floor(Math.random() * a.length)];
+  const sum = (a, f) => a.reduce((x, y) => x + f(y), 0);
+  const minBy = (a, f) => a.reduce((x, y) => f(y) < f(x) ? y : x);
+  const maxBy = (a, f) => a.reduce((x, y) => f(y) > f(x) ? y : x);
+
+  // ---------------------------------------------------------------- legal moves per game
+  const legalOf = (g, st, seat) => g === 'h' ? E.hLegal(st, seat) : g === 't' ? E.tLegal(st, seat) : st.hands[seat].slice();
+  const toPlay = (g, st) => g === 'h' ? E.hToPlay(st) : g === 't' ? E.tToPlay(st) : E.bToPlay(st);
+
+  // ================================================================ AVERAGE players
+  // Briškula: win a trick with points cheaply, never waste trumps on nothing, dump zero-point cards
+  function bAverage(st, seat) {
+    const hand = st.hands[seat], T = st.trump, me = E.teamOf(st, seat);
+    const cheap = cs => minBy(cs, c => c.p * 10 + c.st + (c.s === T ? 50 : 0));
+    if (!st.trick.length) return cheap(hand);
+    const w = st.trick[E.bWinnerIdx(st.trick, T)];
+    const table = sum(st.trick, t => t.card.p);
+    const last = st.trick.length === E.bOrder(st).length - 1;
+    if (E.teamOf(st, w.seat) === me && st.teams === 2) {
+      const pts = hand.filter(c => c.s !== T && c.p > 0);
+      return last && pts.length ? maxBy(pts, c => c.p) : cheap(hand);
+    }
+    const win = hand.filter(c => E.bBeats(c, w.card, T));
+    const plain = win.filter(c => c.s !== T);
+    if (plain.length) return minBy(plain, c => c.st);
+    if (win.length && table >= 10) return minBy(win, c => c.st);
+    return cheap(hand);
+  }
+  // Bela: lead aces, take tricks worth taking, give partner points when he wins, otherwise cheapest legal card
+  function hAverage(st, seat) {
+    const legal = E.hLegal(st, seat); if (legal.length === 1) return legal[0];
+    const T = st.trump, pts = c => E.hPts(c, T), str = c => E.hStr(c, T);
+    const cheap = cs => minBy(cs, c => pts(c) * 10 + str(c));
+    if (!st.trick.length) {
+      const aces = legal.filter(c => c.s !== T && c.r === 'A');
+      if (aces.length) return aces[0];
+      if (st.caller % 2 === seat % 2) { const tr = legal.filter(c => c.s === T); if (tr.length >= 3) return maxBy(tr, str); }
+      return cheap(legal);
+    }
+    const w = st.trick[E.hWinnerIdx(st.trick, T)];
+    const beats = c => (c.s === w.card.s ? str(c) > str(w.card) : c.s === T);
+    if (w.seat % 2 === seat % 2) {
+      const giv = legal.filter(c => !beats(c) && c.s !== T && pts(c) >= 10);
+      return st.trick.length === 3 && giv.length ? maxBy(giv, pts) : cheap(legal);
+    }
+    const win = legal.filter(beats);
+    const table = sum(st.trick, t => pts(t.card));
+    if (win.length && (table >= 10 || st.trickNo === 7 || st.trick.length === 3)) return minBy(win, str);
+    return cheap(legal);
+  }
+  function hAverageBid(st, seat) {
+    let best = 0, bv = -1;
+    for (let s = 0; s < 4; s++) { const v = E.hBidValue(st.hands[seat], s); if (v > bv) { bv = v; best = s; } }
+    return (seat === st.dealer || bv >= 44) ? best : -1;
+  }
+  function hNoviceBid(st, seat) {
+    const h = st.hands[seat]; let best = 0, bn = -1;
+    for (let s = 0; s < 4; s++) { const n = h.filter(c => c.s === s).length + (h.some(c => c.s === s && c.r === 'U') ? 1 : 0); if (n > bn) { bn = n; best = s; } }
+    return (seat === st.dealer || bn >= 4) ? best : -1;
+  }
+  // Trešeta: follow suit, take tricks with an ace in them, feed partner, otherwise lowest card
+  function tAverage(st, seat) {
+    const legal = E.tLegal(st, seat); if (legal.length === 1) return legal[0];
+    const cheap = cs => minBy(cs, c => E.tThirds(c) * 10 + E.tStr(c));
+    if (!st.trick.length) {
+      for (const c of legal) if (c.r === '3' && legal.some(x => x.s === c.s && x.r === '2')) return c;
+      const bySuit = s => legal.filter(c => c.s === s).length;
+      return minBy(legal, c => -bySuit(c.s) * 20 + E.tThirds(c) * 10 + E.tStr(c));
+    }
+    const w = st.trick[E.tWinnerIdx(st.trick)], led = st.trick[0].card.s;
+    const win = legal.filter(c => c.s === led && E.tStr(c) > E.tStr(w.card));
+    const table = sum(st.trick, t => E.tThirds(t.card));
+    const last = st.trick.length === st.seats.length - 1;
+    if (E.teamOf(st, w.seat) === E.teamOf(st, seat)) {
+      const give = legal.filter(c => E.tThirds(c) > 0 && !win.includes(c));
+      return last && give.length ? maxBy(give, E.tThirds) : cheap(legal);
+    }
+    if (win.length && (table >= 3 || last || st.hands[seat].length === 1)) return minBy(win, E.tStr);
+    return cheap(legal);
+  }
+  const novice = (f, legal) => Math.random() < 0.5 ? rnd(legal) : f();
+
+  // ================================================================ PRO (determinized Monte-Carlo)
+  function clone(st) {
+    const w = Object.assign({}, st);
+    w.hands = {}; for (const s of st.seats) w.hands[s] = st.hands[s].slice();
+    w.trick = st.trick.slice(); w.won = st.won.map(a => a.slice());
+    if (st.stock) w.stock = st.stock.slice();
+    w.seen = new Set(st.seen);
+    if (st.void) { w.void = {}; for (const k in st.void) w.void[k] = Object.assign({}, st.void[k]); }
+    if (st.tricks) w.tricks = st.tricks.slice();
+    if (st.score) w.score = st.score.slice();
+    if (st.wins) w.wins = st.wins.slice();
+    if (st.signals) w.signals = st.signals.slice();
+    if (st.public) w.public = new Set(st.public);
+    w.rows = []; w.history = [];
+    return w;
+  }
+  // rollout copy with a fixed shape (much faster than copying every field); rollout players never read 'seen'
+  const SINK = { add() { }, has() { return false; } };
+  const hcopy = (st) => { const h = {}; for (const s of st.seats) h[s] = st.hands[s].slice(); return h; };
+  const vcopy = v => { const o = {}; for (const k in v) o[k] = Object.assign({}, v[k]); return o; };
+  function cloneLite(st) {
+    const won = st.won.map(x => x.slice());
+    if (st.game === 'b') return { game: 'b', opts: st.opts, seats: st.seats, teams: st.teams, trump: st.trump, hands: hcopy(st), trick: st.trick.slice(), won, stock: st.stock.slice(), seen: SINK, leader: st.leader, trickNo: st.trickNo, lastTrick: null };
+    if (st.game === 't') return { game: 't', opts: st.opts, seats: st.seats, teams: 2, hands: hcopy(st), trick: st.trick.slice(), won, tricks: st.tricks.slice(), stock: st.stock.slice(), seen: SINK, public: SINK, void: vcopy(st.void), leader: st.leader, trickNo: st.trickNo, lastWinner: st.lastWinner, lastTrick: null, akuze: st.akuze, score: st.score.slice(), rows: [], signals: [], knock: null, returnSuit: null, dealer: st.dealer };
+    return { game: 'h', opts: st.opts, seats: st.seats, trump: st.trump, caller: st.caller, dealer: st.dealer, decls: st.decls, belaSeat: st.belaSeat, belaCalled: st.belaCalled, belaSkipped: st.belaSkipped, hang: st.hang, hands: hcopy(st), trick: st.trick.slice(), won, tricks: st.tricks.slice(), seen: SINK, void: vcopy(st.void), leader: st.leader, trickNo: st.trickNo, lastWinner: st.lastWinner, lastTrick: null, score: st.score.slice(), rows: [] };
+  }
+  const DECKS = { h: E.hDeck(), b: E.bDeck() };
+  const deckOf = g => g === 'h' ? DECKS.h : DECKS.b;
+  // deal every card the viewer cannot see to the other hands / the stock, respecting known voids and revealed cards
+  function determinize(g, st, viewer) {
+    const w = cloneLite(st), mine = new Set(st.hands[viewer].map(c => c.id));
+    const fixed = {};                       // card id -> seat known to hold it
+    if (g === 'h' && st.decls && st.decls.team >= 0) {
+      for (const s of st.decls.order) if (s % 2 === st.decls.team && s !== viewer)
+        for (const d of st.decls.per[s]) {
+          const ids = d.type === 'quad' ? [0, 1, 2, 3].map(x => 'h' + x + d.r) : d.type === 'seq' ? E.H_KEYS.slice(d.low, d.top + 1).map(r => 'h' + d.s + r) : [];
+          ids.forEach(id => { fixed[id] = s; });
+        }
+      if (st.belaCalled && st.belaSeat !== viewer) ['K', 'O'].forEach(r => { fixed['h' + st.trump + r] = st.belaSeat; });
+    }
+    if (g === 't' && st.akuze) for (const s of st.seats) if (s !== viewer) for (const d of st.akuze[s]) {
+      if (d.type === 'napolitana') ['A', '2', '3'].forEach(r => { fixed['b' + d.s + r] = s; });
+      if (d.type === 'four') [0, 1, 2, 3].forEach(x => { fixed['b' + x + d.r] = s; });
+    }
+    if (g === 't' && st.public) for (const id of st.public) if (!fixed[id]) { const s = st.seats.find(x => x !== viewer); fixed[id] = s; }
+    const stockFixed = (g === 'b' && st.stock && st.stock.length) ? st.stock[0] : null; // the face-up briškula
+    const all = deckOf(g).filter(c => !mine.has(c.id) && !st.seen.has(c.id) && c.id !== st.removed && (!stockFixed || c.id !== stockFixed.id));
+    const others = st.seats.filter(s => s !== viewer);
+    for (let attempt = 0; attempt < 30; attempt++) {
+      const need = {}; others.forEach(s => need[s] = st.hands[s].length);
+      let stockNeed = st.stock ? st.stock.length - (stockFixed ? 1 : 0) : 0;
+      const hands = {}; others.forEach(s => hands[s] = []);
+      const free = [];
+      for (const c of all) {
+        const f = fixed[c.id];
+        if (f !== undefined && need[f] > 0) { hands[f].push(c); need[f]--; } else free.push(c);
+      }
+      E.shuffle(free);
+      let ok = true; const stock = [];
+      for (const c of free) {
+        const opts = others.filter(s => need[s] > 0 && !(st.void && st.void[s] && st.void[s][c.s] && attempt < 25));
+        const cap = sum(opts, s => need[s]) + stockNeed;
+        if (!cap) { ok = false; break; }
+        let r = Math.random() * cap, pick = null;
+        for (const s of opts) { r -= need[s]; if (r < 0) { pick = s; break; } }
+        if (pick === null) { stock.push(c); stockNeed--; } else { hands[pick].push(c); need[pick]--; }
+      }
+      if (!ok) continue;
+      others.forEach(s => { w.hands[s] = hands[s]; });
+      if (st.stock) { w.stock = stockFixed ? [stockFixed, ...E.shuffle(stock)] : E.shuffle(stock); }
+      return w;
+    }
+    return cloneLite(st);
+  }
+  // play one card on a world, finish tricks as needed
+  function step(g, w, seat, card) {
+    if (g === 'b') { if (E.bPlay(w, seat, card)) E.bFinishTrick(w); }
+    else if (g === 't') { if (E.tPlay(w, seat, card)) E.tFinishTrick(w); }
+    else { if (E.hPlay(w, seat, card, true).done) E.hFinishTrick(w); }
+  }
+  const over = (g, w) => g === 'b' ? E.bHandOver(w) : g === 't' ? E.tHandOver(w) : E.hHandOver(w);
+  function value(g, w, seat) {
+    const me = E.teamOf(w, seat);
+    if (g === 'b') { const p = E.bPoints(w); const others = p.filter((_, i) => i !== me); return p[me] - Math.max(...others); }
+    const r = g === 't' ? E.tScoreHand(w) : E.hScoreHand(w);
+    return r.add[me] - r.add[1 - me];
+  }
+  const ROLL = { b: (w, s) => bAverage(w, s), t: (w, s) => tAverage(w, s), h: (w, s) => hAverage(w, s) };
+  const SAMPLES = { b: 24, t: 16, h: 12 };
+  function pro(g, st, seat, opts = {}) {
+    const legal = legalOf(g, st, seat);
+    if (legal.length === 1) return legal[0];
+    const n = opts.samples || SAMPLES[g], roll = opts.rollout || ROLL[g];
+    const vals = legal.map(() => []);
+    for (let k = 0; k < n; k++) {
+      const world = determinize(g, st, seat);
+      legal.forEach((c, i) => {
+        const w = cloneLite(world);
+        step(g, w, seat, c);
+        let guard = 0;
+        while (!over(g, w) && guard++ < 200) { const s = toPlay(g, w); step(g, w, s, roll(w, s)); }
+        vals[i].push(value(g, w, seat));
+      });
+      // stop early once the leader is clearly ahead of the runner-up (paired samples, ~3 standard errors)
+      if (k >= 7 && k % 4 === 3) {
+        const means = vals.map(v => v.reduce((x, y) => x + y, 0) / v.length);
+        const order = means.map((m, i) => i).sort((x, y) => means[y] - means[x]);
+        const d = vals[order[0]].map((v, j) => v - vals[order[1]][j]);
+        const md = d.reduce((x, y) => x + y, 0) / d.length;
+        const sd = Math.sqrt(d.reduce((x, y) => x + (y - md) * (y - md), 0) / (d.length - 1)) || 1e-9;
+        if (md / (sd / Math.sqrt(d.length)) > 3) break;
+      }
+    }
+    const means = vals.map(v => v.reduce((x, y) => x + y, 0) / v.length);
+    return legal[means.indexOf(Math.max(...means))];
+  }
+
+  // ================================================================ dispatch
+  const LEVELS = ['novice', 'average', 'pro', 'cardshark'];
+  function play(g, st, seat, level) {
+    if (level === 'cardshark') return g === 'b' ? E.bAI(st, seat) : g === 't' ? E.tAI(st, seat) : E.hAI(st, seat);
+    if (level === 'pro') return pro(g, st, seat);
+    const avg = () => g === 'b' ? bAverage(st, seat) : g === 't' ? tAverage(st, seat) : hAverage(st, seat);
+    if (level === 'novice') return novice(avg, legalOf(g, st, seat));
+    return avg();
+  }
+  function bid(st, seat, level) {
+    if (level === 'novice') return hNoviceBid(st, seat);
+    if (level === 'average') return hAverageBid(st, seat);
+    return E.hAIBid(st, seat);
+  }
+  const callBela = (st, seat, level) => level === 'cardshark' || level === 'pro' ? E.hAIBela(st, seat) : true;
+  return { LEVELS, play, bid, callBela, pro, determinize, clone, cloneLite, bAverage, hAverage, tAverage, SAMPLES, ROLL };
+})();
+if (typeof module !== 'undefined') module.exports = AI;
+</script>
 <script>// ===================== TRIESTINE DECK (traditional pattern, redrawn) =====================
 // Narrow double-headed cards (53 x 98 mm ~ 104 x 192), three-colour palette (yellow, red, blue)
 // with black outlines, Arabic indices (1-7, 11-13), labelled court cards ("RE DI DANARI").
@@ -1180,7 +1407,7 @@ const $ = s => document.querySelector(s);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
 // ---------- settings ----------
-const DEF = { lang: (navigator.language || '').toLowerCase().startsWith('hr') ? 'hr' : 'en', bMode: 'p4', bTarget: 3, tMode: 4, tTarget: 41, tAkuze: true, tLongNap: false, tThirdsLast: false, tSignals: true, tClockwise: false, bReveal: false, hTarget: 1001, speed: 'normal', tap: 2, bDeck: 'triestine', hDeck: 'hungarian' };
+const DEF = { lang: (navigator.language || '').toLowerCase().startsWith('hr') ? 'hr' : 'en', bMode: 'p4', bTarget: 3, tMode: 4, tTarget: 41, tAkuze: true, tLongNap: false, tThirdsLast: false, tSignals: true, tClockwise: false, bReveal: false, hTarget: 1001, speed: 'normal', level: 'cardshark', tap: 2, bDeck: 'triestine', hDeck: 'hungarian' };
 let S = { ...DEF };
 try { Object.assign(S, JSON.parse(localStorage.getItem('stih.v1') || '{}')); } catch (e) { }
 // older saves had players + double separately; 4-player double is not a real variant
@@ -1205,6 +1432,8 @@ const STR = {
     matchTo: 'Partija do', winsN: n => `${n} dobivene`,
     reveal: 'Partner pokazuje karte kad se špil potroši',
     hTo: 'Igra se do', start: 'Igraj',
+    level: 'Protivnici', lv: { novice: 'Početnik', average: 'Prosječan', pro: 'Pro', cardshark: 'Cardshark' },
+    lvNote: { novice: 'Često odigra nasumičnu kartu.', average: 'Igra po osnovnim pravilima, ne broji karte.', pro: 'Prije svakog poteza odigra do kraja mnoge moguće podjele skrivenih karata.', cardshark: 'Naš ručno podešen igrač: broji karte i igra po dogovorenim taktikama.' },
     speed: 'Brzina', normal: 'Normalno', fast: 'Brzo', tap: 'Igranje karte', tap1: 'Jedan dodir', tap2: 'Dva dodira',
     rules: 'Pravila', rulesB: 'Pravila briškule', rulesH: 'Pravila bele',
     settings: 'Postavke', language: 'Jezik',
@@ -1255,6 +1484,8 @@ const STR = {
     matchTo: 'Match to', winsN: n => `${n} hands won`,
     reveal: 'Partner shows their cards once the deck runs out',
     hTo: 'Play to', start: 'Play',
+    level: 'Opponents', lv: { novice: 'Novice', average: 'Average', pro: 'Pro', cardshark: 'Cardshark' },
+    lvNote: { novice: 'Often plays a random card.', average: 'Plays by basic table rules, no card counting.', pro: 'Before each move, plays out many possible deals of the hidden cards to the end.', cardshark: 'Our hand-tuned player: counts cards and plays the tactics we agreed on.' },
     speed: 'Speed', normal: 'Normal', fast: 'Fast', tap: 'Playing a card', tap1: 'One tap', tap2: 'Two taps',
     rules: 'Rules', rulesB: 'Briškula rules', rulesH: 'Bela rules',
     settings: 'Settings', language: 'Language',
@@ -1496,11 +1727,12 @@ function showSettings() {
   const seg = (key, opts) => `<div class="seg dark">${opts.map(([v, lab]) => `<button data-k="${key}" data-v="${v}" aria-pressed="${S[key] === v}">${lab}</button>`).join('')}</div>`;
   openSheet(`<h3>${t.settings}</h3>
     <h4>${t.language}</h4>${seg('lang', [['hr', 'Hrvatski'], ['en', 'English']])}
+    <h4>${t.level}</h4>${seg('level', AI.LEVELS.map(l => [l, t.lv[l]]))}<p class="muted lvnote" id="lvNote">${t.lvNote[S.level]}</p>
     <h4>Briškula</h4><label class="check dark"><input type="checkbox" id="sReveal" ${S.bReveal ? 'checked' : ''}><span>${t.reveal}</span></label>
     <h4>${t.deckB}</h4><div class="decks">${deckRow('b', pickB, 'bDeck')}</div>
     <h4>${t.deckH}</h4><div class="decks">${deckRow('h', pickH, 'hDeck')}</div>
     <h4>${t.speed}</h4>${seg('speed', [['normal', t.normal], ['fast', t.fast]])}
-    <p class="muted credit">${t.credit} · v19</p>
+    <p class="muted credit">${t.credit} · v20</p>
     <div class="btns"><button class="pri" id="sx">${t.close}</button></div>`, v => {
     v.querySelector('#sx').onclick = () => { closeSheet(); if (G) renderAll(); else renderHome(); };
     v.onclick = e => { if (e.target === v) { closeSheet(); if (G) renderAll(); else renderHome(); } };
@@ -1513,6 +1745,7 @@ function showSettings() {
     v.querySelectorAll('.seg button').forEach(b => b.onclick = () => {
       let val = b.dataset.v; val = isNaN(+val) ? val : +val; S[b.dataset.k] = val; save();
       b.parentNode.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b));
+      if (b.dataset.k === 'level') v.querySelector('#lvNote').textContent = L().lvNote[S.level];
       if (b.dataset.k === 'lang') { document.documentElement.lang = S.lang; if (G) renderAll(); else renderHome(); showSettings(); }
     });
   });
@@ -1730,7 +1963,7 @@ async function briskulaMatch(my) {
       await turnTo(s);
       let card;
       if (s === 0) card = await humanPick(G.hands[0].map(c => c.id));
-      else { await sleep(SPEED().ai); card = E.bAI(G, s); }
+      else { await sleep(SPEED().ai); card = AI.play('b', G, s, S.level); }
       check(my);
       const done = E.bPlay(G, s, card);
       placeTrickCard(s, card); renderSeats(); renderHand();
@@ -1780,7 +2013,7 @@ async function belaMatch(my) {
       const s = G.bidder; G.turn = s; renderSeats();
       let b;
       if (s === 0) b = await humanBid(s === G.dealer);
-      else { status(t().bidWait(esc(name(s))), true); await sleep(SPEED().ai); b = E.hAIBid(G, s); }
+      else { status(t().bidWait(esc(name(s))), true); await sleep(SPEED().ai); b = AI.bid(G, s, S.level); }
       check(my);
       if (b < 0) { bubble(s, t().pass); E.hBid(G, s, -1); }
       else { calledSuit = b; bubble(s, `${Cards.suitIcon('h', b, 18)}${t().called(suitName('h', b))}`, true, 2000); E.hBid(G, s, b); }
@@ -1820,7 +2053,7 @@ async function belaMatch(my) {
       let card;
       let callBela = true;
       if (s === 0) { const legal = E.hLegal(G, 0); showBelaChoice(legal); card = await humanPick(legal.map(c => c.id)); callBela = myBela; }
-      else { await sleep(SPEED().ai); card = E.hAI(G, s); callBela = E.hAIBela(G, s); }
+      else { await sleep(SPEED().ai); card = AI.play('h', G, s, S.level); callBela = E.hBelaEligible(G, s, card) ? AI.callBela(G, s, S.level) : true; }
       check(my);
       const r = E.hPlay(G, s, card, callBela);
       placeTrickCard(s, card); renderSeats(); renderHand();
@@ -1965,7 +2198,7 @@ async function tresetaMatch(my) {
       let card;
       let sig = null;
       if (s === 0) { showSignals(); card = await humanPick(E.tLegal(G, 0).map(c => c.id)); sig = mySig; mySig = null; }
-      else { await sleep(SPEED().ai); card = E.tAI(G, s); sig = E.tAISignal(G, s, card); }
+      else { await sleep(SPEED().ai); card = AI.play('t', G, s, S.level); sig = E.tAISignal(G, s, card); }
       check(my);
       if (sig && G.opts.signals && G.seats.length === 4) bubble(s, t().sigName[sig], sig === 'kucam', 1600);
       const done = E.tPlay(G, s, card, sig);
