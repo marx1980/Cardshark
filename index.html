@@ -22,7 +22,7 @@
   --felt:#1c4a3a; --felt-hi:#24604b; --felt-lo:#123228;
   --rail:#3a2416; --rail-hi:#5c3a24;
   --ink:#f3ecd9; --muted:#a8c0b2; --faint:rgba(243,236,217,.14);
-  --brass:#d6ab52; --brass-ink:#2b1b08; --alert:#e9876a; --good:#9fd49a;
+  --brass:#d6ab52; --brass-ink:#2b1b08; --trump:#e23a34; --alert:#e9876a; --good:#9fd49a;
   --sheet:#f6efdd; --sheet-ink:#2a2118; --sheet-line:#c9bb98; --sheet-muted:#7a6a52;
   --display:"Alegreya SC", "Palatino Linotype", Georgia, serif;
   --body:"Alegreya Sans", "Segoe UI", system-ui, sans-serif;
@@ -253,6 +253,10 @@ table.stats td b{display:inline-block;min-width:1.4em;font-size:15px}
 .mini.open{height:56px}
 #center{position:absolute;inset:0;z-index:1}
 .tc{position:absolute;width:var(--tw);transform:translate(-50%,-50%) rotate(var(--r,0deg));filter:drop-shadow(0 4px 6px rgba(0,0,0,.45));pointer-events:none}
+.tc.trump{outline:3px solid var(--trump);outline-offset:1px;border-radius:calc(var(--tw)*.06);box-shadow:0 0 10px 1px rgba(226,58,52,.6)}
+.hintb{position:absolute;right:10px;bottom:10px;z-index:4;width:42px;height:42px;border-radius:50%;background:rgba(0,0,0,.35);color:var(--brass);border-color:rgba(214,171,82,.5)}
+.hintb.busy svg{animation:hintPulse .7s ease-in-out infinite alternate}
+@keyframes hintPulse{from{opacity:.35}to{opacity:1}}
 .stock{position:absolute;left:10px;bottom:10px;width:calc(var(--tw)*var(--cr,1.6));height:calc(var(--tw)*var(--cr,1.6)*.8);z-index:1;pointer-events:none}
 .stock .tr{position:absolute;width:var(--tw);left:calc(50% - var(--tw)/2);bottom:calc(var(--tw)*.06 + var(--tw)/2 - var(--tw)*var(--cr,1.6)/2);transform:rotate(90deg);filter:drop-shadow(0 3px 5px rgba(0,0,0,.45))}
 .stock .pile{position:absolute;width:calc(var(--tw)*.72);left:0;bottom:calc(var(--tw)*.14);filter:drop-shadow(2px 3px 0 #0f2a20)}
@@ -278,6 +282,7 @@ table.stats td b{display:inline-block;min-width:1.4em;font-size:15px}
 .hc{position:absolute;bottom:0;width:var(--cw);transition:transform .16s ease, filter .16s;cursor:pointer;filter:drop-shadow(0 3px 5px rgba(0,0,0,.45));border:0;background:none;padding:0}
 .hc.sel{transform:translateY(-22%)}
 .hc.off{filter:brightness(.55) saturate(.6);cursor:default}
+.hc.hint{transform:translateY(-16%);outline:3px solid var(--brass);outline-offset:1px;border-radius:calc(var(--cw)*.06);filter:drop-shadow(0 0 10px rgba(214,171,82,.85))}
 .hc.talon{filter:brightness(.8)}
 @media (hover:hover) and (pointer:fine){.hand.live .hc:not(.off):not(.sel):hover{transform:translateY(-8%)}}
 .hc{touch-action:manipulation;-webkit-user-select:none;user-select:none}
@@ -457,6 +462,7 @@ button.upile{cursor:pointer}
       <div class="seat s3" id="seat3"></div>
       <div class="stock" id="stock" hidden></div>
       <div id="center"></div>
+      <button class="ib hintb" id="bHint" aria-label="Hint" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/></svg></button>
     </div>
     <div class="action" id="action"></div>
     <div class="hand" id="hand"></div>
@@ -4064,7 +4070,7 @@ const backHTML = (game, cls = '') => `<div class="svgc ${cls}">${Cards.back(deck
 const suitName = (game, s) => (game === 'h' ? L().sH : L().sB)[s];
 
 // ---------- flow control ----------
-let G = null, token = 0, pending = null, sel = null;
+let G = null, token = 0, pending = null, sel = null, hintId = null;
 class Abort extends Error { }
 const sleep = ms => { const t = token; return new Promise((res, rej) => setTimeout(() => t === token ? res() : rej(new Abort()), ms)); };
 const check = t => { if (t !== token) throw new Abort(); };
@@ -4258,7 +4264,7 @@ function showSettings() {
     <h4>${t.deckF}</h4><div class="decks">${Object.keys(Cards.FR).map(k => `<button class="deck" data-fd="${k}" aria-pressed="${Cards.frDeck(S.fDeck) === k}"><span class="dk-cards">${['Hk', 'Sq', 'Dj'].map(c => `<span class="svgc">${Cards.frFace(c, k)}</span>`).join('')}</span><span class="dk-name"><b>${Cards.FR[k].name[S.lang]}</b><small>${Cards.FR[k].maker}</small></span></button>`).join('')}</div>
     ${Cards.FR[Cards.frDeck(S.fDeck)].backs.length > 1 ? `<div class="fbacks">${Cards.FR[Cards.frDeck(S.fDeck)].backs.map(c => `<button class="fback" data-fb="${c}" aria-pressed="${S.fBack === c}" aria-label="${c}">${Cards.frBack(S.fDeck, c)}</button>`).join('')}</div>` : ''}
     <h4>${t.speed}</h4>${seg('speed', [['normal', t.normal], ['fast', t.fast]])}
-    <p class="muted credit">${t.credit} · v44</p>
+    <p class="muted credit">${t.credit} · v45</p>
     <div class="btns"><button class="pri" id="sx">${t.close}</button></div>`, v => {
     v.querySelector('#sx').onclick = () => { closeSheet(); if (G) renderAll(); else renderHome(); };
     v.onclick = e => { if (e.target === v) { closeSheet(); if (G) renderAll(); else renderHome(); } };
@@ -4423,8 +4429,9 @@ function renderHand() {
   el.classList.toggle('live', !!pending);
   let html = cards.map((c, i) => {
     const off = legal && !legal.has(c.id);
-    return `<button class="hc${off ? ' off' : ''}${sel === c.id ? ' sel' : ''}" data-id="${c.id}" style="left:${x0 + i * step}px" aria-label="${c.id}" ${off ? 'aria-disabled="true"' : ''}>${face(G.game, c)}</button>`;
+    return `<button class="hc${off ? ' off' : ''}${sel === c.id ? ' sel' : ''}${hintId === c.id ? ' hint' : ''}" data-id="${c.id}" style="left:${x0 + i * step}px" aria-label="${c.id}" ${off ? 'aria-disabled="true"' : ''}>${face(G.game, c)}</button>`;
   }).join('');
+  $('#bHint').hidden = !(pending && !G.online && G.phase !== 'bid');
   if (showTalon) for (let i = 0; i < 2; i++) html += `<div class="hc talon" style="left:${x0 + (cards.length + i) * step}px">${Cards.back('h')}</div>`;
   el.innerHTML = html;
 }
@@ -4462,7 +4469,7 @@ function placeTrickCard(seat, card) {
   const nth = G.trick.filter(t => t.seat === seat).length - 1;
   const p = slotFor(seat, nth);
   const el = document.createElement('div');
-  el.className = 'tc svgc'; el.dataset.id = card.id;
+  el.className = 'tc svgc' + (G.game !== 't' && G.trump !== null && G.trump !== undefined && card.s === G.trump ? ' trump' : ''); el.dataset.id = card.id;
   el.style.left = p.x + '%'; el.style.top = p.y + '%'; el.style.setProperty('--r', p.r + 'deg');
   el.style.zIndex = G.trick.length;
   el.innerHTML = face(G.game, card);
@@ -4480,7 +4487,7 @@ async function collectTrick(winner) {
 
 // human input
 function humanPick(legalIds) {
-  return new Promise(res => { pending = { legal: new Set(legalIds), res }; sel = null; renderHand(); });
+  return new Promise(res => { pending = { legal: new Set(legalIds), res }; sel = null; hintId = null; renderHand(); });
 }
 function playFromHand(e) {
   const b = e.target.closest('.hc'); if (!b || !pending || !b.dataset.id) return;
@@ -4488,7 +4495,8 @@ function playFromHand(e) {
   if (!pending.legal.has(id)) return;
   e.preventDefault();
   const card = G.hands[0].find(c => c.id === id);
-  const p = pending; pending = null; sel = null;
+  const p = pending; pending = null; sel = null; hintId = null;
+  $('#bHint').hidden = true;
   p.res(card);
 }
 // pointerup plays on the first touch (iOS otherwise spends the first tap on hover); click covers keyboard
@@ -4496,6 +4504,22 @@ $('#hand').addEventListener('pointerdown', e => { if (e.pointerType !== 'mouse')
 $('#hand').addEventListener('touchstart', e => playFromHand(e), { passive: false });
 $('#hand').addEventListener('click', playFromHand);
 $('#center').addEventListener('click', () => { });
+// hint: the Cardshark player picks a card for my seat from what I can see (hidden hands are re-dealt, never peeked at)
+function showHint() {
+  const b = $('#bHint');
+  if (!pending || !G || G.online || b.classList.contains('busy')) return;
+  if (hintId) { hintId = null; renderHand(); return; }
+  const p = pending, my = token;
+  b.classList.add('busy');
+  setTimeout(() => {
+    let card = null;
+    try { card = AI.play(G.game, G, 0, 'cardshark', { timeMs: 1200 }); } catch (e) { console.error(e); }
+    b.classList.remove('busy');
+    if (pending !== p || token !== my || !card || !p.legal.has(card.id)) return;
+    hintId = card.id; renderHand();
+  }, 60);
+}
+$('#bHint').onclick = showHint;
 
 // ================= GAME START =================
 // level of the computer player in a seat: my partner's level or the opponents' level
