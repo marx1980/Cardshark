@@ -114,7 +114,16 @@ table.stats td b{display:inline-block;min-width:1.4em;font-size:15px}
 .ghost{background:none;border:1px solid var(--faint);border-radius:12px;padding:11px;color:var(--ink);cursor:pointer;font-weight:700}
 .foot{color:var(--muted);font-size:12.5px;text-align:center;margin:0}
 /* home: two posters */
-#home .wrap{min-height:100%;box-sizing:border-box;gap:12px}
+#home .wrap{min-height:100%;box-sizing:border-box;gap:12px;display:grid;grid-template-columns:1fr 1fr;grid-auto-rows:min-content;align-content:start}
+#home .hbar{grid-column:1/-1}
+#home .poster{flex:none;min-height:0;aspect-ratio:3/4;border-radius:20px}
+#home .poster:last-of-type:nth-child(even){grid-column:1/-1;aspect-ratio:auto;height:34vw;max-height:190px}
+#home .pfan{height:48%;top:10%}
+#home .poster:last-of-type:nth-child(even) .pfan{height:62%;top:8%}
+#home .pcap{padding:12px 12px}
+#home .pcap b{font-size:clamp(22px,6.4vw,30px)}
+#home .go{width:42px;height:42px}
+#home .go svg{width:22px;height:22px}
 .rules-list{display:flex;flex-direction:column;gap:2px}
 .tog{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 2px;border-bottom:1px dashed var(--sheet-line);cursor:pointer}
 .tog:last-child{border-bottom:0}
@@ -3426,7 +3435,7 @@ function showSettings() {
     <h4>${t.deckF}</h4><div class="decks">${Object.keys(Cards.FR).map(k => `<button class="deck" data-fd="${k}" aria-pressed="${Cards.frDeck(S.fDeck) === k}"><span class="dk-cards">${['Hk', 'Sq', 'Dj'].map(c => `<span class="svgc">${Cards.frFace(c, k)}</span>`).join('')}</span><span class="dk-name"><b>${Cards.FR[k].name[S.lang]}</b><small>${Cards.FR[k].maker}</small></span></button>`).join('')}</div>
     ${Cards.FR[Cards.frDeck(S.fDeck)].backs.length > 1 ? `<div class="fbacks">${Cards.FR[Cards.frDeck(S.fDeck)].backs.map(c => `<button class="fback" data-fb="${c}" aria-pressed="${S.fBack === c}" aria-label="${c}">${Cards.frBack(S.fDeck, c)}</button>`).join('')}</div>` : ''}
     <h4>${t.speed}</h4>${seg('speed', [['normal', t.normal], ['fast', t.fast]])}
-    <p class="muted credit">${t.credit} · v36</p>
+    <p class="muted credit">${t.credit} · v37</p>
     <div class="btns"><button class="pri" id="sx">${t.close}</button></div>`, v => {
     v.querySelector('#sx').onclick = () => { closeSheet(); if (G) renderAll(); else renderHome(); };
     v.onclick = e => { if (e.target === v) { closeSheet(); if (G) renderAll(); else renderHome(); } };
