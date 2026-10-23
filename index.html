@@ -331,13 +331,16 @@ table.pis{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;
 /* colour game */
 .poster.pu{background:radial-gradient(90% 90% at 50% 18%,#f2c230,#b9810c)}
 .poster.pu .pfan .svgc > svg{aspect-ratio:60/90}
-#uno{position:fixed;inset:0;z-index:20;display:flex;flex-direction:column;background:radial-gradient(120% 90% at 50% 38%,#2c3652,#111522);user-select:none;-webkit-user-select:none;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);overflow:hidden;--pw:min(26vw,118px,15vh)}
+#uno{position:fixed;inset:0;z-index:20;display:flex;flex-direction:column;background:radial-gradient(120% 90% at 50% 38%,#2c3652,#111522);user-select:none;-webkit-user-select:none;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);overflow:hidden;--pw:min(22vw,104px,14vh)}
 #uno[hidden]{display:none}
+#uno[data-n="5"],#uno[data-n="6"]{--pw:min(20vw,96px,13vh)}
 .ubar{display:flex;align-items:center;gap:8px;padding:8px 8px 4px;flex:none}
 .ubar .chip.score{margin:0 auto;gap:6px}
 .ubar .chip small{color:var(--muted);font-size:12px}
-.uopps{display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));gap:6px;padding:4px 8px;flex:none}
-.uopp{position:relative;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 2px;border-radius:14px;border:1px solid rgba(255,255,255,.1);background:rgba(0,0,0,.2);min-width:0;transition:box-shadow .2s,border-color .2s}
+.utable{position:relative;flex:1;min-height:0;display:flex}
+.utable .ucenter{flex:1}
+.uopps{position:absolute;inset:0;z-index:2;pointer-events:none;--sw:min(24vw,96px)}
+.uopp{position:absolute;width:var(--sw);box-sizing:border-box;left:clamp(4px,calc(var(--x) * 1% - var(--sw) / 2),calc(100% - var(--sw) - 4px));top:calc(var(--y) * 1%);transform:translateY(-50%);pointer-events:auto;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 2px;border-radius:14px;border:1px solid rgba(255,255,255,.1);background:rgba(0,0,0,.2);min-width:0;transition:box-shadow .2s,border-color .2s}
 .uopp.turn{border-color:var(--brass);box-shadow:0 0 0 2px var(--brass) inset,0 0 16px rgba(214,170,80,.35)}
 .ufan{position:relative;height:46px;width:100%}
 .umini{position:absolute;top:0;width:30px;height:45px;left:calc(50% - 15px + (var(--i) - (var(--k) - 1) / 2) * min(8px, 40px / max(var(--k) - 1, 1)))}
@@ -349,7 +352,7 @@ table.pis{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;
 .upts{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
 .ucatch{position:absolute;left:4px;right:4px;bottom:-12px;background:#d8382e;color:#fff;border:0;border-radius:10px;padding:7px 2px;font:900 14px var(--display);animation:upulse .5s infinite alternate;z-index:3;cursor:pointer}
 @keyframes upulse{to{transform:scale(1.08)}}
-.ucenter{position:relative;flex:1;display:flex;align-items:center;justify-content:center;gap:26px;min-height:0}
+.ucenter{position:relative;flex:1;display:flex;align-items:center;justify-content:center;gap:24px;min-height:0}
 .udir{position:absolute;width:min(80vw,310px,34vh);aspect-ratio:1;left:50%;top:50%;transform:translate(-50%,-50%);opacity:.5;pointer-events:none;transition:color .3s}
 .udir.ccw{transform:translate(-50%,-50%) scaleX(-1)}
 .udir svg{width:100%;height:100%;animation:uspin 16s linear infinite}
@@ -357,7 +360,9 @@ table.pis{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;
 .upile{position:relative;width:var(--pw);height:calc(var(--pw) * 1.5);padding:0;border:0;background:none;flex:none;color:var(--ink)}
 button.upile{cursor:pointer}
 .upile .ucard.big{position:absolute;inset:0}
-.udisc .ucard.big{border-radius:8px;box-shadow:0 0 0 4px var(--ring),0 0 24px var(--ring);transition:box-shadow .3s}
+.udisc .ucard.big{transform:translate(var(--dx,0),var(--dy,0)) rotate(var(--r,0deg));filter:drop-shadow(0 3px 5px rgba(0,0,0,.45))}
+.udisc .ucard.old{filter:brightness(.8) drop-shadow(0 3px 5px rgba(0,0,0,.45))}
+.udisc .ucard.top{border-radius:8px;box-shadow:0 0 0 4px var(--ring),0 0 24px var(--ring);transition:box-shadow .3s;filter:none}
 .uleft{position:absolute;bottom:-20px;left:0;right:0;text-align:center;font-size:12px;color:var(--muted)}
 .upend{position:absolute;top:6px;left:50%;transform:translateX(-50%);background:#d8382e;color:#fff;font:900 22px var(--display);padding:2px 14px;border-radius:99px;z-index:2}
 .upend[hidden]{display:none}
@@ -2716,7 +2721,7 @@ const UnoUI = (() => {
     levels = [null]; for (let i = 1; i < st.n; i++) levels.push(api.S.uLevel || 'cardshark');
     const pick = {}; for (let i = 1; i < st.n; i++) pick[i] = levels[i];
     const pn = api.pickBotNames(pick); names = [null]; for (let i = 1; i < st.n; i++) names.push(pn[i]);
-    build();
+    build(); root.dataset.n = st.n;
     token++; run(token).catch(e => { if (!(e instanceof Abort)) console.error(e); });
   }
   function leave() { token++; wait = null; jumpWait = null; catchState = null; st = null; root.hidden = true; api.showHome(); }
@@ -2725,13 +2730,13 @@ const UnoUI = (() => {
       <button class="ib" id="uHome" aria-label="${api.L().sol.home}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M15 5l-7 7 7 7"/></svg></button>
       <div class="chip score" id="uScore"></div>
       <button class="ib" id="uRules" aria-label="${api.L().rules}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14"/><circle cx="12" cy="17.2" r=".6" fill="currentColor"/></svg></button></header>
-      <div class="uopps" id="uOpps"></div>
+      <div class="utable"><div class="uopps" id="uOpps"></div>
       <div class="ucenter" id="uCenter">
         <div class="udir" id="uDir"><svg viewBox="0 0 100 100"><path d="M50 8a42 42 0 1 1-29.7 12.3" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="6 6"/><path d="M14 10l7 11 11-6" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
         <button class="upile" id="uDraw" aria-label="${T().draw}"></button>
         <div class="upile udisc" id="uDisc"></div>
         <div class="upend" id="uPend" hidden></div>
-      </div>
+      </div></div>
       <div class="uact" id="uAct"></div>
       <div class="uhand" id="uHand"></div>`;
     $('#uHome').onclick = leave;
@@ -2743,18 +2748,37 @@ const UnoUI = (() => {
   }
 
   // ---------------------------------------------------------------- drawing
+  // seats around the table in playing order: the next player sits on my left, then across the top, then down the right
+  const SEATS = {
+    1: [[50, 10]],
+    2: [[12, 76], [88, 76]],
+    3: [[12, 76], [50, 10], [88, 76]],
+    4: [[12, 76], [28, 11], [72, 11], [88, 76]],
+    5: [[12, 76], [12, 27], [50, 10], [88, 27], [88, 76]]
+  };
+  const seatXY = p => p === 0 ? [50, 100] : p < 0 ? [50, 50] : SEATS[st.n - 1][p - 1];
+  // where a card lands on the discard pile: nudged toward the player who threw it
+  let played = new Map();   // card id -> seat
+  function landing(id) {
+    const p = played.has(id) ? played.get(id) : -1;
+    if (p < 0) return { x: 0, y: 0, r: 0 };
+    const [x, y] = seatXY(p), dx = x - 50, dy = y - 50, d = Math.hypot(dx, dy) || 1;
+    let h = 0; for (const ch of String(id)) h = (h * 31 + ch.charCodeAt(0)) % 997;
+    const k = 0.2 * (parseFloat(getComputedStyle(root).getPropertyValue('--pw')) || $('#uDisc').offsetWidth || 90);
+    return { x: dx / d * k, y: dy / d * k, r: (h % 17) - 8 };
+  }
   function render() {
     if (!st || !root) return;
     const t = T();
     $('#uScore').innerHTML = st.opts.target ? `<span>${t.you}</span><b>${st.scores[0]}</b><small>/ ${st.opts.target}</small>` : (api.S.lang === 'hr' ? `<b>${st.round}.</b><small>${t.round}</small>` : `<small>${t.round}</small><b>${st.round}</b>`);
     // opponents, in the order they play after me
     seatOrder = []; for (let i = 1; i < st.n; i++) seatOrder.push(i);
-    $('#uOpps').style.setProperty('--n', st.n - 1);
     $('#uOpps').innerHTML = seatOrder.map(p => {
       const h = st.hands[p] || [], k = Math.min(h.length, 12);
       const fan = h.slice(0, k).map((c, i) => `<span class="umini" style="--i:${i};--k:${k}">${hidden(c)}</span>`).join('');
       const vul = catchState && catchState.p === p;
-      return `<div class="uopp${st.turn === p && st.winner === null ? ' turn' : ''}" data-p="${p}">
+      const [x, y] = seatXY(p);
+      return `<div class="uopp${st.turn === p && st.winner === null ? ' turn' : ''}" data-p="${p}" style="--x:${x};--y:${y}">
         <div class="ufan">${fan}</div>
         <div class="uname"><b>${esc(nm(p))}</b><span class="ucount">${h.length}</span>${st.uno[p] && h.length === 1 ? `<span class="ulast">!</span>` : ''}</div>
         ${st.opts.target ? `<small class="upts">${st.scores[p]}</small>` : ''}
@@ -2762,7 +2786,12 @@ const UnoUI = (() => {
     }).join('');
     // piles
     const topCard = st.discard[st.discard.length - 1];
-    $('#uDisc').innerHTML = topCard ? `<div class="ucard big">${shown(topCard)}</div>` : '';
+    // the last round of plays stays visible, each card skewed toward whoever threw it
+    const keep = Math.min(st.n, 5), last = st.discard.slice(-keep);
+    $('#uDisc').innerHTML = last.map((c, i) => {
+      const l = landing(c.id), top = i === last.length - 1;
+      return `<div class="ucard big${top ? ' top' : ' old'}" style="--dx:${l.x.toFixed(1)}px;--dy:${l.y.toFixed(1)}px;--r:${l.r}deg">${shown(c)}</div>`;
+    }).join('');
     const ring = st.color ? HEX[st.color] : 'transparent';
     $('#uDisc').style.setProperty('--ring', ring);
     $('#uDraw').innerHTML = st.draw.length ? `<div class="ucard big">${hidden(st.draw[st.draw.length - 1])}</div><span class="uleft">${st.draw.length}</span>` : '';
@@ -2803,22 +2832,23 @@ const UnoUI = (() => {
 
   // ---- animation: a card flies from one element to another
   function rectOf(el) { const r = el.getBoundingClientRect(); return { x: r.left, y: r.top, w: r.width, h: r.height }; }
-  async function fly(fromEl, toEl, html, ms = 320) {
+  async function fly(fromEl, toEl, html, ms = 320, off) {
     if (!fromEl || !toEl) return;
     const a = rectOf(fromEl), b = rectOf(toEl);
+    off = off || { x: 0, y: 0, r: 0 };
     const d = document.createElement('div'); d.className = 'ufly'; d.innerHTML = html;
     d.style.width = b.w + 'px'; d.style.height = b.h + 'px'; root.appendChild(d);
     const sx = a.w / b.w;
-    const anim = d.animate([{ transform: `translate(${a.x}px,${a.y}px) scale(${sx})` }, { transform: `translate(${b.x}px,${b.y}px) scale(1)` }], { duration: ms * speed(), easing: 'cubic-bezier(.2,.8,.3,1)' });
+    const anim = d.animate([{ transform: `translate(${a.x}px,${a.y}px) scale(${sx})` }, { transform: `translate(${b.x + off.x}px,${b.y + off.y}px) scale(1) rotate(${off.r}deg)` }], { duration: ms * speed(), easing: 'cubic-bezier(.2,.8,.3,1)' });
     await anim.finished.catch(() => {}); d.remove();
   }
   const oppEl = p => root.querySelector(`.uopp[data-p="${p}"]`);
   async function animPlay(fx) {
     const from = fx.p === 0 ? (root.querySelector(`.ucard[data-id="${fx.card.id}"]`) || $('#uHand')) : oppEl(fx.p);
-    const disc = $('#uDisc .ucard') || $('#uDisc');
+    played.set(fx.card.id, fx.p);
     const html = `<div class="ucard big">${cardFace(fx.card, fx.flipped ? (st.side === 'L' ? 'D' : 'L') : st.side)}</div>`;
     if (fx.p === 0 && from && from.classList) from.style.visibility = 'hidden';
-    await fly(from, disc, html, 300);
+    await fly(from, $('#uDisc'), html, 300, landing(fx.card.id));
   }
   async function animDraw(p, k) {
     const src = $('#uDraw'), dst = p === 0 ? $('#uHand') : oppEl(p);
@@ -2875,7 +2905,7 @@ const UnoUI = (() => {
   // ---------------------------------------------------------------- the game
   async function run(my) {
     while (true) {
-      U.newRound(st); catchState = null;
+      U.newRound(st); catchState = null; played = new Map();
       // a Draw card turned first: the first player draws and misses the turn (shown after the deal)
       const sp = st.start, extra = sp.n ? st.hands[sp.p].splice(st.hands[sp.p].length - sp.n) : [];
       render();
@@ -4264,7 +4294,7 @@ function showSettings() {
     <h4>${t.deckF}</h4><div class="decks">${Object.keys(Cards.FR).map(k => `<button class="deck" data-fd="${k}" aria-pressed="${Cards.frDeck(S.fDeck) === k}"><span class="dk-cards">${['Hk', 'Sq', 'Dj'].map(c => `<span class="svgc">${Cards.frFace(c, k)}</span>`).join('')}</span><span class="dk-name"><b>${Cards.FR[k].name[S.lang]}</b><small>${Cards.FR[k].maker}</small></span></button>`).join('')}</div>
     ${Cards.FR[Cards.frDeck(S.fDeck)].backs.length > 1 ? `<div class="fbacks">${Cards.FR[Cards.frDeck(S.fDeck)].backs.map(c => `<button class="fback" data-fb="${c}" aria-pressed="${S.fBack === c}" aria-label="${c}">${Cards.frBack(S.fDeck, c)}</button>`).join('')}</div>` : ''}
     <h4>${t.speed}</h4>${seg('speed', [['normal', t.normal], ['fast', t.fast]])}
-    <p class="muted credit">${t.credit} · v45</p>
+    <p class="muted credit">${t.credit} · v46</p>
     <div class="btns"><button class="pri" id="sx">${t.close}</button></div>`, v => {
     v.querySelector('#sx').onclick = () => { closeSheet(); if (G) renderAll(); else renderHome(); };
     v.onclick = e => { if (e.target === v) { closeSheet(); if (G) renderAll(); else renderHome(); } };
