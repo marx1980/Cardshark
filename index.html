@@ -146,7 +146,8 @@ button{font:inherit;color:inherit}
 .ib svg{width:20px;height:20px}
 .chip{display:flex;align-items:center;gap:6px;background:rgba(0,0,0,.25);border:1px solid var(--faint);border-radius:99px;padding:5px 11px;font-size:14px;white-space:nowrap;min-width:0}
 .chip b{font-family:var(--display);font-size:16px}
-.chip.score{font-variant-numeric:tabular-nums;margin-left:auto}
+.chip.score{font-variant-numeric:tabular-nums;margin-left:auto;flex-shrink:0}
+#trumpChip{overflow:hidden;flex-shrink:1}
 .chip .k{color:var(--muted);font-size:12px;letter-spacing:.08em;text-transform:uppercase}
 .felt{position:relative;flex:1;min-height:0;border-radius:26px;border:7px solid var(--rail);
   background:radial-gradient(90% 70% at 50% 45%, var(--felt-hi), var(--felt) 60%, #17402f);
@@ -196,8 +197,10 @@ button{font:inherit;color:inherit}
 .action{min-height:52px;display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;padding-block:8px 4px;text-align:center}
 .msg{font-size:15px;color:var(--ink)}
 .msg .m{color:var(--muted)}
-.bid{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;width:100%}
-.bid button{display:flex;align-items:center;gap:6px;background:var(--sheet);color:var(--sheet-ink);border:0;border-radius:10px;padding:8px 11px;font-weight:700;font-size:15px;cursor:pointer;box-shadow:0 2px 0 rgba(0,0,0,.35)}
+.bid{display:grid;grid-template-columns:1fr 1fr 14px 1fr;gap:12px;width:100%;max-width:400px;margin:0 auto}
+.bid button:nth-child(1){grid-area:1/1}.bid button:nth-child(2){grid-area:1/2}.bid button:nth-child(3){grid-area:2/1}.bid button:nth-child(4){grid-area:2/2}
+.bid button.pass{grid-column:4;grid-row:1/3;justify-content:center}
+.bid button{display:flex;align-items:center;justify-content:center;min-height:48px;min-width:0;gap:6px;background:var(--sheet);color:var(--sheet-ink);border:0;border-radius:10px;padding:8px 11px;font-weight:700;font-size:15px;cursor:pointer;box-shadow:0 2px 0 rgba(0,0,0,.35)}
 .bid button.pass{background:rgba(0,0,0,.3);color:var(--ink);border:1px solid var(--faint);box-shadow:none}
 .bid button:disabled{opacity:.35;cursor:not-allowed}
 .hand{position:relative;flex:none;margin-bottom:10px}
@@ -1475,7 +1478,7 @@ const STR = {
     credit: 'Slike karata su fotografije pravih špilova (Modiano, Masenghini, Dal Negro, Fournier, Piatnik).',
     foot: 'Igra se protiv računala. Postavke se pamte na ovom uređaju.',
     names: { 0: 'Ti', 1: 'Ante', 2: 'Mare', 3: 'Jure' }, names2: { 0: 'Ti', 2: 'Ante' },
-    we: 'Mi', they: 'Vi',
+    we: 'Mi', they: 'Vi', mine: 'Ja',
     yourTurn: 'Tvoj red — odaberi kartu', tapAgain: 'Dodirni istu kartu još jednom', thinking: n => `${n} razmišlja…`,
     trump: 'Adut', stock: 'U špilu',
     pass: 'Dalje', mustCall: 'Zadnji mora zvati', callPrompt: 'Tvoj red: zovi adut ili reci dalje',
@@ -1526,7 +1529,7 @@ const STR = {
     credit: 'Card images are photographs of real decks (Modiano, Masenghini, Dal Negro, Fournier, Piatnik).',
     foot: 'You play against the computer. Settings are kept on this device.',
     names: { 0: 'You', 1: 'Ante', 2: 'Mare', 3: 'Jure' }, names2: { 0: 'You', 2: 'Ante' },
-    we: 'Us', they: 'Them',
+    we: 'Us', they: 'Them', mine: 'Me',
     yourTurn: 'Your turn — pick a card', tapAgain: 'Tap the same card again to play it', thinking: n => `${n} is thinking…`,
     trump: 'Trump', stock: 'Deck',
     pass: 'Pass', mustCall: 'Dealer must call', callPrompt: 'Your turn: call trump or pass',
@@ -1757,7 +1760,7 @@ function showSettings() {
     <h4>${t.deckB}</h4><div class="decks">${deckRow('b', pickB, 'bDeck')}</div>
     <h4>${t.deckH}</h4><div class="decks">${deckRow('h', pickH, 'hDeck')}</div>
     <h4>${t.speed}</h4>${seg('speed', [['normal', t.normal], ['fast', t.fast]])}
-    <p class="muted credit">${t.credit} · v22</p>
+    <p class="muted credit">${t.credit} · v23</p>
     <div class="btns"><button class="pri" id="sx">${t.close}</button></div>`, v => {
     v.querySelector('#sx').onclick = () => { closeSheet(); if (G) renderAll(); else renderHome(); };
     v.onclick = e => { if (e.target === v) { closeSheet(); if (G) renderAll(); else renderHome(); } };
@@ -1868,7 +1871,9 @@ function renderBar() {
     const zv = G.decls ? G.decls.total + (G.belaCalled ? 20 : 0) : 0;
     $('#trumpChip').innerHTML = (G.trump === null ? `<span class="k">${t.trump}</span><b>—</b>` : `${Cards.suitIcon('h', G.trump, 20)}<b>${suitName('h', G.trump)}</b>`)
       + `<span class="zv">${t.zvShort}${zv ? ' ' + zv : ''}</span>`;
-    $('#scoreChip').innerHTML = `<span class="k">${t.we}</span><b>${G.score[0]}</b>:<b>${G.score[1]}</b><span class="k">${t.they}</span>`;
+    // only my own tricks: players may not look back into tricks already taken, not even partner's
+    $('#scoreChip').classList.remove('tight');
+    $('#scoreChip').innerHTML = `<span class="k">${t.mine}</span><b>${G.myPts || 0}</b>`;
   }
 }
 function renderHand() {
@@ -2042,7 +2047,7 @@ async function belaMatch(my) {
   const t = () => L();
   while (true) {
     G.dealer = E.nextSeat(G, G.dealer);
-    E.hDeal(G); G.phase = 'bid'; G.turn = null;
+    E.hDeal(G); G.phase = 'bid'; G.turn = null; G.myPts = 0;
     $('#center').innerHTML = '';
     renderAll(); status('');
     await sleep(SPEED().deal); check(my);
@@ -2104,6 +2109,7 @@ async function belaMatch(my) {
         G.turn = null; renderSeats(); status('');
         await sleep(SPEED().trick); check(my);
         const { winner } = E.hFinishTrick(G);
+        if (winner === 0) G.myPts += G.lastTrick.pts + (G.trickNo === 8 ? 10 : 0);
         await collectTrick(winner); check(my);
         renderAll();
       }
