@@ -387,7 +387,7 @@ const Engine = (() => {
     for (const s of st.seats) { st.hands[s] = deck.splice(0, 6); st.talon[s] = deck.splice(0, 2); }
     st.trump = null; st.caller = null; st.bidder = nextSeat(st, st.dealer); st.bids = [];
     st.trick = []; st.won = [[], []]; st.tricks = [0, 0]; st.seen = new Set(); st.lastTrick = null; st.trickNo = 0;
-    st.void = { 0: {}, 1: {}, 2: {}, 3: {} }; st.belaSeat = null; st.belaCalled = false; st.decls = null;
+    st.void = { 0: {}, 1: {}, 2: {}, 3: {} }; st.belaSeat = null; st.belaCalled = false; st.belaSkipped = false; st.decls = null;
   }
   function hBidValue(hand, s) {
     let v = 0; const tr = hand.filter(c => c.s === s);
@@ -488,14 +488,26 @@ const Engine = (() => {
   }
   function hToPlay(st) { return roundFrom(st, st.leader)[st.trick.length]; }
   // returns {done, bela}
-  function hPlay(st, seat, card) {
+  // bela is optional: the holder may stay quiet (e.g. when the callers are going to fall anyway)
+  function hBelaEligible(st, seat, card) {
+    return seat === st.belaSeat && !st.belaCalled && !st.belaSkipped && card.s === st.trump && (card.r === 'K' || card.r === 'O');
+  }
+  function hAIBela(st, seat) {
+    const me = seat % 2;
+    if (me !== st.caller % 2) return true;                // defenders always gain from bela
+    const D = st.decls, zOpp = D.team === 1 - me ? D.total : 0, zOur = D.team === me ? D.total : 0;
+    if (zOpp < 120) return true;                           // e.g. 150+, or four aces with another 20/40
+    const won = sum(st.won[me], c => hPts(c, st.trump));
+    return won + zOur + 20 > (162 + zOpp + zOur + 20) / 2; // only call if passing is already certain
+  }
+  function hPlay(st, seat, card, callBela = true) {
     const T = st.trump, h = st.hands[seat];
     if (st.trick.length) {
       const led = st.trick[0].card.s;
       if (card.s !== led) { st.void[seat][led] = true; if (card.s !== T) st.void[seat][T] = true; }
     }
     let bela = false;
-    if (seat === st.belaSeat && !st.belaCalled && card.s === T && (card.r === 'K' || card.r === 'O')) { st.belaCalled = true; bela = true; }
+    if (hBelaEligible(st, seat, card)) { if (callBela) { st.belaCalled = true; bela = true; } else st.belaSkipped = true; }
     h.splice(h.findIndex(c => c.id === card.id), 1);
     st.trick.push({ seat, card }); st.seen.add(card.id);
     return { done: st.trick.length === 4, bela };
@@ -768,7 +780,7 @@ const Engine = (() => {
   return {
     shuffle, teamOf, nextSeat, roundFrom,
     B_RANKS, bDeck, bNew, bDeal, bOrder, bToPlay, bBeats, bWinnerIdx, bPlay, bFinishTrick, bHandOver, bPoints, bAI,
-    H_KEYS, hDeck, hStr, hPts, hNew, hDeal, hAIBid, hBid, hFindDecls, hLegal, hWinnerIdx, hToPlay, hPlay, hFinishTrick, hHandOver, hScoreHand, hMatchWinner, hAI, hBidValue,
+    H_KEYS, hDeck, hStr, hPts, hNew, hDeal, hAIBid, hBid, hFindDecls, hLegal, hWinnerIdx, hToPlay, hPlay, hFinishTrick, hHandOver, hScoreHand, hMatchWinner, hAI, hBidValue, hBelaEligible, hAIBela,
     tStr, tThirds, tNew, tDeal, tToPlay, tLegal, tWinnerIdx, tPlay, tFinishTrick, tHandOver, tScoreHand, tMatchWinner, tAI, tFindAkuze, tAISignal
   };
 })();
@@ -1202,8 +1214,9 @@ const STR = {
     bidWait: n => `${n} odlučuje…`,
     belaCall: 'Bela!', belot: 'BELOT!', declWord: 'Zvanje',
     declWin: (t, v) => `Zvanja priznata: ${t} +${v}`, declNone: 'Nema zvanja',
+    belaToggle: 'Zovi belu', belaHint: 'Isključi ako ne želiš zvati belu s ovom kartom',
     zvTitle: 'Zvanja', zvShort: 'Zv.', zvNotYet: 'Zvanja se vide kad je adut zvan.', zvMyBela: 'Imaš belu – zove se kad odigraš kralja ili babu aduta',
-    zvNote: 'Priznaju se samo zvanja para s najjačim zvanjem. Vrijede ako par nosi barem jedan štih.',
+    zvNote: 'Pokazuju se samo zvanja para s najjačim zvanjem. Vrijede ako par nosi barem jedan štih.',
     lastTrick: 'Zadnji štih', noLast: 'Još nije odigran nijedan štih.', took: n => `Nosi: ${n}`, pts: 'bodova',
     handWon: 'Dobili ste ruku!', handLost: 'Izgubili ste ruku.', handDraw: 'Neriješeno, 60 : 60.',
     matchWon: 'Partija je vaša!', matchLost: 'Partija je izgubljena.',
@@ -1251,8 +1264,9 @@ const STR = {
     bidWait: n => `${n} is deciding…`,
     belaCall: 'Bela!', belot: 'BELOT!', declWord: 'Declares',
     declWin: (t, v) => `Declarations count for: ${t} +${v}`, declNone: 'No declarations',
+    belaToggle: 'Call bela', belaHint: 'Switch off to keep quiet about bela with this card',
     zvTitle: 'Declarations', zvShort: 'Decl.', zvNotYet: 'Declarations are shown once trump is called.', zvMyBela: 'You hold bela – it is called when you play the trump king or ober',
-    zvNote: 'Only the pair with the best declaration scores. Declarations count only if that pair wins a trick.',
+    zvNote: 'Only the pair with the best declaration shows and scores it. It counts only if that pair wins a trick.',
     lastTrick: 'Last trick', noLast: 'No trick has been played yet.', took: n => `Taken by: ${n}`, pts: 'points',
     handWon: 'You won the hand!', handLost: 'You lost the hand.', handDraw: 'Draw, 60 : 60.',
     matchWon: 'The match is yours!', matchLost: 'Match lost.',
@@ -1471,7 +1485,7 @@ function showSettings() {
     <h4>${t.deckB}</h4><div class="decks">${deckRow('b', pickB, 'bDeck')}</div>
     <h4>${t.deckH}</h4><div class="decks">${deckRow('h', pickH, 'hDeck')}</div>
     <h4>${t.speed}</h4>${seg('speed', [['normal', t.normal], ['fast', t.fast]])}
-    <p class="muted credit">${t.credit} · v16</p>
+    <p class="muted credit">${t.credit} · v17</p>
     <div class="btns"><button class="pri" id="sx">${t.close}</button></div>`, v => {
     v.querySelector('#sx').onclick = () => { closeSheet(); if (G) renderAll(); else renderHome(); };
     v.onclick = e => { if (e.target === v) { closeSheet(); if (G) renderAll(); else renderHome(); } };
@@ -1775,7 +1789,7 @@ async function belaMatch(my) {
     }
     let any = false;
     for (const s of D.order) {
-      const ds = D.per[s]; if (!ds.length) continue;
+      const ds = D.per[s]; if (!ds.length || s % 2 !== D.team) continue; // the weaker pair's zvanja are never shown
       any = true;
       bubble(s, `${t().declWord} ${ds.map(d => d.val).join(' + ')}`, false, 2400);
       await sleep(SPEED().ai * 0.6);
@@ -1789,10 +1803,11 @@ async function belaMatch(my) {
       const s = E.hToPlay(G);
       await turnTo(s);
       let card;
-      if (s === 0) card = await humanPick(E.hLegal(G, 0).map(c => c.id));
-      else { await sleep(SPEED().ai); card = E.hAI(G, s); }
+      let callBela = true;
+      if (s === 0) { const legal = E.hLegal(G, 0); showBelaChoice(legal); card = await humanPick(legal.map(c => c.id)); callBela = myBela; }
+      else { await sleep(SPEED().ai); card = E.hAI(G, s); callBela = E.hAIBela(G, s); }
       check(my);
-      const r = E.hPlay(G, s, card);
+      const r = E.hPlay(G, s, card, callBela);
       placeTrickCard(s, card); renderSeats(); renderHand();
       if (r.bela) { bubble(s, t().belaCall, true); renderBar(); }
       if (r.done) {
@@ -1846,6 +1861,14 @@ function scoreSheetHTML(row, mw) {
     <tr class="tot"><td></td><td>${G.score[0]}</td><td>${G.score[1]}</td><td class="note">${t.target(G.opts.target)}</td></tr></tbody></table></div>
     <div class="btns">${mw >= 0 ? `<button class="sec" data-go="home">${t.home}</button><button class="pri" data-go="again">${t.again}</button>` : `<button class="pri" data-go="next">${t.next}</button>`}</div>`;
 }
+let myBela = true;
+function showBelaChoice(legal) {
+  myBela = true;
+  if (!legal.some(c => E.hBelaEligible(G, 0, c))) return;
+  const t = L();
+  setAction(`<div class="msg">${t.yourTurn}</div><div class="sigs"><button class="sig" id="belaTog" aria-pressed="true">${t.belaToggle}</button></div><div class="msg"><span class="m">${t.belaHint}</span></div>`);
+  $('#belaTog').onclick = () => { myBela = !myBela; $('#belaTog').setAttribute('aria-pressed', myBela); };
+}
 function showZvanja() {
   const t = L();
   if (!G || G.game !== 'h') return;
@@ -1855,19 +1878,16 @@ function showZvanja() {
   const D = G.decls, K = E.H_KEYS;
   const declCards = d => d.type === 'quad' ? [0, 1, 2, 3].map(s => 'h' + s + d.r) : K.slice(d.low, d.top + 1).map(r => 'h' + d.s + r);
   const deck = E.hDeck(), byId = id => deck.find(c => c.id === id);
-  const rows = D.order.map(s => {
-    const ds = D.per[s].filter(d => d.type !== 'belot');
-    const counts = D.team === s % 2;
-    const items = ds.map(d => `<div class="zrow${counts ? '' : ' off'}"><span class="zcards">${declCards(d).map(id => `<span class="svgc">${face('h', byId(id))}</span>`).join('')}</span><span class="zd">${t.declDesc(d)}</span><b>${d.val}</b></div>`).join('');
-    return `<div class="zseat"><div class="zname">${esc(name(s))}<small>${s % 2 === team(0) ? t.we : t.they}</small></div>${items || `<div class="zrow off"><span class="zd">—</span></div>`}</div>`;
+  const shown = D.team < 0 ? [] : D.order.filter(s => s % 2 === D.team && D.per[s].some(d => d.type !== 'belot'));
+  const rows = shown.map(s => {
+    const items = D.per[s].filter(d => d.type !== 'belot').map(d => `<div class="zrow"><span class="zcards">${declCards(d).map(id => `<span class="svgc">${face('h', byId(id))}</span>`).join('')}</span><span class="zd">${t.declDesc(d)}</span><b>${d.val}</b></div>`).join('');
+    return `<div class="zseat"><div class="zname">${esc(name(s))}<small>${s % 2 === team(0) ? t.we : t.they}</small></div>${items}</div>`;
   }).join('');
-  let bela = '';
-  if (G.belaCalled) bela = `<div class="zrow"><span class="zd"><b>Bela</b> · ${esc(name(G.belaSeat))}</span><b>20</b></div>`;
-  else if (G.belaSeat === 0) bela = `<div class="zrow off"><span class="zd">${t.zvMyBela}</span><b>20</b></div>`;
+  const bela = G.belaCalled ? `<div class="zrow"><span class="zd"><b>Bela</b> · ${esc(name(G.belaSeat))}</span><b>20</b></div>` : '';
   const tot = [0, 1].map(tm => (D.team === tm ? D.total : 0) + (G.belaCalled && G.belaSeat % 2 === tm ? 20 : 0));
   openSheet(`<h3>${t.zvTitle}</h3>
     <p class="muted">${D.team >= 0 ? t.declWin(D.team === team(0) ? t.we : t.they, D.total) : t.declNone}</p>
-    <div class="zlist">${rows}${bela}</div>
+    <div class="zlist">${rows || bela ? rows + bela : `<p class="muted">${t.declNone}</p>`}</div>
     <div class="decl"><div><span>${t.we} : ${t.they}</span><b>${tot[0]} : ${tot[1]}</b></div></div>
     <p class="muted small">${t.zvNote}</p>${close}`, bind);
 }
