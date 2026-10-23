@@ -109,6 +109,10 @@ button{font:inherit;color:inherit}
 .gsh{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
 .link{background:none;border:0;color:var(--felt);font:700 15px var(--body);text-decoration:underline;cursor:pointer;padding:6px 0}
 .gsegs{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.seg.modes{display:grid;grid-template-columns:1fr 1fr}
+.chip.score.tight{gap:3px;padding:5px 8px;font-size:12px}
+.chip.score.tight b{font-size:14px}
+.chip.score.tight .k{font-size:10.5px;letter-spacing:0}
 .play.wide{flex:1}
 .check.dark{color:var(--sheet-ink)}
 .check.dark input{accent-color:var(--felt)}
@@ -242,7 +246,7 @@ const Engine = (() => {
   const sum = (a, f) => a.reduce((x, y) => x + f(y), 0);
 
   // ---------- shared seat helpers ----------
-  function teamOf(st, seat) { return st.seats.length === 2 ? (seat === 0 ? 0 : 1) : st.seats.length === 3 ? st.seats.indexOf(seat) : seat % 2; }
+  function teamOf(st, seat) { return st.teams > 2 ? st.seats.indexOf(seat) : st.seats.length === 2 ? (seat === 0 ? 0 : 1) : seat % 2; }
   function nextSeat(st, s) { const i = st.seats.indexOf(s); return st.seats[(i + 1) % st.seats.length]; }
   function roundFrom(st, s) { const o = []; for (let i = 0; i < st.seats.length; i++) { o.push(s); s = nextSeat(st, s); } return o; }
 
@@ -257,7 +261,7 @@ const Engine = (() => {
   function bNew(opts) {
     // 4 players: two pairs; 3 players: each for themselves (one 2 removed, 39 cards); 2 players: double hand
     const seats = opts.players === 4 ? [0, 1, 2, 3] : opts.players === 3 ? [0, 1, 3] : [0, 2];
-    const teams = opts.players === 3 ? 3 : 2;
+    const teams = opts.players === 3 ? 3 : (opts.players === 4 && opts.solo) ? 4 : 2; // solo: four players, each for themselves
     return { game: 'b', opts, seats, teams, dealer: seats[seats.length - 1], wins: Array(teams).fill(0), history: [] };
   }
   function bDeal(st) {
@@ -959,12 +963,15 @@ const $ = s => document.querySelector(s);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
 // ---------- settings ----------
-const DEF = { lang: (navigator.language || '').toLowerCase().startsWith('hr') ? 'hr' : 'en', bMode: 4, bTarget: 3, bReveal: false, hTarget: 1001, speed: 'normal', tap: 2, bDeck: 'triestine', hDeck: 'hungarian' };
+const DEF = { lang: (navigator.language || '').toLowerCase().startsWith('hr') ? 'hr' : 'en', bMode: 'p4', bTarget: 3, bReveal: false, hTarget: 1001, speed: 'normal', tap: 2, bDeck: 'triestine', hDeck: 'hungarian' };
 let S = { ...DEF };
 try { Object.assign(S, JSON.parse(localStorage.getItem('stih.v1') || '{}')); } catch (e) { }
 // older saves had players + double separately; 4-player double is not a real variant
-if (S.bPlayers !== undefined) { S.bMode = S.bPlayers === 2 ? 2 : 4; delete S.bPlayers; delete S.bDouble; }
-if (![2, 3, 4].includes(S.bMode)) S.bMode = 4;
+if (S.bPlayers !== undefined) { S.bMode = S.bPlayers === 2 ? 'd2' : 'p4'; delete S.bPlayers; delete S.bDouble; }
+if (typeof S.bMode === 'number') S.bMode = ({ 4: 'p4', 3: 's3', 2: 'd2' })[S.bMode];
+if (!['p4', 's4', 's3', 'd2'].includes(S.bMode)) S.bMode = 'p4';
+// mode → engine options
+const B_MODES = { p4: { players: 4 }, s4: { players: 4, solo: true }, s3: { players: 3 }, d2: { players: 2, double: true } };
 const save = () => { try { localStorage.setItem('stih.v1', JSON.stringify(S)); } catch (e) { } };
 const applyDecks = () => { Cards.setDeck('b', S.bDeck); Cards.setDeck('h', S.hDeck); };
 applyDecks();
@@ -984,9 +991,9 @@ const STR = {
     speed: 'Brzina', normal: 'Normalno', fast: 'Brzo', tap: 'Igranje karte', tap1: 'Jedan dodir', tap2: 'Dva dodira',
     rules: 'Pravila', rulesB: 'Pravila briškule', rulesH: 'Pravila bele',
     settings: 'Postavke', language: 'Jezik',
-    playersN: n => `${n} igrača`, modeN: n => ({ 4: '4 · u paru', 3: '3 igrača', 2: '2 · dupla' })[n],
+    playersN: n => `${n} igrača`, modeN: n => ({ p4: '4 · u paru', s4: '4 · svatko za sebe', s3: '3 igrača', d2: '2 · dupla' })[n],
     handWonBy: n => `${n} dobiva ruku.`, handTie: 'Neriješeno.', pairNote: 'Dupla: 4 karte, svatko igra dvaput u štihu.', cardsN: n => n === 4 ? '4 karte · dupla' : '3 karte',
-    sumB: () => `${({ 4: '4 igrača · u paru', 3: '3 igrača', 2: '2 igrača · dupla' })[S.bMode]} · do ${S.bTarget}`, sumH: () => `4 igrača · do ${S.hTarget}`, deckB: 'Karte za briškulu', deckH: 'Karte za belu', lowRes: 'niža rezolucija',
+    sumB: () => `${({ p4: '4 igrača · u paru', s4: '4 igrača · svatko za sebe', s3: '3 igrača', d2: '2 igrača · dupla' })[S.bMode]} · do ${S.bTarget}`, sumH: () => `4 igrača · do ${S.hTarget}`, deckB: 'Karte za briškulu', deckH: 'Karte za belu', lowRes: 'niža rezolucija',
     credit: 'Slike karata su fotografije pravih špilova (Modiano, Masenghini, Dal Negro, Fournier, Piatnik).',
     foot: 'Igra se protiv računala. Postavke se pamte na ovom uređaju.',
     names: { 0: 'Ti', 1: 'Ante', 2: 'Mare', 3: 'Jure' }, names2: { 0: 'Ti', 2: 'Ante' },
@@ -1024,9 +1031,9 @@ const STR = {
     speed: 'Speed', normal: 'Normal', fast: 'Fast', tap: 'Playing a card', tap1: 'One tap', tap2: 'Two taps',
     rules: 'Rules', rulesB: 'Briškula rules', rulesH: 'Bela rules',
     settings: 'Settings', language: 'Language',
-    playersN: n => `${n} players`, modeN: n => ({ 4: '4 · pairs', 3: '3 players', 2: '2 · double' })[n],
+    playersN: n => `${n} players`, modeN: n => ({ p4: '4 · pairs', s4: '4 · each for themselves', s3: '3 players', d2: '2 · double hand' })[n],
     handWonBy: n => `${n} wins the hand.`, handTie: 'Tie.', pairNote: 'Double: 4 cards, everyone plays twice per trick.', cardsN: n => n === 4 ? '4 cards · double' : '3 cards',
-    sumB: () => `${({ 4: '4 players · pairs', 3: '3 players', 2: '2 players · double' })[S.bMode]} · first to ${S.bTarget}`, sumH: () => `4 players · to ${S.hTarget}`, deckB: 'Briškula cards', deckH: 'Bela cards', lowRes: 'lower resolution',
+    sumB: () => `${({ p4: '4 players · pairs', s4: '4 players · solo', s3: '3 players', d2: '2 players · double' })[S.bMode]} · first to ${S.bTarget}`, sumH: () => `4 players · to ${S.hTarget}`, deckB: 'Briškula cards', deckH: 'Bela cards', lowRes: 'lower resolution',
     credit: 'Card images are photographs of real decks (Modiano, Masenghini, Dal Negro, Fournier, Piatnik).',
     foot: 'You play against the computer. Settings are kept on this device.',
     names: { 0: 'You', 1: 'Ante', 2: 'Mare', 3: 'Jure' }, names2: { 0: 'You', 2: 'Ante' },
@@ -1142,7 +1149,7 @@ const sleep = ms => { const t = token; return new Promise((res, rej) => setTimeo
 const check = t => { if (t !== token) throw new Abort(); };
 const name = s => (G && G.seats.length === 2 ? L().names2 : L().names)[s];
 // score-column labels: pairs/head-to-head use Us/Them, three players use their names
-const sideLabels = () => G.teams === 3 ? G.seats.map(s => name(s)) : [L().we, L().they];
+const sideLabels = () => G.teams > 2 ? G.seats.map(s => name(s)) : [L().we, L().they];
 const team = s => E.teamOf(G, s);
 
 // ================= HOME =================
@@ -1167,14 +1174,14 @@ function showGameSheet(game) {
   const t = L();
   const seg = (key, opts) => `<div class="seg dark" role="group">${opts.map(([v, lab]) => `<button data-k="${key}" data-v="${v}" aria-pressed="${S[key] === v}">${lab}</button>`).join('')}</div>`;
   const body = game === 'b'
-    ? seg('bMode', [[4, t.modeN(4)], [3, t.modeN(3)], [2, t.modeN(2)]]) + seg('bTarget', [[2, t.target(2)], [3, t.target(3)], [4, t.target(4)]])
+    ? `<div class="seg dark modes" role="group">${['p4', 's4', 's3', 'd2'].map(m => `<button data-k="bMode" data-v="${m}" aria-pressed="${S.bMode === m}">${t.modeN(m)}</button>`).join('')}</div>` + seg('bTarget', [[2, t.target(2)], [3, t.target(3)], [4, t.target(4)]])
     : seg('hTarget', [[501, '501'], [701, '701'], [1001, '1001']]);
   openSheet(`<div class="gsh"><h3>${game === 'b' ? 'Briškula' : 'Bela'}</h3><button class="link" id="gRules">${t.rules}</button></div>
     <div class="gsegs">${body}</div>
     <div class="btns"><button class="play wide" id="gPlay">${t.start}</button></div>`, v => {
     v.onclick = e => { if (e.target === v) closeSheet(); };
     v.querySelectorAll('.seg button').forEach(b => b.onclick = () => {
-      let val = b.dataset.v; val = val === 'true' ? true : val === 'false' ? false : +val;
+      let val = b.dataset.v; val = isNaN(+val) ? val : +val;
       S[b.dataset.k] = val; save(); renderHome();
       b.parentNode.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b));
     });
@@ -1211,7 +1218,7 @@ function showSettings() {
     <h4>${t.deckB}</h4><div class="decks">${deckRow('b', pickB, 'bDeck')}</div>
     <h4>${t.deckH}</h4><div class="decks">${deckRow('h', pickH, 'hDeck')}</div>
     <h4>${t.speed}</h4>${seg('speed', [['normal', t.normal], ['fast', t.fast]])}
-    <p class="muted credit">${t.credit} · v11</p>
+    <p class="muted credit">${t.credit} · v12</p>
     <div class="btns"><button class="pri" id="sx">${t.close}</button></div>`, v => {
     v.querySelector('#sx').onclick = () => { closeSheet(); if (G) renderAll(); else renderHome(); };
     v.onclick = e => { if (e.target === v) { closeSheet(); if (G) renderAll(); else renderHome(); } };
@@ -1309,7 +1316,8 @@ function renderBar() {
   const t = L();
   if (G.game === 'b') {
     $('#trumpChip').innerHTML = `${Cards.suitIcon('b', G.trump, 20)}<b>${suitName('b', G.trump)}</b>`;
-    if (G.teams === 3) $('#scoreChip').innerHTML = G.seats.map((s, i) => `<span class="k">${esc(name(s)).slice(0, 1)}</span><b>${G.wins[i]}</b>`).join('<span class="k">·</span>');
+    $('#scoreChip').classList.toggle('tight', G.teams > 3);
+    if (G.teams > 2) $('#scoreChip').innerHTML = G.seats.map((s, i) => `<span class="k">${esc(name(s)).slice(0, 1)}</span><b>${G.wins[i]}</b>`).join('<span class="k">·</span>');
     else $('#scoreChip').innerHTML = `<span class="k">${t.we}</span><b>${G.wins[0]}</b>:<b>${G.wins[1]}</b><span class="k">${t.they}</span>`;
   } else {
     $('#trumpChip').innerHTML = G.trump === null ? `<span class="k">${t.trump}</span><b>—</b>` : `${Cards.suitIcon('h', G.trump, 20)}<b>${suitName('h', G.trump)}</b>`;
@@ -1401,7 +1409,7 @@ $('#center').addEventListener('click', () => { });
 // ================= GAME START =================
 function startGame(game) {
   token++; pending = null; sel = null; closeSheet();
-  if (game === 'b') { G = E.bNew({ players: S.bMode, double: S.bMode === 2, target: S.bTarget, reveal: S.bMode === 4 && S.bReveal }); }
+  if (game === 'b') { G = E.bNew({ ...B_MODES[S.bMode], target: S.bTarget, reveal: S.bMode === 'p4' && S.bReveal }); }
   else { G = E.hNew({ target: S.hTarget }); }
   G.turn = null;
   $('#home').hidden = true; $('#table').hidden = false;
@@ -1448,8 +1456,8 @@ async function briskulaMatch(my) {
     const labels = sideLabels();
     const top = Math.max(...pts), tops = pts.map((p, i) => p === top ? i : -1).filter(i => i >= 0);
     let verdict;
-    if (tops.length > 1) verdict = G.teams === 3 ? t().handTie : t().handDraw;
-    else { G.wins[tops[0]]++; verdict = tops[0] === 0 ? t().handWon : (G.teams === 3 ? t().handWonBy(esc(labels[tops[0]])) : t().handLost); }
+    if (tops.length > 1) verdict = G.teams > 2 ? t().handTie : t().handDraw;
+    else { G.wins[tops[0]]++; verdict = tops[0] === 0 ? t().handWon : (G.teams > 2 ? t().handWonBy(esc(labels[tops[0]])) : t().handLost); }
     G.history.push(pts);
     renderBar();
     const over = G.wins.some(w => w >= G.opts.target);
