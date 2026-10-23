@@ -51,7 +51,8 @@ button{font:inherit;color:inherit}
 .seg.dark button{background:#fff;border-color:var(--sheet-line);color:var(--sheet-ink)}
 .seg.dark button[aria-pressed="true"]{background:var(--felt);color:var(--ink);border-color:var(--felt)}
 .credit{font-size:12.5px;margin-top:16px}
-.lvnote{font-size:12.5px;margin:6px 2px 0;min-height:2.6em}
+.lvnote{font-size:12.5px;margin:6px 2px 0}
+.seg.levels{display:grid;grid-template-columns:repeat(4,1fr)}.seg.levels button{padding-left:2px;padding-right:2px;font-size:14px;min-width:0}
 .ix{font:700 12px Georgia, "Times New Roman", serif} .ixr{font:700 12px Georgia, "Times New Roman", serif}
 .lbl{font:800 7.2px var(--display);text-anchor:middle;letter-spacing:.4px}
 
@@ -364,6 +365,10 @@ const Engine = (() => {
       else pWin = partnerAfter ? 0.3 : 0;
       let ev = (2 * pWin - 1) * (tablePts + c.p + after.length * 1.6);
       if (c.s === T) ev -= (late ? 0.35 : 1) * (2 + c.st * 0.9 + (c.p >= 10 ? 7 : 0));
+      // keep the trump ace/three while the stock lasts: don't lead it, don't spend it on a small trick or over partner
+      if (!late && c.s === T && c.p >= 10 && (!pos || tablePts < 10 || teamOf(st, curW.seat) === me)) ev -= 20;
+      // load an ace/three on partner's trick only when it is safe
+      if (pos && !iWin && teamOf(st, curW.seat) === me && c.p >= 10 && oppAfter && pHold(curW.card) < 0.9) ev -= 8;
       ev += Math.random() * 0.25;
       if (!best || ev > best.ev) best = { c, ev };
     }
@@ -597,6 +602,12 @@ const Engine = (() => {
     // which the caller then takes); the 9 is never a pull card, it backs up the caller's jack
     const PULL = { K: 14, O: 13, '8': 9, '7': 9, '10': 5, A: 5, '9': -6 };
     const partnerSeat = (seat + 2) % 4;
+    // leading with no plain ace to cash, not pulling trumps for partner, and not the calling side with 3+ trumps:
+    // lead the cheapest plain card rather than a 10 or a king that the opponents can take
+    if (pos === 0 && !(pullForJack && myTrumps > 0) && !legal.some(c => c.s !== T && c.r === 'A') && !(callerTeam && myTrumps >= 3)) {
+      const low = legal.reduce((x, y) => (hPts(y, T) * 10 + hStr(y, T)) < (hPts(x, T) * 10 + hStr(x, T)) ? y : x);
+      if (low.s !== T) return low;
+    }
     let best = null;
     for (const c of legal) {
       let pts = tablePts + hPts(c, T) + after.length * 3;
@@ -630,6 +641,8 @@ const Engine = (() => {
         if (c.s === T && !isMaster(c) && !callerTeam) ev -= 4;
       }
       if (seat === st.belaSeat && !st.belaCalled && c.s === T && (c.r === 'K' || c.r === 'O')) ev += 1;
+      // ruff with the smallest trump that does the job, not the jack or 9
+      if (pos && iWin && c.s === T && curW.card.s !== T && (c.r === 'U' || c.r === '9') && legal.some(x => x.s === T && x.r !== 'U' && x.r !== '9')) ev -= 8;
       ev += Math.random() * 0.2;
       if (!best || ev > best.ev) best = { c, ev };
     }
@@ -787,6 +800,10 @@ const Engine = (() => {
       if (!pos && st.returnSuit && st.returnSuit.seat === seat && c.s === st.returnSuit.s) ev += 2.5; // return the knocked suit
       if (!pos && partner !== undefined && pSig(c.s, 'strisco')) ev += 0.8;  // partner is long here
       if (!pos && partner !== undefined && pSig(c.s, 'volo')) ev -= 0.8;     // partner has none left
+      // don't lead a 3 or 2 from a short suit unless holding both; don't win the opponents' cheap tricks with a 3 or 2
+      const both32 = hand.some(x => x.s === c.s && x.r === '3') && hand.some(x => x.s === c.s && x.r === '2');
+      if (!pos && tStr(c) >= 9 && hand.filter(x => x.s === c.s).length <= 3 && !both32) ev -= 3;
+      if (pos && iWin && teamOf(st, curW.seat) !== me && tStr(c) >= 9 && table < 3 && !lastTrick) ev -= 2;
       ev += Math.random() * 0.15;
       if (!best || ev > best.ev) best = { c, ev };
     }
@@ -890,7 +907,8 @@ const AI = (() => {
     if (win.length && (table >= 3 || last || st.hands[seat].length === 1)) return minBy(win, E.tStr);
     return cheap(legal);
   }
-  const novice = (f, legal) => Math.random() < 0.5 ? rnd(legal) : f();
+  // Bela's follow-suit / overtrump rules already narrow the choice, so the Bela novice picks at random more often
+  const novice = (f, legal, p = 0.5) => Math.random() < p ? rnd(legal) : f();
 
   // ================================================================ PRO (determinized Monte-Carlo)
   function clone(st) {
@@ -1011,20 +1029,23 @@ const AI = (() => {
 
   // ================================================================ dispatch
   const LEVELS = ['novice', 'average', 'pro', 'cardshark'];
+  const EXTRA = {};   // experimental players for the simulations (not shown in the app)
   function play(g, st, seat, level) {
+    if (EXTRA[level]) return EXTRA[level](g, st, seat);
     if (level === 'cardshark') return g === 'b' ? E.bAI(st, seat) : g === 't' ? E.tAI(st, seat) : E.hAI(st, seat);
     if (level === 'pro') return pro(g, st, seat);
     const avg = () => g === 'b' ? bAverage(st, seat) : g === 't' ? tAverage(st, seat) : hAverage(st, seat);
-    if (level === 'novice') return novice(avg, legalOf(g, st, seat));
+    if (level === 'novice') return novice(avg, legalOf(g, st, seat), g === 'h' ? 0.8 : 0.5);
     return avg();
   }
   function bid(st, seat, level) {
+    if (EXTRA[level] && EXTRA[level].bid) return EXTRA[level].bid(st, seat);
     if (level === 'novice') return hNoviceBid(st, seat);
     if (level === 'average') return hAverageBid(st, seat);
     return E.hAIBid(st, seat);
   }
-  const callBela = (st, seat, level) => level === 'cardshark' || level === 'pro' ? E.hAIBela(st, seat) : true;
-  return { LEVELS, play, bid, callBela, pro, determinize, clone, cloneLite, bAverage, hAverage, tAverage, SAMPLES, ROLL };
+  const callBela = (st, seat, level) => level === 'cardshark' || level === 'pro' || EXTRA[level] ? E.hAIBela(st, seat) : true;
+  return { LEVELS, EXTRA, play, bid, callBela, pro, determinize, clone, cloneLite, bAverage, hAverage, tAverage, SAMPLES, ROLL };
 })();
 if (typeof module !== 'undefined') module.exports = AI;
 </script>
@@ -1407,13 +1428,14 @@ const $ = s => document.querySelector(s);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
 // ---------- settings ----------
-const DEF = { lang: (navigator.language || '').toLowerCase().startsWith('hr') ? 'hr' : 'en', bMode: 'p4', bTarget: 3, tMode: 4, tTarget: 41, tAkuze: true, tLongNap: false, tThirdsLast: false, tSignals: true, tClockwise: false, bReveal: false, hTarget: 1001, speed: 'normal', level: 'cardshark', tap: 2, bDeck: 'triestine', hDeck: 'hungarian' };
+const DEF = { lang: (navigator.language || '').toLowerCase().startsWith('hr') ? 'hr' : 'en', bMode: 'p4', bTarget: 3, tMode: 4, tTarget: 41, tAkuze: true, tLongNap: false, tThirdsLast: false, tSignals: true, tClockwise: false, bReveal: false, hTarget: 1001, speed: 'normal', bLevel: 'cardshark', tLevel: 'cardshark', hLevel: 'cardshark', tap: 2, bDeck: 'triestine', hDeck: 'hungarian' };
 let S = { ...DEF };
 try { Object.assign(S, JSON.parse(localStorage.getItem('stih.v1') || '{}')); } catch (e) { }
 // older saves had players + double separately; 4-player double is not a real variant
 if (S.bPlayers !== undefined) { S.bMode = S.bPlayers === 2 ? 'd2' : 'p4'; delete S.bPlayers; delete S.bDouble; }
 if (typeof S.bMode === 'number') S.bMode = ({ 4: 'p4', 3: 's3', 2: 'd2' })[S.bMode];
 if (!['p4', 's4', 's3', 'd2'].includes(S.bMode)) S.bMode = 'p4';
+if (S.level) { for (const k of ['bLevel', 'tLevel', 'hLevel']) S[k] = S.level; delete S.level; }
 // mode → engine options
 const B_MODES = { p4: { players: 4 }, s4: { players: 4, solo: true }, s3: { players: 3 }, d2: { players: 2, double: true } };
 const save = () => { try { localStorage.setItem('stih.v1', JSON.stringify(S)); } catch (e) { } };
@@ -1671,9 +1693,9 @@ function renderHome() {
   $('#home').innerHTML = `<div class="wrap">
     <header class="hbar"><div class="logo"><svg viewBox="0 0 120 120" aria-hidden="true"><path d="M16 76C22 46 46 32 70 33C90 34 102 50 106 76Z" fill="#5b7186"/><path d="M42 36C46 22 54 12 68 6C64 18 64 28 66 35Z" fill="#5b7186"/><circle cx="84" cy="55" r="7" fill="#fbf6ea"/><circle cx="81" cy="57" r="3.5" fill="#1f1a14"/><path d="M75 45Q84 41 93 46" fill="none" stroke="#1f1a14" stroke-width="3" stroke-linecap="round"/><g transform="rotate(-22 60 140)"><rect x="38" y="64" width="44" height="64" rx="6" fill="#8e2a24" stroke="#0e241c" stroke-width="2.5"/><rect x="42" y="68" width="36" height="56" rx="4" fill="none" stroke="#e8d7a8" stroke-width="1.2"/><path transform="translate(48 77) scale(.1)" d="M0,40C-58,2 -42,-50 0,-22C42,-50 58,2 0,40Z" fill="#e8d7a8"/></g><g><rect x="38" y="64" width="44" height="64" rx="6" fill="#8e2a24" stroke="#0e241c" stroke-width="2.5"/><rect x="42" y="68" width="36" height="56" rx="4" fill="none" stroke="#e8d7a8" stroke-width="1.2"/><path transform="translate(48 77) scale(.1)" d="M0,40C-58,2 -42,-50 0,-22C42,-50 58,2 0,40Z" fill="#e8d7a8"/></g><g transform="rotate(22 60 140)"><rect x="38" y="64" width="44" height="64" rx="6" fill="#8e2a24" stroke="#0e241c" stroke-width="2.5"/><rect x="42" y="68" width="36" height="56" rx="4" fill="none" stroke="#e8d7a8" stroke-width="1.2"/><path transform="translate(60 92) scale(.26)" d="M0,40C-58,2 -42,-50 0,-22C42,-50 58,2 0,40Z" fill="#e8d7a8"/></g></svg></div><h1>Card<span>shark</span></h1>
       <button class="ib" id="goSet" aria-label="${t.settings}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button></header>
-    <button class="poster pb" id="goB">${fan('b', fanB)}<span class="pcap"><span><b>Briškula</b><small>${t.sumB()}</small></span><span class="go">${arrow}</span></span></button>
-    <button class="poster pt" id="goT">${fan('b', fanT)}<span class="pcap"><span><b>Trešeta</b><small>${t.sumT()}</small></span><span class="go">${arrow}</span></span></button>
-    <button class="poster ph" id="goH">${fan('h', fanH)}<span class="pcap"><span><b>Bela</b><small>${t.sumH()}</small></span><span class="go">${arrow}</span></span></button>
+    <button class="poster pb" id="goB">${fan('b', fanB)}<span class="pcap"><span><b>Briškula</b><small>${t.sumB()} · ${t.lv[S.bLevel]}</small></span><span class="go">${arrow}</span></span></button>
+    <button class="poster pt" id="goT">${fan('b', fanT)}<span class="pcap"><span><b>Trešeta</b><small>${t.sumT()} · ${t.lv[S.tLevel]}</small></span><span class="go">${arrow}</span></span></button>
+    <button class="poster ph" id="goH">${fan('h', fanH)}<span class="pcap"><span><b>Bela</b><small>${t.sumH()} · ${t.lv[S.hLevel]}</small></span><span class="go">${arrow}</span></span></button>
   </div>`;
   $('#goSet').onclick = showSettings;
   $('#goB').onclick = () => showGameSheet('b');
@@ -1683,11 +1705,13 @@ function renderHome() {
 function showGameSheet(game) {
   const t = L();
   const seg = (key, opts) => `<div class="seg dark" role="group">${opts.map(([v, lab]) => `<button data-k="${key}" data-v="${v}" aria-pressed="${S[key] === v}">${lab}</button>`).join('')}</div>`;
+  const lk = game + 'Level';
+  const lvl = `<div class="gsep"></div><div class="glab">${t.level}</div><div class="seg dark levels" role="group">${AI.LEVELS.map(l => `<button data-k="${lk}" data-v="${l}" aria-pressed="${S[lk] === l}">${t.lv[l]}</button>`).join('')}</div><p class="muted lvnote" id="lvNote">${t.lvNote[S[lk]]}</p>`;
   const body = game === 'b'
-    ? `<div class="glab">${t.players}</div><div class="seg dark modes" role="group">${['p4', 's4', 's3', 'd2'].map(m => `<button data-k="bMode" data-v="${m}" aria-pressed="${S.bMode === m}">${t.modeN(m)}</button>`).join('')}</div><div class="gsep"></div><div class="glab">${t.matchTo}</div>` + seg('bTarget', [[2, t.target(2)], [3, t.target(3)], [4, t.target(4)]])
-    : game === 't' ? `<div class="glab">${t.players}</div>` + seg('tMode', [[4, t.tModeN(4)], [2, t.tModeN(2)]]) + `<div class="gsep"></div><div class="glab">${t.hTo}</div>` + seg('tTarget', [[21, '21'], [31, '31'], [41, '41']])
+    ? `<div class="glab">${t.players}</div><div class="seg dark modes" role="group">${['p4', 's4', 's3', 'd2'].map(m => `<button data-k="bMode" data-v="${m}" aria-pressed="${S.bMode === m}">${t.modeN(m)}</button>`).join('')}</div>${lvl}<div class="gsep"></div><div class="glab">${t.matchTo}</div>` + seg('bTarget', [[2, t.target(2)], [3, t.target(3)], [4, t.target(4)]])
+    : game === 't' ? `<div class="glab">${t.players}</div>` + seg('tMode', [[4, t.tModeN(4)], [2, t.tModeN(2)]]) + lvl + `<div class="gsep"></div><div class="glab">${t.hTo}</div>` + seg('tTarget', [[21, '21'], [31, '31'], [41, '41']])
       + `<div class="gsep"></div><div class="glab">${t.localRules}</div><div class="rules-list">${[['tAkuze', t.rAkuze], ['tLongNap', t.rLongNap], ['tThirdsLast', t.rThirds], ['tSignals', t.rSignals], ['tClockwise', t.rClockwise]].map(([k, [lab, sub]]) => `<label class="tog"><span><b>${lab}</b><small>${sub}</small></span><input type="checkbox" data-opt="${k}" ${S[k] ? 'checked' : ''}></label>`).join('')}</div>`
-    : `<div class="glab">${t.hTo}</div>` + seg('hTarget', [[501, '501'], [701, '701'], [1001, '1001']]);
+    : lvl.replace('<div class="gsep"></div>', '') + `<div class="gsep"></div><div class="glab">${t.hTo}</div>` + seg('hTarget', [[501, '501'], [701, '701'], [1001, '1001']]);
   openSheet(`<div class="gsh"><h3>${({ b: 'Briškula', t: 'Trešeta', h: 'Bela' })[game]}</h3><button class="link" id="gRules">${t.rules}</button></div>
     <div class="gsegs">${body}</div>
     <div class="btns"><button class="play wide" id="gPlay">${t.start}</button></div>`, v => {
@@ -1696,6 +1720,7 @@ function showGameSheet(game) {
       let val = b.dataset.v; val = isNaN(+val) ? val : +val;
       S[b.dataset.k] = val; save(); renderHome();
       b.parentNode.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b));
+      if (b.dataset.k === lk) v.querySelector('#lvNote').textContent = L().lvNote[val];
     });
     v.querySelectorAll('input[data-opt]').forEach(i => i.onchange = () => { S[i.dataset.opt] = i.checked; save(); });
     v.querySelector('#gRules').onclick = () => showRules(game);
@@ -1727,12 +1752,11 @@ function showSettings() {
   const seg = (key, opts) => `<div class="seg dark">${opts.map(([v, lab]) => `<button data-k="${key}" data-v="${v}" aria-pressed="${S[key] === v}">${lab}</button>`).join('')}</div>`;
   openSheet(`<h3>${t.settings}</h3>
     <h4>${t.language}</h4>${seg('lang', [['hr', 'Hrvatski'], ['en', 'English']])}
-    <h4>${t.level}</h4>${seg('level', AI.LEVELS.map(l => [l, t.lv[l]]))}<p class="muted lvnote" id="lvNote">${t.lvNote[S.level]}</p>
     <h4>Briškula</h4><label class="check dark"><input type="checkbox" id="sReveal" ${S.bReveal ? 'checked' : ''}><span>${t.reveal}</span></label>
     <h4>${t.deckB}</h4><div class="decks">${deckRow('b', pickB, 'bDeck')}</div>
     <h4>${t.deckH}</h4><div class="decks">${deckRow('h', pickH, 'hDeck')}</div>
     <h4>${t.speed}</h4>${seg('speed', [['normal', t.normal], ['fast', t.fast]])}
-    <p class="muted credit">${t.credit} · v20</p>
+    <p class="muted credit">${t.credit} · v21</p>
     <div class="btns"><button class="pri" id="sx">${t.close}</button></div>`, v => {
     v.querySelector('#sx').onclick = () => { closeSheet(); if (G) renderAll(); else renderHome(); };
     v.onclick = e => { if (e.target === v) { closeSheet(); if (G) renderAll(); else renderHome(); } };
@@ -1745,7 +1769,6 @@ function showSettings() {
     v.querySelectorAll('.seg button').forEach(b => b.onclick = () => {
       let val = b.dataset.v; val = isNaN(+val) ? val : +val; S[b.dataset.k] = val; save();
       b.parentNode.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b));
-      if (b.dataset.k === 'level') v.querySelector('#lvNote').textContent = L().lvNote[S.level];
       if (b.dataset.k === 'lang') { document.documentElement.lang = S.lang; if (G) renderAll(); else renderHome(); showSettings(); }
     });
   });
@@ -1963,7 +1986,7 @@ async function briskulaMatch(my) {
       await turnTo(s);
       let card;
       if (s === 0) card = await humanPick(G.hands[0].map(c => c.id));
-      else { await sleep(SPEED().ai); card = AI.play('b', G, s, S.level); }
+      else { await sleep(SPEED().ai); card = AI.play('b', G, s, S.bLevel); }
       check(my);
       const done = E.bPlay(G, s, card);
       placeTrickCard(s, card); renderSeats(); renderHand();
@@ -2013,7 +2036,7 @@ async function belaMatch(my) {
       const s = G.bidder; G.turn = s; renderSeats();
       let b;
       if (s === 0) b = await humanBid(s === G.dealer);
-      else { status(t().bidWait(esc(name(s))), true); await sleep(SPEED().ai); b = AI.bid(G, s, S.level); }
+      else { status(t().bidWait(esc(name(s))), true); await sleep(SPEED().ai); b = AI.bid(G, s, S.hLevel); }
       check(my);
       if (b < 0) { bubble(s, t().pass); E.hBid(G, s, -1); }
       else { calledSuit = b; bubble(s, `${Cards.suitIcon('h', b, 18)}${t().called(suitName('h', b))}`, true, 2000); E.hBid(G, s, b); }
@@ -2053,7 +2076,7 @@ async function belaMatch(my) {
       let card;
       let callBela = true;
       if (s === 0) { const legal = E.hLegal(G, 0); showBelaChoice(legal); card = await humanPick(legal.map(c => c.id)); callBela = myBela; }
-      else { await sleep(SPEED().ai); card = AI.play('h', G, s, S.level); callBela = E.hBelaEligible(G, s, card) ? AI.callBela(G, s, S.level) : true; }
+      else { await sleep(SPEED().ai); card = AI.play('h', G, s, S.hLevel); callBela = E.hBelaEligible(G, s, card) ? AI.callBela(G, s, S.hLevel) : true; }
       check(my);
       const r = E.hPlay(G, s, card, callBela);
       placeTrickCard(s, card); renderSeats(); renderHand();
@@ -2198,7 +2221,7 @@ async function tresetaMatch(my) {
       let card;
       let sig = null;
       if (s === 0) { showSignals(); card = await humanPick(E.tLegal(G, 0).map(c => c.id)); sig = mySig; mySig = null; }
-      else { await sleep(SPEED().ai); card = AI.play('t', G, s, S.level); sig = E.tAISignal(G, s, card); }
+      else { await sleep(SPEED().ai); card = AI.play('t', G, s, S.tLevel); sig = E.tAISignal(G, s, card); }
       check(my);
       if (sig && G.opts.signals && G.seats.length === 4) bubble(s, t().sigName[sig], sig === 'kucam', 1600);
       const done = E.tPlay(G, s, card, sig);
