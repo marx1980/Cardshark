@@ -461,6 +461,50 @@ button.upile{cursor:pointer}
 .pslide input{flex:1;accent-color:var(--brass)}
 .pslide b{min-width:64px;text-align:right;font:800 17px var(--display);font-variant-numeric:tabular-nums}
 .pflychip{position:fixed;left:-7px;top:-7px;width:14px;height:14px;border-radius:50%;background:radial-gradient(circle,#f2c230 0 35%,#fff 36% 48%,#c8382e 49%);z-index:40;pointer-events:none}
+
+/* remi */
+.poster.pr{background:radial-gradient(90% 90% at 50% 18%,#7c8a2b,#2c330b)}
+.poster.pr .go{background:#ecf1c4;color:#2c330b}
+#home .poster.solo{grid-column:1/-1;justify-self:center;width:calc((100% - 12px) / 2)}
+@media (orientation:landscape) and (min-width:600px){#home .poster.solo{grid-column:2;width:auto;justify-self:stretch}}
+#remi{position:fixed;inset:0;z-index:20;display:flex;flex-direction:column;background:radial-gradient(120% 90% at 50% 35%,#2c3416,#10140a);user-select:none;-webkit-user-select:none;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--rr:1.5}
+#remi[hidden]{display:none}
+#remi .chip.score small{color:var(--muted);font-size:12px}
+.ropps{display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));gap:6px;padding:4px 8px;flex:none}
+.ropp{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 2px;border-radius:12px;border:1px solid rgba(255,255,255,.1);background:rgba(0,0,0,.22);min-width:0;font-size:12.5px}
+.ropp.turn{border-color:var(--brass);box-shadow:0 0 0 2px rgba(214,171,82,.35)}
+.ropp.open .rname b{color:#d9e7a8}
+.ropp .rname{max-width:100%;overflow:hidden}.ropp .rname b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+.rcount{display:flex;align-items:center;gap:5px}.rcount b{font-size:14px}
+.rback{display:block;width:16px;height:calc(16px * var(--rr))}.rback>*{width:100%!important;height:100%!important}
+.ropp small{color:var(--muted);font-variant-numeric:tabular-nums}
+.rtable{flex:1;min-height:0;overflow-y:auto;display:flex;flex-wrap:wrap;align-content:flex-start;gap:8px 8px;padding:8px 10px;--mw:clamp(40px,11.5vw,52px)}
+.rmeld{display:flex;padding:3px;border-radius:8px;background:rgba(0,0,0,.18);border:1px solid rgba(255,255,255,.08);cursor:pointer}
+.rmeld.mine{border-color:rgba(214,171,82,.45)}
+.rmeld .rc{width:var(--mw);height:calc(var(--mw) * var(--rr));margin-left:calc(var(--mw) * -.62)}
+.rmeld .rc:first-child{margin-left:0}
+.rmeld.new{animation:rnew .5s ease-out}
+.rmeld.fl{animation:rfl .6s ease-out}
+@keyframes rnew{from{transform:scale(.7);opacity:0}to{transform:none;opacity:1}}
+@keyframes rfl{0%{box-shadow:0 0 0 3px var(--brass)}100%{box-shadow:none}}
+.rc>*{width:100%!important;height:100%!important;display:block}
+.rc{filter:drop-shadow(0 1px 2px rgba(0,0,0,.35))}
+.rpiles{display:flex;align-items:center;gap:12px;padding:4px 12px;flex:none;min-height:calc(54px * var(--rr) + 8px)}
+.rpile{position:relative;width:54px;height:calc(54px * var(--rr));padding:0;border:0;background:none;cursor:pointer;flex:none;border-radius:6px}
+.rpile .rc{width:100%;height:100%}
+.rpile .rc.empty{border:1.5px dashed rgba(255,255,255,.2);border-radius:6px;filter:none}
+.rpile.go{box-shadow:0 0 0 3px var(--brass);border-radius:6px}
+.rleft{position:absolute;bottom:3px;right:3px;background:rgba(0,0,0,.6);color:#fff;border-radius:6px;padding:0 5px;font-size:11px;font-weight:700}
+.rstage{flex:1;min-width:0;display:flex;align-items:center;gap:6px;overflow-x:auto;--mw:34px}
+.rmeld.st{border-style:dashed;border-color:rgba(255,255,255,.35)}
+.rsum{font:800 18px var(--display);color:var(--muted);white-space:nowrap}.rsum small{font-size:12px}.rsum.ok{color:#d9e7a8}
+.ract{display:flex;justify-content:center;gap:8px;padding:4px 8px;flex:none;min-height:44px;flex-wrap:wrap}
+.ract .ubtn.pri{background:var(--brass);color:var(--brass-ink)}
+.ract .ubtn.sort{font-size:14px;padding:10px 12px;letter-spacing:.05em}
+.rhand{position:relative;flex:none;margin:0 4px 10px;--cw:56px}
+.rhand .rc{position:absolute;width:var(--cw);height:calc(var(--cw) * var(--rr));transition:transform .12s;cursor:pointer}
+.rhand .rc.sel{transform:translateY(-14px);filter:drop-shadow(0 0 6px rgba(214,171,82,.9))}
+.rhand .rc.must{outline:3px solid #d9e7a8;outline-offset:-1px;border-radius:6px}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 
@@ -471,6 +515,7 @@ button.upile{cursor:pointer}
   <section id="home"></section>
   <section id="sol" hidden></section>
   <section id="poker" hidden></section>
+  <section id="remi" hidden></section>
   <section id="uno" hidden></section>
   <section id="table" hidden>
     <header class="bar">
@@ -1846,9 +1891,16 @@ const Cards = (() => {
     const i = Math.max(0, FR[deck].backs.indexOf(color));
     return sprite(deck, 4 + i, 4);
   }
+  // the jokers: the English-pattern deck has its own (black and red); otherwise a plain drawn joker
+  function frJoker(deck, color) {
+    deck = frDeck(deck);
+    if (deck === 'english') return sprite(deck, color === 'R' ? 2 : 1, 4);
+    const ink = color === 'R' ? '#c0302a' : '#1b1b1b';
+    return `<svg viewBox="0 0 240 336" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="1" width="238" height="334" rx="14" fill="#fff" stroke="#999" stroke-width="2"/><text x="120" y="190" text-anchor="middle" font-family="Georgia,serif" font-weight="700" font-size="44" fill="${ink}" letter-spacing="4">JOKER</text><path d="M120 70l14 30 32 4-24 22 6 32-28-16-28 16 6-32-24-22 32-4z" fill="${ink}"/><text x="22" y="48" font-family="Georgia,serif" font-weight="700" font-size="30" fill="${ink}">J</text></svg>`;
+  }
   const frRatio = deck => FR[frDeck(deck)].h / FR[frDeck(deck)].w;
 
-  return { FR, frFace, frBack, frRatio, frDeck, DECKS, setDeck, deckOf, list, face, back, ratio, suitIcon, DEFS: '' };
+  return { FR, frFace, frBack, frJoker, frRatio, frDeck, DECKS, setDeck, deckOf, list, face, back, ratio, suitIcon, DEFS: '' };
 })();
 </script>
 <script>// French-suited 52-card deck, English pattern. Artwork: Adrian Kennard, www.me.uk/cards (CC0 / public domain), via @letele/playing-cards.
@@ -3858,6 +3910,712 @@ const PokerUI = (() => {
 })();
 if (typeof module !== 'undefined') module.exports = PokerUI;
 </script>
+<script>// ===================== REMI (Croatian rummy, "51") =====================
+// Two French-suited decks and four jokers (108 cards), 2–6 players. Everyone gets 14 cards, the player after the
+// dealer 15 – that player starts by discarding. A turn: draw from the stock (or take the top discard, which must be
+// used in the same turn), lay down / lay off if allowed, then discard. The first lay-down (opening) must be worth at
+// least 51 in one turn. Melds: 3–4 of a rank in different suits, or 3+ in a row of one suit (ace low or high, no
+// wrapping); at most one joker in a meld. Once open, cards may be laid off on any meld, and a joker may be taken back
+// by giving the card it stands for (it must then be used in the same turn). Going out = discarding the last card.
+// Scoring: winner -40 (-100 for going out in one go without having opened before – "remi", which also doubles the
+// others' points); others: the cards left in hand (A, 10, J, Q, K = 10, joker 25), or 100 if they never opened.
+const Remi = (() => {
+  const SUITS = ['S', 'H', 'D', 'C'];
+  const RN = { 1: 'a', 11: 'j', 12: 'q', 13: 'k' };
+  const key = c => c.s + (RN[c.r] || c.r);
+  const isJ = c => c.s === 'X';
+  // value of a card left in hand
+  const handVal = c => isJ(c) ? 25 : c.r === 1 || c.r >= 10 ? 10 : c.r;
+  // value of a position in a meld (ace low 1, ace high 10)
+  const posVal = p => p === 1 ? 1 : p >= 10 ? 10 : p;
+  function shuffle(a, rng = Math.random) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rng() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+  function makeDeck() {
+    const d = [];
+    for (const copy of ['a', 'b']) for (const s of SUITS) for (let r = 1; r <= 13; r++) d.push({ id: s + r + copy, s, r });
+    for (let k = 1; k <= 4; k++) d.push({ id: 'X' + k, s: 'X', r: 0, joker: k % 2 ? 'B' : 'R' });
+    return d;
+  }
+
+  // ---------------------------------------------------------------- melds
+  // analyse a group of cards: { type: 'set'|'run', value, slots: [{ id, r, s }] in order } or null
+  function analyze(cards) {
+    if (!cards || cards.length < 3) return null;
+    const jok = cards.filter(isJ), nat = cards.filter(c => !isJ(c));
+    if (jok.length > 1 || nat.length < 2) return null;
+    // a set: one rank, different suits, at most four
+    if (nat.every(c => c.r === nat[0].r)) {
+      const suits = new Set(nat.map(c => c.s));
+      if (suits.size === nat.length && cards.length <= 4) {
+        const r = nat[0].r, v = (r === 1 ? 10 : posVal(r)) * cards.length;
+        const slots = nat.map(c => ({ id: c.id, r, s: c.s }));
+        if (jok.length) slots.push({ id: jok[0].id, r, s: null, joker: true, miss: SUITS.filter(s => !suits.has(s)) });
+        return { type: 'set', value: v, slots };
+      }
+      if (nat.length > 1) return null;
+    }
+    // a run: one suit, consecutive, ace either end
+    const s = nat[0].s; if (!nat.every(c => c.s === s)) return null;
+    let best = null;
+    for (const aceHigh of [false, true]) {
+      const pos = nat.map(c => c.r === 1 && aceHigh ? 14 : c.r).sort((a, b) => a - b);
+      if (new Set(pos).size !== pos.length) continue;
+      let lo = pos[0], hi = pos[pos.length - 1];
+      const gaps = hi - lo + 1 - pos.length;
+      if (gaps > jok.length) continue;
+      let jPos = null;
+      if (gaps === 1) { for (let p = lo; p <= hi; p++) if (!pos.includes(p)) jPos = p; }
+      else if (jok.length) { if (hi < 14) jPos = ++hi; else if (lo > 1) jPos = --lo; else continue; }
+      if (hi - lo + 1 > 13) continue;                       // the ace is either low or high, never both
+      const slots = [];
+      for (let p = lo; p <= hi; p++) {
+        if (p === jPos) slots.push({ id: jok[0].id, r: p === 14 ? 1 : p, s, joker: true, pos: p });
+        else { const c = nat.find(x => (x.r === 1 && aceHigh ? 14 : x.r) === p); slots.push({ id: c.id, r: c.r, s, pos: p }); }
+      }
+      const value = slots.reduce((a, x) => a + posVal(x.pos), 0);
+      if (!best || value > best.value) best = { type: 'run', value, slots };
+    }
+    return best;
+  }
+  const meldValue = cards => { const a = analyze(cards); return a ? a.value : 0; };
+
+  // ---------------------------------------------------------------- game state
+  function newMatch(o) {
+    const n = o.players || 4;
+    return { n, opts: { target: 1001, ...o }, scores: Array(n).fill(0), dealer: Math.floor(Math.random() * n), round: 0 };
+  }
+  function newRound(st, rng = Math.random) {
+    st.round++;
+    st.dealer = (st.dealer + 1) % st.n;
+    st.stock = shuffle(makeDeck(), rng);
+    st.hands = Array.from({ length: st.n }, () => []);
+    for (let k = 0; k < 14; k++) for (let p = 0; p < st.n; p++) st.hands[p].push(st.stock.pop());
+    st.turn = (st.dealer + 1) % st.n;
+    st.hands[st.turn].push(st.stock.pop());
+    st.discard = []; st.melds = []; st.opened = Array(st.n).fill(false);
+    st.phase = 'play'; st.staged = []; st.mustUse = null; st.swapped = null; st.turnStartOpened = false;
+    st.winner = null; st.remi = false; st.result = null; st.nextMeld = 1; st.log = []; st.took = Array.from({ length: st.n }, () => []);
+    st.firstTurn = true; st.reshuffles = 0;
+    return st;
+  }
+  const hand = (st, p) => st.hands[p];
+  const find = (st, p, id) => st.hands[p].find(c => c.id === id);
+  const take = (st, p, ids) => { const out = []; for (const id of ids) { const i = st.hands[p].findIndex(c => c.id === id); if (i < 0) throw new Error('not in hand'); out.push(st.hands[p].splice(i, 1)[0]); } return out; };
+  const err = m => { const e = new Error(m); e.rule = m; throw e; };
+  // the stock runs out: the discards (all but the top one) are shuffled into a new stock – once.
+  // The second time it runs out the round ends without a winner.
+  function refill(st) {
+    if (st.stock.length) return true;
+    if ((st.reshuffles || 0) >= 1) { endRound(st, -1); return false; }
+    st.reshuffles = (st.reshuffles || 0) + 1;
+    const top = st.discard.pop();
+    st.stock = shuffle(st.discard); st.discard = top ? [top] : [];
+    return st.stock.length > 0;
+  }
+  // ---- actions (all throw on illegal moves; the screen and the bots only offer legal ones)
+  function drawStock(st, p) {
+    if (st.turn !== p || st.phase !== 'draw') err('turn');
+    if (!refill(st)) return null;
+    const c = st.stock.pop(); st.hands[p].push(c); st.phase = 'play'; st.turnStartOpened = st.opened[p];
+    return c;
+  }
+  function takeDiscard(st, p) {
+    if (st.turn !== p || st.phase !== 'draw' || !st.discard.length) err('turn');
+    const c = st.discard.pop(); st.hands[p].push(c); st.phase = 'play'; st.mustUse = c.id; st.turnStartOpened = st.opened[p];
+    st.took[p].push(c);
+    return c;
+  }
+  // give the discard back (only while nothing else was done this turn)
+  function undoTake(st, p) {
+    if (st.turn !== p || !st.mustUse || st.staged.length) err('turn');
+    const i = st.hands[p].findIndex(c => c.id === st.mustUse); if (i < 0) err('used');
+    st.discard.push(st.hands[p].splice(i, 1)[0]); st.took[p].pop(); st.mustUse = null; st.phase = 'draw';
+  }
+  const stagedValue = st => st.staged.reduce((a, m) => a + meldValue(m), 0);
+  // before opening: put a meld aside for the opening
+  function stage(st, p, ids) {
+    if (st.turn !== p || st.phase !== 'play' || st.opened[p]) err('turn');
+    const cards = ids.map(id => find(st, p, id)); if (cards.some(c => !c)) err('not in hand');
+    if (!analyze(cards)) err('meld');
+    if (st.hands[p].length - ids.length < 1) err('keep');
+    st.staged.push(take(st, p, ids));
+  }
+  function unstage(st, p, i) {
+    if (st.turn !== p || !st.staged[i]) err('turn');
+    st.hands[p].push(...st.staged.splice(i, 1)[0]);
+  }
+  function addMeld(st, p, cards) { const a = analyze(cards); const m = { id: st.nextMeld++, owner: p, cards: a.slots.map(x => cards.find(c => c.id === x.id)), a }; st.melds.push(m); return m; }
+  // open: the put-aside melds go to the table (51 or more)
+  function open(st, p) {
+    if (st.turn !== p || st.opened[p] || !st.staged.length) err('turn');
+    if (stagedValue(st) < 51) err('51');
+    for (const m of st.staged) addMeld(st, p, m);
+    st.staged = []; st.opened[p] = true;
+  }
+  // after opening: a new meld from the hand
+  function meld(st, p, ids) {
+    if (st.turn !== p || st.phase !== 'play' || !st.opened[p]) err('turn');
+    const cards = ids.map(id => find(st, p, id)); if (cards.some(c => !c)) err('not in hand');
+    if (!analyze(cards)) err('meld');
+    if (st.hands[p].length - ids.length < 1) err('keep');
+    take(st, p, ids); return addMeld(st, p, cards);
+  }
+  const meldById = (st, id) => st.melds.find(m => m.id === id);
+  function canLayOff(st, card, m) { return !!analyze(m.cards.concat([card])); }
+  function layOff(st, p, id, meldId) {
+    if (st.turn !== p || st.phase !== 'play' || !st.opened[p]) err('turn');
+    const c = find(st, p, id), m = meldById(st, meldId); if (!c || !m) err('bad');
+    if (st.hands[p].length < 2) err('keep');
+    const all = m.cards.concat([c]), a = analyze(all); if (!a) err('meld');
+    take(st, p, [id]); m.cards = a.slots.map(x => all.find(y => y.id === x.id)); m.a = a;
+  }
+  // which card a joker in a meld stands for (null if none)
+  function jokerSlot(m) { return m.a.slots.find(x => x.joker) || null; }
+  function canSwap(st, card, m) {
+    const j = jokerSlot(m); if (!j || isJ(card)) return false;
+    if (m.a.type === 'run') return card.s === j.s && card.r === j.r;
+    return card.r === j.r && j.miss.includes(card.s);
+  }
+  function swapJoker(st, p, id, meldId) {
+    if (st.turn !== p || st.phase !== 'play' || !st.opened[p]) err('turn');
+    const c = find(st, p, id), m = meldById(st, meldId); if (!c || !m || !canSwap(st, c, m)) err('swap');
+    const j = jokerSlot(m), jc = m.cards.find(x => x.id === j.id);
+    const all = m.cards.filter(x => x.id !== j.id).concat([c]), a = analyze(all); if (!a) err('meld');
+    take(st, p, [id]); m.cards = a.slots.map(x => all.find(y => y.id === x.id)); m.a = a;
+    st.hands[p].push(jc); st.swapped = jc.id;
+    return jc;
+  }
+  // end the turn
+  function discard(st, p, id) {
+    if (st.turn !== p || st.phase !== 'play') err('turn');
+    if (st.staged.length) { if (stagedValue(st) >= 51 && !st.opened[p]) open(st, p); else err('51'); }
+    if (st.mustUse && st.hands[p].some(c => c.id === st.mustUse)) err('mustUse');
+    if (st.swapped && st.hands[p].some(c => c.id === st.swapped)) err('joker');
+    const i = st.hands[p].findIndex(c => c.id === id); if (i < 0) err('not in hand');
+    const c = st.hands[p].splice(i, 1)[0]; st.discard.push(c);
+    st.mustUse = null; st.swapped = null; st.firstTurn = false;
+    if (!st.hands[p].length) { endRound(st, p); return { out: true }; }
+    st.turn = (p + 1) % st.n; st.phase = 'draw';
+    return {};
+  }
+  function endRound(st, w) {
+    st.winner = w;
+    st.remi = w >= 0 && !st.turnStartOpened && st.opened[w];
+    const mult = st.remi ? 2 : 1, pts = Array(st.n).fill(0);
+    for (let q = 0; q < st.n; q++) {
+      if (q === w) { pts[q] = st.remi ? -100 : -40; continue; }
+      pts[q] = (st.opened[q] ? st.hands[q].reduce((a, c) => a + handVal(c), 0) : 100) * mult;
+    }
+    pts.forEach((x, q) => st.scores[q] += x);
+    st.result = { winner: w, remi: st.remi, pts };
+    st.matchOver = st.opts.target === 0 || st.scores.some(x => x >= st.opts.target);
+  }
+  const champion = st => st.scores.indexOf(Math.min(...st.scores));
+  const handPoints = (st, p) => st.hands[p].reduce((a, c) => a + handVal(c), 0);
+
+  return { SUITS, key, isJ, handVal, posVal, makeDeck, shuffle, analyze, meldValue, newMatch, newRound, drawStock, takeDiscard, undoTake, stage, unstage, open, meld, layOff, canLayOff, swapJoker, canSwap, jokerSlot, discard, stagedValue, meldById, champion, handPoints };
+})();
+if (typeof module !== 'undefined') module.exports = Remi;
+
+// ===================== REMI BOTS =====================
+// Novice: opens when it happens to see 51, lays down what it notices, throws away almost at random.
+// Average: finds the best melds in its hand, keeps pairs and near-runs, sheds high cards.
+// Pro: also avoids throwing cards the next player could use, takes discards that help, plans lay-offs and joker swaps.
+// Cardshark: Pro, plus it remembers what each player has picked up and keeps the cards they are collecting away from them.
+const RemiAI = (() => {
+  const R = typeof Remi !== 'undefined' ? Remi : require('./remi.js');
+  const LEVELS = ['novice', 'average', 'pro', 'cardshark'];
+  const isJ = R.isJ;
+  // discard weights per level: loose = keep pairs/near-runs, val = shed high cards, feed = don't give the next player
+  // a card they can lay off, lay = keep cards I can lay off later, track = avoid what the others collect
+  const CFG = {
+    novice: {},
+    average: { loose: 1.5, val: 0.6, feed: 0, lay: 0, track: 0 },
+    pro: { loose: 0, outs: 1.2, val: 0.8, feed: 30, lay: 6, track: 0, late: 1.5 },
+    cardshark: { loose: 0, outs: 1.2, val: 0.8, feed: 30, lay: 6, track: 0, late: 2 }
+  };
+
+  // ---- all melds that can be made from a set of cards (each a list of card ids)
+  function candidates(cards) {
+    const out = [], jok = cards.filter(isJ).slice(0, 2), nat = cards.filter(c => !isJ(c));
+    const push = arr => { const a = R.analyze(arr); if (a) out.push({ ids: arr.map(c => c.id), cards: arr, value: a.value, pen: arr.reduce((x, c) => x + R.handVal(c), 0) }); };
+    // sets
+    const byRank = {};
+    for (const c of nat) (byRank[c.r] = byRank[c.r] || []).push(c);
+    for (const r in byRank) {
+      const cs = byRank[r]; if (cs.length < 2) continue;
+      // combinations with different suits
+      const combos = [];
+      const rec = (i, cur) => { if (cur.length >= 2) combos.push(cur.slice()); if (cur.length === 4) return; for (let k = i; k < cs.length; k++) if (!cur.some(x => x.s === cs[k].s)) { cur.push(cs[k]); rec(k + 1, cur); cur.pop(); } };
+      rec(0, []);
+      for (const cb of combos) {
+        if (cb.length >= 3) push(cb);
+        if (cb.length <= 3) for (const j of jok) push(cb.concat([j]));
+      }
+    }
+    // runs
+    for (const s of R.SUITS) {
+      const by = {}; for (const c of nat) if (c.s === s) (by[c.r] = by[c.r] || []).push(c);
+      const has = p => by[p === 14 ? 1 : p];
+      for (let lo = 1; lo <= 12; lo++) for (let hi = lo + 2; hi <= Math.min(14, lo + 12); hi++) {
+        let miss = 0, present = 0;
+        for (let p = lo; p <= hi; p++) { if (has(p)) present++; else miss++; }
+        if (miss > 1 || present < 2) { if (miss > 1) break; continue; }
+        for (const copy of [0, 1]) {
+          const arr = []; let fresh = copy === 0;
+          for (let p = lo; p <= hi; p++) { const l = has(p); if (l) { const c = l[Math.min(copy, l.length - 1)]; if (l.length > copy && copy) fresh = true; arr.push(c); } }
+          if (!fresh) continue;
+          if (miss === 0) push(arr);
+          else for (const j of jok) push(arr.concat([j]));
+        }
+      }
+    }
+    return out;
+  }
+  // ---- the best non-overlapping melds. mode 'open' scores meld value, 'dead' scores the hand points they remove.
+  // need: a card id that must be in a meld (a taken discard). keep: cards that must stay in hand (at least one).
+  function bestMelds(cards, mode = 'dead', need = null, limit = 6000) {
+    const cand = candidates(cards).map(c => ({ ...c, score: mode === 'open' ? c.value : c.pen + 0.01 * c.cards.length }))
+      .sort((a, b) => b.score - a.score);
+    const totalPen = cards.reduce((a, c) => a + (mode === 'open' ? 10 : R.handVal(c)), 0);
+    let best = { score: 0, melds: [] }, nodes = 0;
+    const used = new Set();
+    const ok = melds => !need || melds.some(m => m.ids.includes(need));
+    if (ok([])) best = { score: 0, melds: [] }; else best = { score: -1, melds: [] };
+    const rec = (i, cur, score, left) => {
+      if (++nodes > limit) return;
+      if (score > best.score && ok(cur) && left >= 1) best = { score, melds: cur.slice() };
+      for (let k = i; k < cand.length; k++) {
+        const c = cand[k];
+        if (c.ids.some(id => used.has(id))) continue;
+        if (left - c.ids.length < 1) continue;                 // a card must stay for the discard
+        c.ids.forEach(id => used.add(id)); cur.push(c);
+        rec(k + 1, cur, score + c.score, left - c.ids.length);
+        cur.pop(); c.ids.forEach(id => used.delete(id));
+      }
+    };
+    rec(0, [], 0, cards.length);
+    return best;
+  }
+  // a card can go onto some meld on the table
+  const fitsTable = (st, c) => st.melds.some(m => R.canLayOff(st, c, m) || R.canSwap(st, c, m));
+  // how close the loose cards are to melds: pairs and near-runs
+  function looseScore(cards) {
+    let v = 0;
+    for (let i = 0; i < cards.length; i++) for (let k = i + 1; k < cards.length; k++) {
+      const a = cards[i], b = cards[k];
+      if (isJ(a) || isJ(b)) { v += 2; continue; }
+      if (a.r === b.r && a.s !== b.s) v += 3;
+      else if (a.s === b.s && Math.abs(a.r - b.r) <= 2 && a.r !== b.r) v += Math.abs(a.r - b.r) === 1 ? 3 : 2;
+    }
+    return v;
+  }
+
+  // ---- cards still out there: two of each, minus what I can see (my hand, the table, the discards)
+  function seenCounts(st, h) {
+    const n = {}; const add = c => { if (!isJ(c)) n[c.s + c.r] = (n[c.s + c.r] || 0) + 1; };
+    h.forEach(add); st.melds.forEach(m => m.cards.forEach(add)); st.discard.forEach(add);
+    return n;
+  }
+  // how many unseen cards would turn my loose cards into melds (or lay off on the table)
+  function outs(st, loose, seen, opened) {
+    const left = (s, r) => { if (r < 1 || r > 13) return 0; return Math.max(0, 2 - (seen[s + r] || 0)); };
+    const want = new Map(); const add = (s, r, w = 1) => { if (r >= 1 && r <= 13) want.set(s + ':' + r, Math.max(want.get(s + ':' + r) || 0, w)); };
+    const nat = loose.filter(c => !isJ(c));
+    for (let i = 0; i < nat.length; i++) for (let k = i + 1; k < nat.length; k++) {
+      const a = nat[i], b = nat[k];
+      if (a.r === b.r && a.s !== b.s) { for (const s of R.SUITS) if (s !== a.s && s !== b.s) add(s, a.r); }
+      else if (a.s === b.s && a.r !== b.r) {
+        const lo = Math.min(a.r, b.r), hi = Math.max(a.r, b.r);
+        if (hi - lo === 1) { add(a.s, lo - 1); add(a.s, hi + 1); if (lo === 1) add(a.s, 13); if (hi === 13) add(a.s, 1); }
+        else if (hi - lo === 2) add(a.s, lo + 1, 1.2);
+      }
+    }
+    if (opened) for (const m of st.melds) for (const sl of m.a.slots) {
+      // cards that would extend a meld on the table
+      if (m.a.type === 'run') { add(sl.s, sl.r - 1, 0.5); add(sl.s, sl.r + 1, 0.5); }
+    }
+    let v = 0; for (const [k, w] of want) { const [s, r] = k.split(':'); v += left(s, +r) * w; }
+    return v;
+  }
+  // ---- draw: take the discard only when it can be used this turn (and helps)
+  function chooseDraw(st, p, level) {
+    const top = st.discard[st.discard.length - 1];
+    if (!top) return 'stock';
+    if (level === 'novice' && Math.random() < 0.5) return 'stock';
+    const h = st.hands[p];
+    if (st.opened[p]) {
+      if (fitsTable(st, top)) return 'discard';
+      const b = bestMelds(h.concat([top]), 'dead', top.id, 3000);
+      return b.score > 0 && b.melds.some(m => m.ids.includes(top.id)) ? 'discard' : 'stock';
+    }
+    const b = bestMelds(h.concat([top]), 'open', top.id, 4000);
+    return b.score >= 51 ? 'discard' : 'stock';
+  }
+
+  // ---- the rest of the turn: a list of actions ending with a discard
+  function planTurn(st, p, level, memo) {
+    const acts = [];
+    let h = st.hands[p].slice();
+    const removeIds = ids => { h = h.filter(c => !ids.includes(c.id)); };
+    let opened = st.opened[p];
+    const need = st.mustUse;
+    // open with 51 or more (Novice sometimes misses it)
+    if (!opened) {
+      const b = bestMelds(h, 'open', need);
+      if (b.score >= 51 && (need || !(level === 'novice' && Math.random() < 0.25))) {
+        for (const m of b.melds) { acts.push({ a: 'stage', ids: m.ids }); removeIds(m.ids); }
+        acts.push({ a: 'open' }); opened = true;
+      }
+    }
+    // tables melds as they will be after our moves (for lay-off checks)
+    const sim = { melds: st.melds.map(m => ({ ...m, cards: m.cards.slice(), a: m.a })) };
+    if (opened) {
+      // new melds from the hand
+      const b = bestMelds(h, 'dead', st.opened[p] ? need : null);
+      for (const m of b.melds) { if (h.length - m.ids.length < 1) continue; acts.push({ a: 'meld', ids: m.ids }); sim.melds.push({ id: -acts.length, cards: m.cards, a: R.analyze(m.cards), pending: true }); removeIds(m.ids); }
+      // joker swaps where the freed joker can be used at once
+      if (level !== 'novice') for (const m of sim.melds) {
+        if (m.pending || !R.jokerSlot(m)) continue;
+        const c = h.find(x => R.canSwap(st, x, m)); if (!c || h.length < 2) continue;
+        const jc = m.cards.find(x => x.id === R.jokerSlot(m).id);
+        const rest = h.filter(x => x.id !== c.id).concat([jc]);
+        const bb = bestMelds(rest, 'dead', jc.id, 2000);
+        if (bb.melds.some(mm => mm.ids.includes(jc.id))) {
+          const mm = bb.melds.find(x => x.ids.includes(jc.id));
+          if (rest.length - mm.ids.length < 1) continue;
+          acts.push({ a: 'swap', id: c.id, meld: m.id });
+          m.cards = m.cards.filter(x => x.id !== jc.id).concat([c]); m.a = R.analyze(m.cards);
+          h = rest; acts.push({ a: 'meld', ids: mm.ids }); removeIds(mm.ids);
+        }
+      }
+      // lay off whatever fits (keeping one card to discard; jokers only near the end)
+      let changed = true;
+      while (changed && h.length > 1) {
+        changed = false;
+        for (const c of h.slice().sort((a, b) => R.handVal(b) - R.handVal(a))) {
+          if (h.length <= 1) break;
+          if (isJ(c) && h.length > 4 && level !== 'novice') continue;
+          if (level === 'novice' && c.id !== need && Math.random() < 0.3) continue;
+          const m = sim.melds.find(m => !m.pending && R.canLayOff(st, c, m));
+          if (!m) continue;
+          acts.push({ a: 'layoff', id: c.id, meld: m.id });
+          m.cards = m.cards.concat([c]); m.a = R.analyze(m.cards); removeIds([c.id]); changed = true;
+        }
+      }
+    }
+    // a taken discard must have been used: if not, give up the plan and play it safe
+    if (need && h.some(c => c.id === need)) return null;
+    acts.push({ a: 'discard', id: chooseDiscard(st, p, level, h, opened, memo).id });
+    return acts;
+  }
+
+  // ---- Cardshark: look one draw ahead – the points left after the next card, averaged over likely draws
+  function lookAhead(st, p, rest, seen, samples) {
+    const pool = [];
+    for (const s of R.SUITS) for (let r = 1; r <= 13; r++) { const k = Math.max(0, 2 - (seen[s + r] || 0)); for (let i = 0; i < k; i++) pool.push({ id: 'la' + s + r + i, s, r }); }
+    const jl = 4 - st.melds.reduce((a, m) => a + m.cards.filter(isJ).length, 0) - rest.filter(isJ).length - st.discard.filter(isJ).length;
+    for (let i = 0; i < jl; i++) pool.push({ id: 'laX' + i, s: 'X', r: 0 });
+    if (!pool.length) return 0;
+    let tot = 0;
+    for (let k = 0; k < samples; k++) {
+      const x = pool[Math.floor(Math.random() * pool.length)], h2 = rest.concat([x]);
+      const b = bestMelds(h2, 'dead', null, 500), inM = new Set(b.melds.flatMap(m => m.ids));
+      const loose = h2.filter(c => !inM.has(c.id));
+      // after drawing I throw away my worst loose card
+      const pen = loose.reduce((a, c) => a + R.handVal(c), 0) - (loose.length ? Math.max(...loose.map(c => isJ(c) ? 0 : R.handVal(c))) : 0);
+      tot += pen;
+    }
+    return tot / samples;
+  }
+  // ---- which card to throw away
+  function chooseDiscard(st, p, level, h, opened, memo) {
+    const pool = h.filter(c => !isJ(c));
+    const opts = pool.length ? pool : h;
+    if (opts.length === 1) return opts[0];
+    if (level === 'novice') {
+      const b = bestMelds(h, 'dead', null, 800), inM = new Set(b.melds.flatMap(m => m.ids));
+      const loose = opts.filter(c => !inM.has(c.id));
+      const l = loose.length ? loose : opts;
+      return l[Math.floor(Math.random() * l.length)];
+    }
+    const next = (p + 1) % st.n;
+    const seen = seenCounts(st, h);
+    let best = null, bv = -Infinity;
+    for (const c of opts) {
+      const rest = h.filter(x => x.id !== c.id);
+      const b = bestMelds(rest, 'dead', null, 1500);
+      const inM = new Set(b.melds.flatMap(m => m.ids));
+      const loose = rest.filter(x => !inM.has(x.id));
+      const W = CFG[level];
+      // someone is about to go out: get rid of points
+      const minOpp = Math.min(...st.hands.map((x, q) => q === p ? 99 : x.length));
+      const late = W.late && minOpp <= 3 ? W.late : 1;
+      let v = b.score + looseScore(loose) * W.loose + R.handVal(c) * W.val * late;
+      if (W.outs) v += outs(st, loose, seen, opened) * W.outs;
+      if (W.look) v -= lookAhead(st, p, rest, seen, W.look) * (W.lookW || 1.5);
+      if (W.feed && st.opened[next] && fitsTable(st, c)) v -= W.feed;    // don't feed the next player
+      if (W.lay && st.opened[p] && fitsTable(st, c)) v -= W.lay;         // keep it to lay off later
+      if (W.track && memo) {
+        // what the others have been picking up: don't throw them what they collect
+        for (let q = 0; q < st.n; q++) if (q !== p) for (const t of st.took[q] || []) {
+          if (isJ(t)) continue;
+          if (t.r === c.r) v -= q === next ? 8 : 3;
+          else if (t.s === c.s && Math.abs(t.r - c.r) <= 2) v -= q === next ? 6 : 2;
+        }
+      }
+      if (v > bv) { bv = v; best = c; }
+    }
+    return best;
+  }
+  return { CFG, LEVELS, candidates, bestMelds, chooseDraw, planTurn, chooseDiscard, looseScore };
+})();
+if (typeof module !== 'undefined') module.exports = RemiAI;
+
+// ===================== REMI: screen =====================
+const RemiUI = (() => {
+  const R = Remi, A = RemiAI;
+  let api, st = null, levels = [], names = [], token = 0, root, wait = null, sel = new Set(), sortBy = 'suit', lastMeld = null, flash = null;
+  const T = () => api.L().remi;
+  class Abort extends Error {}
+  const sleep = ms => { const t = token; return new Promise((res, rej) => setTimeout(() => t === token ? res() : rej(new Abort()), ms)); };
+  const check = t => { if (t !== token) throw new Abort(); };
+  const $ = s => root.querySelector(s);
+  const speed = () => api.S.speed === 'fast' ? 0.55 : 1;
+  const nm = p => p === 0 ? T().you : api.botName(names[p]);
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+  function init(a) { api = a; }
+  const face = c => R.isJ(c) ? Cards.frJoker(api.S.fDeck, c.joker) : Cards.frFace(R.key(c), api.S.fDeck);
+  const back = () => Cards.frBack(api.S.fDeck, api.S.fBack);
+  const card = (c, cls = '') => `<div class="rc ${cls}" data-id="${c.id}">${face(c)}</div>`;
+
+  // ---------------------------------------------------------------- save / resume
+  function ckpt() { if (!st) return; api.S.remiSave = { st: JSON.stringify(st), levels, names, t: Date.now() }; api.save(); }
+  function clearSave() { if (api.S.remiSave) { api.S.remiSave = null; api.save(); } }
+  const hasSaved = () => !!(api && api.S.remiSave);
+  function show() {
+    root = document.querySelector('#remi');
+    for (const id of ['#home', '#table', '#sol', '#uno', '#poker']) { const el = document.querySelector(id); if (el) el.hidden = true; }
+    root.hidden = false;
+    root.style.setProperty('--rr', Cards.frRatio(api.S.fDeck));
+  }
+  function start() {
+    api.closeSheet(); clearSave(); show();
+    const S = api.S;
+    st = R.newMatch({ players: S.rPlayers || 4, target: S.rTarget ?? 501 });
+    st.dealer = st.n - 2;                                   // you start the first round
+    levels = [null]; for (let i = 1; i < st.n; i++) levels.push(S.rLevel || 'cardshark');
+    const pick = {}; for (let i = 1; i < st.n; i++) pick[i] = levels[i];
+    const pn = api.pickBotNames(pick); names = [null]; for (let i = 1; i < st.n; i++) names.push(pn[i]);
+    build(); token++; run(token, false).catch(e => { if (!(e instanceof Abort)) console.error(e); });
+  }
+  function resume() {
+    const sv = api.S.remiSave; if (!sv) return start();
+    api.closeSheet(); show();
+    st = JSON.parse(sv.st); levels = sv.levels; names = sv.names;
+    build(); token++; run(token, st.winner === null && st.hands).catch(e => { if (!(e instanceof Abort)) console.error(e); });
+  }
+  function leave() { token++; wait = null; st = null; sel.clear(); root.hidden = true; api.showHome(); }
+
+  // ---------------------------------------------------------------- layout
+  function build() {
+    const G = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>';
+    root.innerHTML = `<header class="ubar">
+      <button class="ib" id="rHome" aria-label="${api.L().sol.home}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M15 5l-7 7 7 7"/></svg></button>
+      <div class="chip score" id="rScore"></div>
+      <button class="ib" id="rOpts" aria-label="${api.L().settings}">${G}</button></header>
+      <div class="ropps" id="rOpps"></div>
+      <div class="rtable" id="rTable"></div>
+      <div class="rpiles"><button class="rpile" id="rStock"></button><button class="rpile" id="rDisc"></button><div class="rstage" id="rStage"></div></div>
+      <div class="ract" id="rAct"></div>
+      <div class="rhand" id="rHand"></div>`;
+    $('#rHome').onclick = leave;
+    $('#rOpts').onclick = () => api.showOpts('r');
+    $('#rStock').onclick = () => human({ a: 'stock' });
+    $('#rDisc').onclick = () => human({ a: sel.size === 1 && st.phase === 'play' ? 'discard' : 'take' });
+    $('#rHand').onclick = e => { const el = e.target.closest('.rc'); if (el) toggle(el.dataset.id); };
+    $('#rTable').onclick = e => { const el = e.target.closest('.rmeld'); if (el) human({ a: 'meldTap', meld: +el.dataset.m }); };
+    $('#rStage').onclick = e => { const el = e.target.closest('.rmeld'); if (el) human({ a: 'unstage', i: +el.dataset.i }); };
+    $('#rAct').onclick = e => { const b = e.target.closest('button'); if (b) human({ a: b.dataset.a }); };
+  }
+  const myTurn = () => wait && st.turn === 0;
+  function render() {
+    if (!st || !root) return;
+    const t = T();
+    $('#rScore').innerHTML = st.opts.target ? `<span>${t.you}</span><b>${st.scores[0]}</b><small>/ ${st.opts.target}</small>` : `<small>${t.round}</small><b>${st.round}</b>`;
+    // opponents
+    $('#rOpps').style.setProperty('--n', st.n - 1);
+    $('#rOpps').innerHTML = Array.from({ length: st.n - 1 }, (_, k) => k + 1).map(p => `<div class="ropp${st.turn === p && st.winner === null ? ' turn' : ''}${st.opened[p] ? ' open' : ''}" data-p="${p}">
+      <div class="rname"><b>${esc(nm(p))}</b></div><div class="rcount"><span class="rback">${back()}</span><b>${st.hands[p].length}</b></div>
+      ${st.opts.target ? `<small>${st.scores[p]}</small>` : ''}</div>`).join('');
+    // the table: melds by owner
+    const melds = st.melds;
+    $('#rTable').innerHTML = melds.length ? melds.map(m => `<div class="rmeld${m.owner === 0 ? ' mine' : ''}${lastMeld === m.id ? ' new' : ''}${flash === m.id ? ' fl' : ''}" data-m="${m.id}" style="--k:${m.cards.length}">${m.cards.map(c => card(c)).join('')}</div>`).join('') : '';
+    // piles
+    const top = st.discard[st.discard.length - 1];
+    $('#rStock').innerHTML = `<div class="rc">${back()}</div><span class="rleft">${st.stock.length}</span>`;
+    $('#rDisc').innerHTML = top ? card(top) : '<div class="rc empty"></div>';
+    $('#rStock').classList.toggle('go', !!(myTurn() && st.phase === 'draw'));
+    $('#rDisc').classList.toggle('go', !!(myTurn() && (st.phase === 'draw' && top || st.phase === 'play' && sel.size === 1)));
+    // put-aside melds for the opening
+    const stg = st.turn === 0 ? st.staged : [];
+    $('#rStage').innerHTML = stg.length ? `${stg.map((m, i) => `<div class="rmeld st" data-i="${i}" style="--k:${m.length}">${m.map(c => card(c)).join('')}</div>`).join('')}<b class="rsum${R.stagedValue(st) >= 51 ? ' ok' : ''}">${R.stagedValue(st)}<small>/51</small></b>` : '';
+    renderHand(); renderAct();
+  }
+  const ORDER = { S: 0, H: 1, C: 2, D: 3, X: 4 };
+  function sorted(h) {
+    return h.slice().sort((a, b) => sortBy === 'suit'
+      ? ORDER[a.s] - ORDER[b.s] || a.r - b.r || a.id.localeCompare(b.id)
+      : (R.isJ(a) - R.isJ(b)) || a.r - b.r || ORDER[a.s] - ORDER[b.s]);
+  }
+  function renderHand() {
+    const el = $('#rHand'), h = sorted(st.hands[0]);
+    for (const id of [...sel]) if (!h.some(c => c.id === id)) sel.delete(id);
+    const W = el.clientWidth || 360, n = h.length;
+    const rows = n > 11 ? 2 : 1, per = Math.ceil(n / rows);
+    const cw = Math.min(66, Math.max(44, W / 6.2)), step = per > 1 ? Math.min(cw * 0.86, (W - cw - 4) / (per - 1)) : 0;
+    el.style.setProperty('--cw', cw + 'px'); el.style.height = `calc(${rows} * (var(--cw) * var(--rr) * ${rows > 1 ? 0.62 : 1}) + ${rows > 1 ? 'var(--cw) * var(--rr) * .38 + ' : ''}16px)`;
+    el.classList.toggle('myturn', !!myTurn());
+    el.innerHTML = h.map((c, i) => {
+      const row = Math.floor(i / per), col = i % per, inRow = Math.min(per, n - row * per);
+      const x0 = (W - (cw + step * (inRow - 1))) / 2;
+      return `<div class="rc${sel.has(c.id) ? ' sel' : ''}${c.id === st.mustUse && st.turn === 0 ? ' must' : ''}" data-id="${c.id}" style="left:${(x0 + col * step).toFixed(1)}px;top:calc(${row} * var(--cw) * var(--rr) * .62);z-index:${i + 1}">${face(c)}</div>`;
+    }).join('');
+  }
+  function renderAct() {
+    const t = T(), a = [];
+    if (myTurn() && st.phase === 'play') {
+      const cards = [...sel].map(id => st.hands[0].find(c => c.id === id)).filter(Boolean);
+      if (cards.length >= 3 && R.analyze(cards)) a.push(`<button class="ubtn pri" data-a="meld">${t.meld} ${R.analyze(cards).value}</button>`);
+      if (!st.opened[0] && st.staged.length && R.stagedValue(st) >= 51) a.push(`<button class="ubtn pri" data-a="open">${t.open}</button>`);
+      if (st.mustUse && st.hands[0].some(c => c.id === st.mustUse) && !st.staged.length) a.push(`<button class="ubtn" data-a="untake">${t.untake}</button>`);
+      if (sel.size === 1) a.push(`<button class="ubtn" data-a="discard">${t.discard}</button>`);
+    }
+    a.push(`<button class="ubtn sort" data-a="sort" aria-label="${t.sort}">${sortBy === 'suit' ? '♠♥♣♦' : 'A·2·3'}</button>`);
+    $('#rAct').innerHTML = a.join('');
+  }
+  function toggle(id) { if (sel.has(id)) sel.delete(id); else sel.add(id); render(); }
+
+  // ---------------------------------------------------------------- your moves
+  function say(rule) { api.toast(T().err[rule] || T().err.bad); }
+  function shake(el) { if (el) el.animate([{ transform: 'translateX(0)' }, { transform: 'translateX(-5px)' }, { transform: 'translateX(5px)' }, { transform: 'translateX(0)' }], { duration: 220 }); }
+  function human(m) {
+    if (m.a === 'sort') { sortBy = sortBy === 'suit' ? 'rank' : 'suit'; render(); return; }
+    if (!myTurn()) return;
+    try {
+      if (st.phase === 'draw') {
+        if (m.a === 'stock') { R.drawStock(st, 0); flyIn('#rStock'); if (st.winner !== null) { const w = wait; wait = null; render(); w.res({}); return; } }
+        else if (m.a === 'take') {
+          const top = st.discard[st.discard.length - 1]; if (!top) return;
+          // only a card that can be used this turn
+          if (!usable(top)) { shake($('#rDisc')); say('cantUse'); return; }
+          R.takeDiscard(st, 0); sel.clear(); sel.add(top.id);
+        } else return;
+        render(); return;
+      }
+      const cards = [...sel].map(id => st.hands[0].find(c => c.id === id)).filter(Boolean);
+      if (m.a === 'meld') {
+        if (st.opened[0]) { const mm = R.meld(st, 0, cards.map(c => c.id)); lastMeld = mm.id; }
+        else R.stage(st, 0, cards.map(c => c.id));
+        sel.clear(); render(); return;
+      }
+      if (m.a === 'unstage') { R.unstage(st, 0, m.i); render(); return; }
+      if (m.a === 'open') { R.open(st, 0); lastMeld = st.melds.length ? st.melds[st.melds.length - 1].id : null; render(); return; }
+      if (m.a === 'untake') { R.undoTake(st, 0); sel.clear(); render(); return; }
+      if (m.a === 'meldTap') {
+        if (cards.length !== 1) { shake($(`.rmeld[data-m="${m.meld}"]`)); return; }
+        const mm = R.meldById(st, m.meld), c = cards[0];
+        if (!st.opened[0]) { shake($(`.rmeld[data-m="${m.meld}"]`)); say('notOpen'); return; }
+        if (R.canSwap(st, c, mm)) { const j = R.swapJoker(st, 0, c.id, m.meld); sel.clear(); sel.add(j.id); flash = m.meld; render(); return; }
+        R.layOff(st, 0, c.id, m.meld); sel.clear(); flash = m.meld; render(); return;
+      }
+      if (m.a === 'discard') {
+        if (cards.length !== 1) return;
+        const res = R.discard(st, 0, cards[0].id); sel.clear();
+        const w = wait; wait = null; render(); w.res(res); return;
+      }
+    } catch (e) {
+      if (e.rule) { say(e.rule); shake(m.a === 'meldTap' ? $(`.rmeld[data-m="${m.meld}"]`) : $('#rHand')); render(); }
+      else console.error(e);
+    }
+  }
+  // the top discard can be used this turn: to open (51 with it) or, once open, to meld or lay it off
+  function usable(top) {
+    const h = st.hands[0];
+    if (st.opened[0]) {
+      if (st.melds.some(m => R.canLayOff(st, top, m) || R.canSwap(st, top, m))) return true;
+      return A.bestMelds(h.concat([top]), 'dead', top.id, 4000).melds.some(m => m.ids.includes(top.id));
+    }
+    return A.bestMelds(h.concat([top]), 'open', top.id, 6000).score >= 51;
+  }
+  function flyIn(from) { const el = $(from); if (el) el.animate([{ transform: 'scale(.92)' }, { transform: 'none' }], { duration: 180 }); }
+
+  // ---------------------------------------------------------------- the game
+  async function run(my, cont) {
+    while (true) {
+      if (!cont) { R.newRound(st); sel.clear(); lastMeld = null; }
+      cont = false;
+      render(); await sleep(400 * speed()); check(my);
+      while (st.winner === null) {
+        ckpt();
+        const p = st.turn;
+        if (p === 0) {
+          await new Promise(res => { wait = { res }; render(); });
+          check(my); lastMeld = null; flash = null;
+        } else await botTurn(p, my);
+        render();
+      }
+      check(my);
+      await sleep(700 * speed());
+      const again = await roundEnd();
+      check(my);
+      if (!again) return;
+    }
+  }
+  async function botTurn(p, my) {
+    const lv = levels[p];
+    render(); await sleep((500 + Math.random() * 300) * speed()); check(my);
+    if (st.phase === 'draw') {
+      const d = A.chooseDraw(st, p, lv);
+      if (d === 'discard') { const c = R.takeDiscard(st, p); api.toast(`${nm(p)}: ${T().took}`); render(); highlight(p); }
+      else R.drawStock(st, p);
+      render(); if (st.winner !== null) return; await sleep(350 * speed()); check(my);
+    }
+    let plan = A.planTurn(st, p, lv, lv === 'cardshark');
+    if (!plan) { R.undoTake(st, p); R.drawStock(st, p); if (st.winner !== null) return; plan = A.planTurn(st, p, lv, lv === 'cardshark'); }
+    for (const a of plan) {
+      if (a.a === 'stage') { R.stage(st, p, a.ids); continue; }
+      if (a.a === 'open') { const before = st.melds.length; R.open(st, p); lastMeld = st.melds[st.melds.length - 1].id; api.toast(`${nm(p)} · ${T().opened}`); render(); await sleep(700 * speed()); check(my); continue; }
+      if (a.a === 'meld') { const m = R.meld(st, p, a.ids); lastMeld = m.id; render(); await sleep(450 * speed()); check(my); continue; }
+      if (a.a === 'layoff') { R.layOff(st, p, a.id, a.meld); flash = a.meld; render(); await sleep(380 * speed()); check(my); continue; }
+      if (a.a === 'swap') { R.swapJoker(st, p, a.id, a.meld); flash = a.meld; render(); await sleep(380 * speed()); check(my); continue; }
+      if (a.a === 'discard') { R.discard(st, p, a.id); render(); }
+    }
+    lastMeld = null; flash = null;
+  }
+  function highlight(p) { const el = $(`.ropp[data-p="${p}"]`); if (el) el.animate([{ boxShadow: '0 0 0 3px var(--brass)' }, { boxShadow: 'none' }], { duration: 900 }); }
+  function roundEnd() {
+    const t = T(), r = st.result, w = r.winner, over = st.matchOver;
+    if (over) { clearSave(); record(R.champion(st) === 0); } else ckpt();
+    const order = Array.from({ length: st.n }, (_, i) => i).sort((a, b) => st.scores[a] - st.scores[b]);
+    const champ = R.champion(st);
+    return new Promise(res => api.openSheet(`<h3>${over ? t.matchWon(esc(nm(champ))) : w < 0 ? t.noWinner : t.roundWon(esc(nm(w)))}${r.remi ? ' · ' + t.remi : ''}</h3>
+      <table class="pis utab"><thead><tr><th></th><th>${t.left}</th><th>${t.pts}</th>${st.opts.target ? `<th>${t.total}</th>` : ''}</tr></thead><tbody>
+      ${order.map(i => `<tr${i === w ? ' class="w"' : ''}><td>${esc(nm(i))}</td><td>${i === w ? '—' : st.opened[i] ? st.hands[i].length : t.closed}</td><td>${r.pts[i] > 0 ? '+' : ''}${r.pts[i]}</td>${st.opts.target ? `<td><b>${st.scores[i]}</b></td>` : ''}</tr>`).join('')}
+      </tbody></table>
+      <div class="btns">${over ? `<button class="sec" id="rMenu">${api.L().sol.home}</button><button class="pri" id="rNew">${t.again}</button>` : `<button class="pri" id="rNext">${t.next}</button>`}</div>`, v => {
+      const n = v.querySelector('#rNext'); if (n) n.onclick = () => { api.closeSheet(); res(true); };
+      const m = v.querySelector('#rMenu'); if (m) m.onclick = () => { res(false); leave(); };
+      const a = v.querySelector('#rNew'); if (a) a.onclick = () => { res(false); start(); };
+    }));
+  }
+  function record(won) {
+    const S = api.S; S.remiStats = S.remiStats || {};
+    const r = S.remiStats[levels[1]] = S.remiStats[levels[1]] || [0, 0]; r[won ? 0 : 1]++; api.save();
+  }
+  return { init, start, resume, hasSaved, get state() { return st; } };
+})();
+if (typeof module !== 'undefined') module.exports = RemiUI;
+</script>
 <script>// ===================== APP (UI + game flow) =====================
 (() => {
 const E = Engine;
@@ -3894,6 +4652,9 @@ const STR = {
     matchTo: 'Partija do', winsN: n => `${n} dobivene`,
     reveal: 'Partner pokazuje karte kad se špil potroši',
     hTo: 'Igra se do', start: 'Igraj',
+    remi: { name: 'Remi', players: 'Igrači', target: 'Igra se do', one: 'Jedna runda', you: 'Ti', round: 'runda', meld: 'Spusti', open: 'Otvori', untake: 'Vrati', discard: 'Odbaci', sort: 'Poredaj', took: 'uzima s hrpe', opened: 'otvara', remi: 'remi!', left: 'Karte', pts: 'Bodovi', total: 'Ukupno', closed: 'zatvoren', next: 'Sljedeća runda', again: 'Nova igra',
+      roundWon: n => `${n} · runda`, matchWon: n => `${n} · pobjeda`, noWinner: 'Špil je potrošen',
+      err: { 51: 'Za otvaranje treba 51', mustUse: 'Uzetu kartu treba iskoristiti', joker: 'Joker treba iskoristiti', keep: 'Jedna karta ostaje za odbacivanje', meld: 'To nije kombinacija', cantUse: 'Tu kartu sada ne možeš iskoristiti', notOpen: 'Prvo otvori', turn: 'Nije tvoj red', swap: 'Ne može', bad: 'Ne može' } },
     poker: { name: 'Poker', holdem: "Texas Hold'em", draw: 'Klasični', players: 'Igrači', blindsUp: 'Blindovi rastu', slow: 'Svakih 10 ruku', fast: 'Svakih 5 ruku', you: 'Ti', blinds: 'Blindovi',
       fold: 'Odustajem', check: 'Dalje', call: 'Pratim', raise: 'Dižem', raiseTo: 'Dižem na', bet: 'Ulažem', allin: 'Sve', sb: 'MB', bb: 'VB', min: 'Min', potQ: 'Pot',
       next: 'Sljedeća ruka', pat: 'Ostajem', drawN: n => `Mijenjam ${n}`, drew: n => `mijenja ${n}`, maxDraw: n => `Najviše ${n}`, youWin: 'Pobjeda!', place: n => `${n}. mjesto`, again: 'Nova igra',
@@ -3969,6 +4730,9 @@ const STR = {
     matchTo: 'Match to', winsN: n => `${n} hands won`,
     reveal: 'Partner shows their cards once the deck runs out',
     hTo: 'Play to', start: 'Play',
+    remi: { name: 'Remi', players: 'Players', target: 'Play to', one: 'One round', you: 'You', round: 'Round', meld: 'Meld', open: 'Open', untake: 'Put back', discard: 'Discard', sort: 'Sort', took: 'takes the discard', opened: 'opens', remi: 'remi!', left: 'Cards', pts: 'Points', total: 'Total', closed: 'not open', next: 'Next round', again: 'New game',
+      roundWon: n => `${n} · round`, matchWon: n => `${n} · winner`, noWinner: 'The stock ran out',
+      err: { 51: '51 needed to open', mustUse: 'Use the card you took', joker: 'Use the joker', keep: 'Keep one card to discard', meld: 'Not a meld', cantUse: 'You can’t use that card now', notOpen: 'Open first', turn: 'Not your turn', swap: 'Not possible', bad: 'Not possible' } },
     poker: { name: 'Poker', holdem: "Texas Hold'em", draw: 'Five-card draw', players: 'Players', blindsUp: 'Blinds go up', slow: 'Every 10 hands', fast: 'Every 5 hands', you: 'You', blinds: 'Blinds',
       fold: 'Fold', check: 'Check', call: 'Call', raise: 'Raise', raiseTo: 'Raise to', bet: 'Bet', allin: 'All in', sb: 'SB', bb: 'BB', min: 'Min', potQ: 'Pot',
       next: 'Next hand', pat: 'Stand pat', drawN: n => `Draw ${n}`, drew: n => `draws ${n}`, maxDraw: n => `At most ${n}`, youWin: 'You win!', place: n => `${n}${n === 2 ? 'nd' : n === 3 ? 'rd' : 'th'} place`, again: 'New game',
@@ -4041,6 +4805,12 @@ const L = () => STR[S.lang];
 // ---------- rules text ----------
 const RULES = {
   hr: {
+    r: `<h3>Remi</h3>
+<h4>Karte i djeljenje</h4><ul><li>Dva špila i četiri jokera, 2–6 igrača. Svatko dobiva 14 karata, a prvi igrač 15 i počinje bacanjem jedne karte.</li></ul>
+<h4>Potez</h4><ul><li>Vuče se karta sa špila ili gornja karta s hrpe – nju se mora iskoristiti u istom potezu. Potez završava bacanjem karte.</li></ul>
+<h4>Kombinacije</h4><ul><li>Tri ili četiri iste karte različitih boja, ili tri i više karata zaredom u istoj boji (as dolje ili gore, bez prelaska K-A-2). U kombinaciji je najviše jedan joker.</li></ul>
+<h4>Otvaranje</h4><ul><li>Prvo spuštanje mora vrijediti najmanje 51: 2–10 po broju, dečko, dama i kralj po 10, as 1 na početku skale, inače 10, joker kao karta koju zamjenjuje.</li><li>Nakon otvaranja smiješ dodavati karte na sve kombinacije na stolu i zamijeniti jokera kartom koju predstavlja – tog jokera moraš upotrijebiti u istom potezu.</li></ul>
+<h4>Kraj runde i bodovi</h4><ul><li>Runda završava kad netko baci zadnju kartu: on dobiva −40. Ostali dobivaju zbroj karata u ruci (as i slike 10, joker 25), a tko nije otvorio 100.</li><li>Remi – sve karte spuštene odjednom, bez ranijeg otvaranja: −100 za pobjednika, ostalima se bodovi udvostručuju.</li><li>Kad se špil potroši, hrpa se jednom promiješa; kad se potroši drugi put, runda završava bez pobjednika.</li><li>Igra traje dok netko ne dosegne zadani zbroj; pobjeđuje onaj s najmanje bodova.</li></ul>`,
     p: `<h3>Poker</h3>
 <h4>Turnir</h4><ul><li>Svi počinju s 1.000 žetona. Blindovi rastu svakih 10 (ili 5) ruku. Tko ostane bez žetona, ispada; pobjeđuje zadnji sa žetonima.</li><li>Prvi lijevo od djelitelja ulaže mali blind, sljedeći veliki blind.</li><li>Na potezu: odustani, prati (ili dalje ako nema uloga), ili diži (najmanje za iznos zadnjeg dizanja). Nema ograničenja uloga.</li></ul>
 <h4>Texas Hold'em</h4><ul><li>Svatko dobiva 2 karte. Na stol dolaze 3 karte (flop), pa 1 (turn) i još 1 (river); prije svake i nakon zadnje igra se krug ulaganja.</li><li>Najbolja kombinacija od 5 između svojih 2 i 5 zajedničkih karata nosi pot.</li></ul>
@@ -4114,6 +4884,12 @@ const RULES = {
 <li>Igra se do 1001 (ili 501 / 701).</li></ul>`
   },
   en: {
+    r: `<h3>Remi</h3>
+<h4>Cards and deal</h4><ul><li>Two decks and four jokers, 2–6 players. Everyone gets 14 cards; the first player gets 15 and starts by discarding one.</li></ul>
+<h4>A turn</h4><ul><li>Draw from the stock or take the top discard – which must be used in the same turn. End the turn by discarding a card.</li></ul>
+<h4>Melds</h4><ul><li>Three or four of a rank in different suits, or three or more in a row in one suit (ace low or high, no K-A-2). At most one joker per meld.</li></ul>
+<h4>Opening</h4><ul><li>Your first lay-down must be worth at least 51: 2–10 as numbered, J, Q, K 10, ace 1 at the bottom of a run and 10 otherwise, a joker as the card it stands for.</li><li>Once open you may add cards to any meld on the table, and swap a joker for the card it stands for – that joker must be used in the same turn.</li></ul>
+<h4>End of a round and scoring</h4><ul><li>The round ends when someone discards their last card: they score −40. Everyone else scores the cards left in hand (ace and pictures 10, joker 25), or 100 if they never opened.</li><li>Remi – going out all at once without having opened before: −100 for the winner, and everyone else's points are doubled.</li><li>When the stock runs out, the discards are shuffled once; when it runs out again, the round ends without a winner.</li><li>Play continues until someone reaches the target; the lowest score wins.</li></ul>`,
     p: `<h3>Poker</h3>
 <h4>Tournament</h4><ul><li>Everyone starts with 1,000 chips. Blinds go up every 10 (or 5) hands. A player out of chips is out; the last player with chips wins.</li><li>The first player left of the dealer posts the small blind, the next the big blind.</li><li>On your turn: fold, call (or check when there is nothing to call), or raise (by at least the last raise). No limit.</li></ul>
 <h4>Texas Hold'em</h4><ul><li>Everyone gets 2 cards. Three shared cards are dealt (the flop), then one (the turn) and one more (the river), with a betting round before each and after the last.</li><li>The best five-card hand from your 2 and the 5 shared cards wins the pot.</li></ul>
@@ -4243,6 +5019,7 @@ function renderHome() {
     <button class="poster ph" id="goH">${fan('h', fanH)}<span class="pcap"><span><b>Bela</b></span><span class="go">${arrow}</span></span></button>
     <button class="poster pk" id="goP"><div class="pfan">${['Sa', 'Ha', 'Ck'].map((k, i) => `<div class="svgc" style="--i:${i - 1}">${Cards.frFace(k, S.fDeck)}</div>`).join('')}</div><span class="pcap"><span><b>${t.poker.name}</b></span><span class="go">${arrow}</span></span></button>
     <button class="poster pu" id="goU"><div class="pfan">${(S.uVar === 'flip' ? [[{ c: 'p', k: 'n', n: 7 }, 'D'], [{ c: null, k: 'wdc' }, 'D'], [{ c: 't', k: 'skipall' }, 'D']] : [[{ c: 'r', k: 'n', n: 7 }, 'L'], [{ c: null, k: 'wild' }, 'L'], [{ c: 'b', k: 'rev' }, 'L']]).map(([f, sd], i) => `<div class="svgc" style="--i:${i - 1}">${UnoUI.faceSVG(f, sd)}</div>`).join('')}</div><span class="pcap"><span><b>${t.uno.name}</b></span><span class="go">${arrow}</span></span></button>
+    <button class="poster pr" id="goR"><div class="pfan">${[['S', 7], ['S', 8], null].map((c, i) => `<div class="svgc" style="--i:${i - 1}">${c ? Cards.frFace(c[0] + c[1], S.fDeck) : Cards.frJoker(S.fDeck, 'R')}</div>`).join('')}</div><span class="pcap"><span><b>${t.remi.name}</b></span><span class="go">${arrow}</span></span></button>
   </div>`;
   fitTitle(); if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitTitle);
   $('#goSet').onclick = showSettings;
@@ -4254,6 +5031,9 @@ function renderHome() {
   $('#goS').onclick = () => Solitaire.start(Solitaire.hasSaved());
   $('#goU').onclick = () => UnoUI.hasSaved() ? UnoUI.resume() : UnoUI.start();
   $('#goP').onclick = () => PokerUI.hasSaved() ? PokerUI.resume() : PokerUI.start();
+  $('#goR').onclick = () => RemiUI.hasSaved() ? RemiUI.resume() : RemiUI.start();
+  // an odd number of games: the last tile sits in the middle
+  { const ps = [...document.querySelectorAll('#home .poster')]; ps.forEach(x => x.classList.remove('solo')); if (ps.length % 2) ps[ps.length - 1].classList.add('solo'); }
 }
 function showGameSheet(game) {
   const t = L();
@@ -4283,7 +5063,7 @@ function showGameSheet(game) {
     v.querySelector('#gPlay').onclick = () => startGame(game);
   });
 }
-function showHome() { token++; pending = null; G = null; closeSheet(); $('#table').hidden = true; $('#sol').hidden = true; $('#uno').hidden = true; $('#poker').hidden = true; $('#home').hidden = false; renderHome(); }
+function showHome() { token++; pending = null; G = null; closeSheet(); $('#table').hidden = true; $('#sol').hidden = true; $('#uno').hidden = true; $('#poker').hidden = true; $('#remi').hidden = true; $('#home').hidden = false; renderHome(); }
 // the title shrinks until the header buttons fit on narrow phones and wide fonts
 function fitTitle() {
   const h = document.querySelector('.hbar h1'); if (!h) return;
@@ -4292,7 +5072,7 @@ function fitTitle() {
   while (h.scrollWidth > h.clientWidth + 1 && fs > 14) { fs -= 1; h.style.fontSize = fs + 'px'; }
 }
 addEventListener('resize', fitTitle);
-function showOpts(g) { if (g === 's') showSolSheet(); else if (g === 'u') showUnoSheet(); else if (g === 'p') showPokerSheet(); else showGameSheet(g); }
+function showOpts(g) { if (g === 's') showSolSheet(); else if (g === 'u') showUnoSheet(); else if (g === 'p') showPokerSheet(); else if (g === 'r') showRemiSheet(); else showGameSheet(g); }
 function showSolSheet() {
   const t = L(), u = t.sol;
   if (!S.solDraw) S.solDraw = 1; if (!S.solPasses) S.solPasses = 'inf'; if (!S.solScoring) S.solScoring = 'standard';
@@ -4313,6 +5093,26 @@ function showSolSheet() {
     v.querySelectorAll('input[data-opt]').forEach(i => i.onchange = () => { S[i.dataset.opt] = i.checked; save(); });
     v.querySelector('#gRules').onclick = () => showRules('s');
     v.querySelector('#gPlay').onclick = () => Solitaire.start(false);
+  });
+}
+function showRemiSheet() {
+  const t = L(), u = t.remi;
+  if (!S.rPlayers) S.rPlayers = 4; if (!S.rLevel) S.rLevel = 'cardshark'; if (S.rTarget === undefined) S.rTarget = 501;
+  const seg = (key, opts) => `<div class="seg dark" role="group">${opts.map(([v, lab]) => `<button data-k="${key}" data-v="${v}" aria-pressed="${String(S[key]) === String(v)}">${lab}</button>`).join('')}</div>`;
+  openSheet(`<div class="gsh"><h3>${u.name}</h3><button class="link" id="gRules">${t.rules}</button></div>
+    <div class="gsegs"><div class="glab">${u.players}</div>${seg('rPlayers', [2, 3, 4, 5, 6].map(n => [n, n]))}
+    <div class="gsep"></div><div class="glab">${t.level}</div><div class="seg dark levels" role="group">${AI.LEVELS.map(l => `<button data-k="rLevel" data-v="${l}" aria-pressed="${S.rLevel === l}">${t.lv[l]}</button>`).join('')}</div>
+    <div class="gsep"></div><div class="glab">${u.target}</div>${seg('rTarget', [[501, '501'], [1001, '1001'], [0, u.one]])}</div>
+    <div class="btns"><button class="sec" id="gClose">${L().close}</button><button class="play wide" id="gPlay">${L().sol.newGame}</button></div>`, v => {
+    v.onclick = e => { if (e.target === v) closeSheet(); };
+    v.querySelector('#gClose').onclick = closeSheet;
+    v.querySelectorAll('.seg button').forEach(b => b.onclick = () => {
+      let val = b.dataset.v; val = isNaN(+val) ? val : +val;
+      S[b.dataset.k] = val; save();
+      b.parentNode.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b));
+    });
+    v.querySelector('#gRules').onclick = () => showRules('r');
+    v.querySelector('#gPlay').onclick = () => RemiUI.start();
   });
 }
 function showPokerSheet() {
@@ -4397,7 +5197,7 @@ function showSettings() {
     <h4>${t.deckF}</h4><div class="decks">${Object.keys(Cards.FR).map(k => `<button class="deck" data-fd="${k}" aria-pressed="${Cards.frDeck(S.fDeck) === k}"><span class="dk-cards">${['Hk', 'Sq', 'Dj'].map(c => `<span class="svgc">${Cards.frFace(c, k)}</span>`).join('')}</span><span class="dk-name"><b>${Cards.FR[k].name[S.lang]}</b><small>${Cards.FR[k].maker}</small></span></button>`).join('')}</div>
     ${Cards.FR[Cards.frDeck(S.fDeck)].backs.length > 1 ? `<div class="fbacks">${Cards.FR[Cards.frDeck(S.fDeck)].backs.map(c => `<button class="fback" data-fb="${c}" aria-pressed="${S.fBack === c}" aria-label="${c}">${Cards.frBack(S.fDeck, c)}</button>`).join('')}</div>` : ''}
     <h4>${t.speed}</h4>${seg('speed', [['normal', t.normal], ['fast', t.fast]])}
-    <p class="muted credit">${t.credit} · v56</p>
+    <p class="muted credit">${t.credit} · v57</p>
     <div class="btns"><button class="pri" id="sx">${t.close}</button></div>`, v => {
     v.querySelector('#sx').onclick = () => { closeSheet(); if (G) renderAll(); else renderHome(); };
     v.onclick = e => { if (e.target === v) { closeSheet(); if (G) renderAll(); else renderHome(); } };
@@ -4431,9 +5231,12 @@ function showStats() {
   const unoStats = `<h4>${t.uno.name}</h4><table class="stats"><thead><tr><th class="corner"><span>${t.level}</span></th>${['classic', 'flip'].map(v => `<th>${t.uno[v]}</th>`).join('')}</tr></thead>
     <tbody>${LV.map(l => `<tr><th>${t.lvShort[l]}</th>${['classic', 'flip'].map(v => { const r = (us[v] || {})[l]; return r ? `<td><b class="sw">${r[0]}</b><b class="sl">${r[1]}</b></td>` : '<td class="se">·</td>'; }).join('')}</tr>`).join('')}</tbody></table>`;
   const ps = S.pokerStats || {};
+  const rs = S.remiStats || {};
+  const remiStats = `<h4>${t.remi.name}</h4><table class="stats"><thead><tr><th class="corner"><span>${t.level}</span></th><th>${t.remi.name}</th></tr></thead>
+    <tbody>${LV.map(l => { const r = rs[l]; return `<tr><th>${t.lvShort[l]}</th>${r ? `<td><b class="sw">${r[0]}</b><b class="sl">${r[1]}</b></td>` : '<td class="se">·</td>'}</tr>`; }).join('')}</tbody></table>`;
   const pokerStats = `<h4>${t.poker.name}</h4><table class="stats"><thead><tr><th class="corner"><span>${t.level}</span></th>${['holdem', 'draw'].map(v => `<th>${t.poker[v]}</th>`).join('')}</tr></thead>
     <tbody>${LV.map(l => `<tr><th>${t.lvShort[l]}</th>${['holdem', 'draw'].map(v => { const r = (ps[v] || {})[l]; return r ? `<td><b class="sw">${r[0]}</b><b class="sl">${r[1]}</b></td>` : '<td class="se">·</td>'; }).join('')}</tr>`).join('')}</tbody></table>`;
-  openSheet(`<h3>${t.stats}</h3>${[['b', 'Briškula'], ['t', 'Trešeta'], ['h', 'Bela']].map(([g, n]) => `<h4>${n}</h4>${table(g)}`).join('')}${solStats}${unoStats}${pokerStats}
+  openSheet(`<h3>${t.stats}</h3>${[['b', 'Briškula'], ['t', 'Trešeta'], ['h', 'Bela']].map(([g, n]) => `<h4>${n}</h4>${table(g)}`).join('')}${solStats}${unoStats}${pokerStats}${remiStats}
     <div class="btns"><button class="pri" id="sx">${t.close}</button></div>`, v => {
     v.querySelector('#sx').onclick = closeSheet; v.onclick = e => { if (e.target === v) closeSheet(); };
   });
@@ -5322,6 +6125,7 @@ async function askHuman(req) {
 
 // ================= WIRING =================
 Solitaire.init({ S, save: () => save(), L: () => L(), openSheet, closeSheet, showHome, toast, showOpts });
+RemiUI.init({ S, save: () => save(), L: () => L(), openSheet, closeSheet, showHome, toast, botName: n => botName(n), pickBotNames, showRules, showOpts });
 PokerUI.init({ S, save: () => save(), L: () => L(), openSheet, closeSheet, showHome, toast, botName: n => botName(n), pickBotNames, showRules, showOpts });
 UnoUI.init({ S, save: () => save(), L: () => L(), openSheet, closeSheet, showHome, toast, botName: n => botName(n), pickBotNames, showRules, showOpts });
 $('#defs').innerHTML = Cards.DEFS;
