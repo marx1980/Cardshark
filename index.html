@@ -389,6 +389,11 @@ button.upile{cursor:pointer}
 #uno.uflip .ucenter,#uno.uflip .uhand,#uno.uflip .uopps{animation:uflipk .42s ease-in-out}
 @keyframes uflipk{50%{transform:rotateY(90deg)}}
 .ucolors{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0}
+.ucolrow{display:flex;gap:10px;justify-content:center;width:100%;max-width:420px}
+.ucolrow button{flex:1;height:52px;border-radius:14px;border:2px solid rgba(255,255,255,.85);background:var(--c);box-shadow:0 3px 0 rgba(0,0,0,.35);cursor:pointer;display:grid;place-items:center;animation:ucolin .18s ease-out}
+.ucolrow button:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.35)}
+.ucolrow svg{width:22px;height:22px}
+@keyframes ucolin{from{transform:scale(.8);opacity:0}to{transform:none;opacity:1}}
 .ucolors button{height:84px;border-radius:16px;border:0;background:var(--c);box-shadow:0 3px 0 rgba(0,0,0,.3);cursor:pointer;display:grid;place-items:center}
 .ucolors svg{width:26px;height:26px}
 .btns.col{flex-direction:column}
@@ -2712,6 +2717,8 @@ const UnoUI = (() => {
   const check = t => { if (t !== token) throw new Abort(); };
   const $ = s => root.querySelector(s);
   const speed = () => api.S.speed === 'fast' ? 0.55 : 1;
+  // how quickly the opponents react: thinking, challenging, jumping in, catching a missed call
+  const react = () => speed() * ({ slow: 1.8, normal: 1, fast: 0.5 })[api.S.uPace || 'normal'];
   const nm = p => p === 0 ? T().you : api.botName(names[p]);
   function init(a) { api = a; }
 
@@ -2747,7 +2754,7 @@ const UnoUI = (() => {
     build(); root.dataset.n = st.n;
     token++; run(token).catch(e => { if (!(e instanceof Abort)) console.error(e); });
   }
-  function leave() { token++; wait = null; jumpWait = null; catchState = null; st = null; root.hidden = true; api.showHome(); }
+  function leave() { token++; wait = null; jumpWait = null; catchState = null; colorWait = null; st = null; root.hidden = true; api.showHome(); }
   function build() {
     root.innerHTML = `<header class="ubar">
       <button class="ib" id="uHome" aria-label="${api.L().sol.home}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M15 5l-7 7 7 7"/></svg></button>
@@ -2767,7 +2774,11 @@ const UnoUI = (() => {
     $('#uDraw').onclick = () => human({ draw: true });
     $('#uHand').onclick = e => { const el = e.target.closest('.ucard'); if (el) tapCard(+el.dataset.id); };
     $('#uOpps').onclick = e => { const el = e.target.closest('.ucatch'); if (el) human({ catch: +el.dataset.p }); };
-    $('#uAct').onclick = e => { const b = e.target.closest('button'); if (b) human({ [b.dataset.a]: true }); };
+    $('#uAct').onclick = e => {
+      const b = e.target.closest('button'); if (!b) return;
+      if (b.dataset.c) { if (colorWait) { const r = colorWait; colorWait = null; renderAct(); r(b.dataset.c); } return; }
+      if (b.dataset.a) human({ [b.dataset.a]: true });
+    };
   }
 
   // ---------------------------------------------------------------- drawing
@@ -2847,6 +2858,10 @@ const UnoUI = (() => {
   }
   function renderAct() {
     const t = T(), a = [];
+    if (colorWait) {
+      $('#uAct').innerHTML = `<div class="ucolrow">${U.COLORS[st.side].map(c => `<button data-c="${c}" style="--c:${HEX[c]}" aria-label="${t.cols[c]}"><svg viewBox="-6 -6 12 12" fill="#fff">${SYM[c]}</svg></button>`).join('')}</div>`;
+      return;
+    }
     const lastOk = st.winner === null && ((st.turn === 0 && wait && st.hands[0].length === 2 && U.legal(st, 0).length) || U.vulnerable(st, 0)) && !st.uno[0];
     a.push(`<button class="ubtn last" data-a="last" ${lastOk ? '' : 'disabled'}>${t.last}</button>`);
     if (wait && wait.drawn) a.push(`<button class="ubtn" data-a="pass">${t.pass}</button>`);
@@ -2905,12 +2920,9 @@ const UnoUI = (() => {
     human({ card });
   }
   const waitHuman = extra => new Promise(res => { wait = { res, ...extra }; render(); });
-  function askColor() {
-    const t = T(), cols = U.COLORS[st.side];
-    return new Promise(res => api.openSheet(`<h3>${t.color}</h3><div class="ucolors">${cols.map(c => `<button data-c="${c}" style="--c:${HEX[c]}" aria-label="${t.cols[c]}"><svg viewBox="-6 -6 12 12" fill="#fff">${SYM[c]}</svg></button>`).join('')}</div>`, v => {
-      v.querySelectorAll('[data-c]').forEach(b => b.onclick = () => { api.closeSheet(); res(b.dataset.c); });
-    }));
-  }
+  // the colour for a wild card is picked just above the hand, so the hand stays in view
+  let colorWait = null;
+  function askColor() { return new Promise(res => { colorWait = res; renderAct(); }); }
   function askSwap() {
     const t = T();
     return new Promise(res => api.openSheet(`<h3>${t.swap}</h3><div class="btns col">${seatOrder.map(p => `<button class="sec" data-p="${p}">${esc(nm(p))} · ${st.hands[p].length}</button>`).join('')}</div>`, v => {
@@ -2950,7 +2962,7 @@ const UnoUI = (() => {
         }
         if (st.pendingChallenge) {
           const c = st.pendingChallenge;
-          const ch = c.to === 0 ? await askChallenge(c) : (await sleep(500 * speed()), U.botChallenge(st, c.to, levels[c.to]));
+          const ch = c.to === 0 ? await askChallenge(c) : (await sleep(500 * react()), U.botChallenge(st, c.to, levels[c.to]));
           check(my);
           if (ch && c.to !== 0) api.toast(`${nm(c.to)}: ${T().challenge}`);
           const fx = U.resolveChallenge(st, ch); await showFx(fx); continue;
@@ -3000,7 +3012,7 @@ const UnoUI = (() => {
   async function botTurn(p, my) {
     render();
     // while a bot thinks, an identical card can jump in
-    const jumped = await thinkOrJump((650 + Math.random() * 300) * speed(), my);
+    const jumped = await thinkOrJump((650 + Math.random() * 300) * react(), my);
     if (jumped) return;
     check(my);
     const lv = levels[p], ch = U.botMove(st, p, lv);
@@ -3034,7 +3046,7 @@ const UnoUI = (() => {
       if (q === last) continue;
       const cs = U.jumpInCards(st, q);
       if (!cs.length || !U.botJumpIn(levels[q]) || Math.random() < 0.5) continue;
-      await sleep(300 * speed()); check(my);
+      await sleep(300 * react()); check(my);
       if (!U.jumpInCards(st, q).length) continue;
       const fx = U.play(st, q, cs[0], null);
       await animPlay(fx); await afterPlay(fx, my);
@@ -3048,12 +3060,12 @@ const UnoUI = (() => {
     for (let q = 1; q < st.n; q++) if (q !== p && U.botCatches(levels[q])) delays.push({ q, ms: ({ novice: 1500, average: 1100, pro: 800, cardshark: 650 })[levels[q]] * (0.8 + Math.random() * 0.5) });
     // a bot that forgot may still call it in time
     if (p !== 0 && Math.random() < 0.3) delays.push({ q: -1, ms: 500 + Math.random() * 600 });
-    const win = (p === 0 ? 1300 : 1700) * speed();
+    const win = (p === 0 ? 1300 : 1700) * react();
     render();
     await new Promise(res => {
       cs.wake = res;
       setTimeout(res, win);
-      delays.forEach(d => setTimeout(() => { if (!cs.done && !cs.saved) { if (d.q < 0) { cs.saved = true; U.callUno(st, p); } else { cs.done = true; cs.by = d.q; } res(); } }, d.ms * speed()));
+      delays.forEach(d => setTimeout(() => { if (!cs.done && !cs.saved) { if (d.q < 0) { cs.saved = true; U.callUno(st, p); } else { cs.done = true; cs.by = d.q; } res(); } }, d.ms * react()));
     });
     check(my);
     catchState = null;
@@ -3878,7 +3890,7 @@ const STR = {
       fold: 'Odustajem', check: 'Dalje', call: 'Pratim', raise: 'Dižem', raiseTo: 'Dižem na', bet: 'Ulažem', allin: 'Sve', sb: 'MB', bb: 'VB', min: 'Min', potQ: 'Pot',
       next: 'Sljedeća ruka', pat: 'Ostajem', drawN: n => `Mijenjam ${n}`, drew: n => `mijenja ${n}`, maxDraw: n => `Najviše ${n}`, youWin: 'Pobjeda!', place: n => `${n}. mjesto`, again: 'Nova igra',
       hands: { high: 'Visoka karta', pair: 'Par', twoPair: 'Dva para', trips: 'Tris', straight: 'Skala', flush: 'Boja', fullHouse: 'Full house', quads: 'Poker', straightFlush: 'Skala u boji' } },
-    uno: { name: 'L’Unico!', classic: 'Klasične', flip: 'Flip', players: 'Igrači', target: 'Igra se do', one: 'Jedna runda', house: 'Kućna pravila', stack: 'Slaganje +2 na +2 i +4 na +4', sevenO: '7 mijenja ruke, 0 ih okreće', jumpIn: 'Upadanje istom kartom', drawUntil: 'Vuci dok ne možeš igrati',
+    uno: { name: 'L’Unico!', pace: 'Brzina protivnika', slow: 'Sporo', normal: 'Normalno', fast: 'Brzo', classic: 'Klasične', flip: 'Flip', players: 'Igrači', target: 'Igra se do', one: 'Jedna runda', house: 'Kućna pravila', stack: 'Slaganje +2 na +2 i +4 na +4', sevenO: '7 mijenja ruke, 0 ih okreće', jumpIn: 'Upadanje istom kartom', drawUntil: 'Vuci dok ne možeš igrati',
       you: 'Ti', round: 'runda', draw: 'Vuci', pass: 'Dalje', last: 'Zadnja!', catch: 'Uhvati!', color: 'Boja', swap: 'Zamijeni ruke s', take: 'Uzmi', challenge: 'Izazovi', left: 'Karte', total: 'Ukupno', next: 'Sljedeća runda', again: 'Nova partija',
       roundWon: n => `${n} · runda`, matchWon: n => `${n} · pobjeda`, won: 'Pobjede', lost: 'Porazi',
       cols: { r: 'Crvena', y: 'Žuta', g: 'Zelena', b: 'Plava', p: 'Ružičasta', t: 'Tirkizna', o: 'Narančasta', v: 'Ljubičasta' } },
@@ -3953,7 +3965,7 @@ const STR = {
       fold: 'Fold', check: 'Check', call: 'Call', raise: 'Raise', raiseTo: 'Raise to', bet: 'Bet', allin: 'All in', sb: 'SB', bb: 'BB', min: 'Min', potQ: 'Pot',
       next: 'Next hand', pat: 'Stand pat', drawN: n => `Draw ${n}`, drew: n => `draws ${n}`, maxDraw: n => `At most ${n}`, youWin: 'You win!', place: n => `${n}${n === 2 ? 'nd' : n === 3 ? 'rd' : 'th'} place`, again: 'New game',
       hands: { high: 'High card', pair: 'Pair', twoPair: 'Two pair', trips: 'Three of a kind', straight: 'Straight', flush: 'Flush', fullHouse: 'Full house', quads: 'Four of a kind', straightFlush: 'Straight flush' } },
-    uno: { name: 'L’Unico!', classic: 'Classic', flip: 'Flip', players: 'Players', target: 'Play to', one: 'One round', house: 'House rules', stack: 'Stack +2 on +2 and +4 on +4', sevenO: '7 swaps hands, 0 rotates them', jumpIn: 'Jump in with an identical card', drawUntil: 'Draw until you can play',
+    uno: { name: 'L’Unico!', pace: 'Opponents’ speed', slow: 'Slow', normal: 'Normal', fast: 'Fast', classic: 'Classic', flip: 'Flip', players: 'Players', target: 'Play to', one: 'One round', house: 'House rules', stack: 'Stack +2 on +2 and +4 on +4', sevenO: '7 swaps hands, 0 rotates them', jumpIn: 'Jump in with an identical card', drawUntil: 'Draw until you can play',
       you: 'You', round: 'Round', draw: 'Draw', pass: 'Pass', last: 'Last card!', catch: 'Catch!', color: 'Colour', swap: 'Swap hands with', take: 'Take', challenge: 'Challenge', left: 'Cards', total: 'Total', next: 'Next round', again: 'New match',
       roundWon: n => `${n} · round`, matchWon: n => `${n} · winner`, won: 'Won', lost: 'Lost',
       cols: { r: 'Red', y: 'Yellow', g: 'Green', b: 'Blue', p: 'Pink', t: 'Teal', o: 'Orange', v: 'Purple' } },
@@ -4316,6 +4328,7 @@ function showPokerSheet() {
 }
 function showUnoSheet() {
   const t = L(), u = t.uno;
+  if (!S.uPace) S.uPace = 'normal';
   const seg = (key, opts) => `<div class="seg dark" role="group">${opts.map(([v, lab]) => `<button data-k="${key}" data-v="${v}" aria-pressed="${String(S[key]) === String(v)}">${lab}</button>`).join('')}</div>`;
   const rules = () => [['uStack', u.stack, true], ['uSevenO', u.sevenO, S.uVar !== 'flip'], ['uJumpIn', u.jumpIn, S.uVar !== 'flip'], ['uDrawUntil', u.drawUntil, true]].filter(r => r[2]).map(([k, lab]) => `<label class="tog"><span><b>${lab}</b></span><input type="checkbox" data-opt="${k}" ${S[k] ? 'checked' : ''}></label>`).join('');
   openSheet(`<div class="gsh"><h3>${u.name}</h3><button class="link" id="gRules">${t.rules}</button></div>
@@ -4323,6 +4336,7 @@ function showUnoSheet() {
     <div class="gsep"></div><div class="glab">${u.players}</div>${seg('uPlayers', [2, 3, 4, 5, 6].map(n => [n, n]))}
     <div class="gsep"></div><div class="glab">${t.level}</div><div class="seg dark levels" role="group">${AI.LEVELS.map(l => `<button data-k="uLevel" data-v="${l}" aria-pressed="${S.uLevel === l}">${t.lv[l]}</button>`).join('')}</div>
     <div class="gsep"></div><div class="glab">${u.target}</div>${seg('uTarget', [[500, '500'], [250, '250'], [0, u.one]])}
+    <div class="gsep"></div><div class="glab">${u.pace}</div>${seg('uPace', [['slow', u.slow], ['normal', u.normal], ['fast', u.fast]])}
     <div class="gsep"></div><div class="glab">${u.house}</div><div class="rules-list" id="uRulesList">${rules()}</div></div>
     <div class="btns">${UnoUI.hasSaved() ? `<button class="sec" id="gCont">${t.sol.cont}</button>` : ''}<button class="play wide" id="gPlay">${t.start}</button></div>`, v => {
     v.onclick = e => { if (e.target === v) closeSheet(); };
@@ -4373,7 +4387,7 @@ function showSettings() {
     <h4>${t.deckF}</h4><div class="decks">${Object.keys(Cards.FR).map(k => `<button class="deck" data-fd="${k}" aria-pressed="${Cards.frDeck(S.fDeck) === k}"><span class="dk-cards">${['Hk', 'Sq', 'Dj'].map(c => `<span class="svgc">${Cards.frFace(c, k)}</span>`).join('')}</span><span class="dk-name"><b>${Cards.FR[k].name[S.lang]}</b><small>${Cards.FR[k].maker}</small></span></button>`).join('')}</div>
     ${Cards.FR[Cards.frDeck(S.fDeck)].backs.length > 1 ? `<div class="fbacks">${Cards.FR[Cards.frDeck(S.fDeck)].backs.map(c => `<button class="fback" data-fb="${c}" aria-pressed="${S.fBack === c}" aria-label="${c}">${Cards.frBack(S.fDeck, c)}</button>`).join('')}</div>` : ''}
     <h4>${t.speed}</h4>${seg('speed', [['normal', t.normal], ['fast', t.fast]])}
-    <p class="muted credit">${t.credit} · v53</p>
+    <p class="muted credit">${t.credit} · v54</p>
     <div class="btns"><button class="pri" id="sx">${t.close}</button></div>`, v => {
     v.querySelector('#sx').onclick = () => { closeSheet(); if (G) renderAll(); else renderHome(); };
     v.onclick = e => { if (e.target === v) { closeSheet(); if (G) renderAll(); else renderHome(); } };
