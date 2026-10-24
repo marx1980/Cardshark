@@ -114,11 +114,11 @@ export class Table {
   registry() { return this.env.REGISTRY.get(this.env.REGISTRY.idFromName('registry')); }
   async load() { if (!this.info) this.info = (await this.state.storage.get('info')) || null; }
   async save() { await this.state.storage.put('info', this.info); }
-  publicInfo() { const i = this.info; return { id: i.id, game: i.game, opts: i.opts, host: i.host, hostName: i.hostName, status: i.status, seats: i.seats.map(s => s ? { name: s.name, bot: !!s.bot, level: s.level || null } : null) }; }
+  publicInfo() { const i = this.info; return { id: i.id, game: i.game, opts: i.opts, hostName: i.hostName, status: i.status, seats: i.seats.map(s => s ? { name: s.name, bot: !!s.bot, level: s.level || null, host: !!s.pid && s.pid === i.host } : null) }; }
   async announce() {
     await this.save();
     const info = this.publicInfo();
-    for (const [pid, ws] of this.socks) this.sendWs(ws, { t: 'table', info, mySeat: this.seatOf(pid) });
+    for (const [pid, ws] of this.socks) this.sendWs(ws, { t: 'table', info, mySeat: this.seatOf(pid), isHost: pid === this.info.host });
     await this.lobby().fetch('https://do/upsert', { method: 'POST', body: JSON.stringify({ id: info.id, game: info.game, opts: info.opts, hostName: info.hostName, status: info.status, seats: info.seats.map(s => s && s.name) }) });
   }
   seatOf(pid) { return this.info.seats.findIndex(s => s && s.pid === pid); }
@@ -152,7 +152,7 @@ export class Table {
       const seat = this.seatOf(pid);
       if (seat >= 0) { i.seats[seat].name = clean(m.name); this.away.delete(seat); this.pushBots(); }
       if (i.status === 'playing' && !this.runner) await this.resume();
-      this.sendWs(ws, { t: 'table', info: this.publicInfo(), mySeat: seat });
+      this.sendWs(ws, { t: 'table', info: this.publicInfo(), mySeat: seat, isHost: pid === i.host });
       if (i.status === 'playing' && seat >= 0 && this.runner) {
         const view = this.runner.snapshot(seat);
         if (view) this.sendWs(ws, { t: 'state', view, names: this.namesFor(seat) });
