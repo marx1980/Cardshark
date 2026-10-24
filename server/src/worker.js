@@ -270,9 +270,11 @@ export class Table {
       this.sendWs(ws, { t: 'ask', req, ms: TURN_MS });
     });
   }
+  // between hands: everyone reads the result; the next hand starts when all players still here are ready,
+  // at most 5 s after the first one is (a locked phone would otherwise hold the table up), or after ms anyway
   waitNext(ms) {
     return new Promise(resolve => {
-      this.nextVotes = new Set(); this.nextResolve = resolve;
+      this.nextVotes = new Set(); this.nextResolve = resolve; this.nextDeadline = Date.now() + ms;
       this.nextTimer = setTimeout(() => this.doneNext(), ms);
       this.checkNext();
     });
@@ -280,7 +282,10 @@ export class Table {
   checkNext() {
     if (!this.nextVotes) return;
     const need = this.humanSeats().filter(s => this.socks.has(this.info.seats[s].pid) && !this.away.has(s));
-    if (need.every(s => this.nextVotes.has(s))) this.doneNext();
+    const ready = need.filter(s => this.nextVotes.has(s)).length;
+    if (need.every(s => this.nextVotes.has(s))) { this.doneNext(); return; }
+    for (const s of need) this.sendSeat(s, { t: 'next', n: ready, of: need.length });
+    if (ready && Date.now() + 5000 < this.nextDeadline) { clearTimeout(this.nextTimer); this.nextDeadline = Date.now() + 5000; this.nextTimer = setTimeout(() => this.doneNext(), 5000); }
   }
   doneNext() { if (!this.nextVotes) return; clearTimeout(this.nextTimer); this.nextVotes = null; const r = this.nextResolve; this.nextResolve = null; r(); }
   async finish(winner) {

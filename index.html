@@ -4373,7 +4373,7 @@ function showSettings() {
     <h4>${t.deckF}</h4><div class="decks">${Object.keys(Cards.FR).map(k => `<button class="deck" data-fd="${k}" aria-pressed="${Cards.frDeck(S.fDeck) === k}"><span class="dk-cards">${['Hk', 'Sq', 'Dj'].map(c => `<span class="svgc">${Cards.frFace(c, k)}</span>`).join('')}</span><span class="dk-name"><b>${Cards.FR[k].name[S.lang]}</b><small>${Cards.FR[k].maker}</small></span></button>`).join('')}</div>
     ${Cards.FR[Cards.frDeck(S.fDeck)].backs.length > 1 ? `<div class="fbacks">${Cards.FR[Cards.frDeck(S.fDeck)].backs.map(c => `<button class="fback" data-fb="${c}" aria-pressed="${S.fBack === c}" aria-label="${c}">${Cards.frBack(S.fDeck, c)}</button>`).join('')}</div>` : ''}
     <h4>${t.speed}</h4>${seg('speed', [['normal', t.normal], ['fast', t.fast]])}
-    <p class="muted credit">${t.credit} · v49</p>
+    <p class="muted credit">${t.credit} · v50</p>
     <div class="btns"><button class="pri" id="sx">${t.close}</button></div>`, v => {
     v.querySelector('#sx').onclick = () => { closeSheet(); if (G) renderAll(); else renderHome(); };
     v.onclick = e => { if (e.target === v) { closeSheet(); if (G) renderAll(); else renderHome(); } };
@@ -5185,12 +5185,13 @@ async function handleNet(m) {
   if (m.t === 'away') { pending = null; renderHand(); showAway(true); return; }
   if (m.t === 'bots') { NET.botSeats = m.seats; if (G && G.online) renderSeats(); return; }
   if (m.t === 'rating') { const c = m.change; const el = document.querySelector('#ratingLine'); if (el && c) el.textContent = `${t.rating} ${c.r} (${c.d >= 0 ? '+' : ''}${c.d})`; NET.rating = c; return; }
+  if (m.t === 'next') { NET.nextN = m.n; NET.nextOf = m.of; const b = document.querySelector('#on'); if (b && b.disabled) b.textContent = t.waitOthers(m.n, m.of); return; }
   if (m.t === 'again') { NET.againOf = m.of; const b = document.querySelector('#oa'); if (b && b.disabled) b.textContent = t.waitOthers(m.n, m.of); return; }
   if (m.t === 'error') { status(esc(m.msg || 'error')); return; }
   if (m.t !== 'ev') return;
   const ev = m.ev, prev = G;
   G = m.view; G.online = true; G.names = NET.names;
-  if (ev.k === 'deal') { NET.myPts = 0; NET.lastHand = null; closeSheet(); $('#center').innerHTML = ''; }
+  if (ev.k === 'deal') { NET.myPts = 0; NET.lastHand = null; NET.nextN = 0; closeSheet(); $('#center').innerHTML = ''; }
   G.myPts = NET.myPts;
   if (prev === null || ev.k === 'deal') { layoutSizes(); renderAll(); status(''); return; }
   switch (ev.k) {
@@ -5254,7 +5255,7 @@ function onlineSheet(html, over) {
       v.querySelector('#ox').onclick = leaveOnline; v.querySelector('#ot').onclick = () => { leaveOnline(); showLobby(); };
       v.querySelector('#oa').onclick = () => { netSend({ a: 'again' }); const b = v.querySelector('#oa'); b.disabled = true; b.textContent = t.waitOthers(1, NET.againOf || 1); };
     }
-    else v.querySelector('#on').onclick = () => { netSend({ a: 'next' }); v.querySelector('#on').disabled = true; };
+    else v.querySelector('#on').onclick = () => { netSend({ a: 'next' }); const b = v.querySelector('#on'); b.disabled = true; b.textContent = t.waitOthers(Math.max(1, NET.nextN || 0), NET.nextOf || 2); };
   });
 }
 const ROBOT = '<svg class="robo" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="2.5" r="1.5" fill="currentColor"/><rect x="4" y="6" width="16" height="13" rx="4" fill="currentColor"/><circle cx="9" cy="12" r="1.8" fill="#14251d"/><circle cx="15" cy="12" r="1.8" fill="#14251d"/><path d="M9 16h6" stroke="#14251d" stroke-width="1.6" stroke-linecap="round"/><path d="M2 11v4M22 11v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
