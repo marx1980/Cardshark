@@ -153,7 +153,7 @@ table.stats td b{display:inline-block;min-width:1.4em;font-size:15px}
 .hbar .logo{flex:none}
 .hbar{gap:8px}
 .poster{position:relative;display:block;width:100%;flex:1 1 0;min-height:150px;border-radius:24px;overflow:hidden;border:1px solid var(--faint);padding:0;cursor:pointer;color:var(--ink);font:inherit;text-align:left;box-shadow:0 8px 22px rgba(0,0,0,.3)}
-.poster.pb{background:radial-gradient(90% 90% at 50% 18%,#2d7259,#173f31)}
+.poster.pb{background:radial-gradient(90% 90% at 50% 18%,#1f8f94,#0a3d43)}
 .poster.pt{background:radial-gradient(90% 90% at 50% 18%,#2f5389,#14284a)}
 /* solitaire */
 .poster.ps{background:radial-gradient(90% 90% at 50% 18%,#4b3a78,#1f1638)}
@@ -182,7 +182,7 @@ table.stats td b{display:inline-block;min-width:1.4em;font-size:15px}
 .sbtn:disabled{opacity:.35}
 .sbtn[hidden]{display:none}
 .toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:var(--sheet);color:var(--sheet-ink);padding:10px 16px;border-radius:12px;font-weight:700;z-index:50;box-shadow:0 6px 18px rgba(0,0,0,.4)}
-.poster.ph{background:radial-gradient(90% 90% at 50% 18%,#76302a,#3b1512)}
+.poster.ph{background:radial-gradient(90% 90% at 50% 18%,#a5302a,#4a1210)}
 .poster:active{transform:scale(.99)}
 .pfan{position:absolute;left:50%;top:7%;height:62%;width:0}
 .pfan .svgc{position:absolute;bottom:0;height:100%;width:auto;aspect-ratio:auto;left:0;transform-origin:50% 110%;filter:drop-shadow(0 6px 10px rgba(0,0,0,.45));
@@ -194,9 +194,9 @@ table.stats td b{display:inline-block;min-width:1.4em;font-size:15px}
 .pcap small{display:block;font-size:15px;color:#e8e0cc;margin-top:4px}
 .go{width:54px;height:54px;flex:none;border-radius:50%;background:var(--brass);color:var(--brass-ink);display:grid;place-items:center;box-shadow:0 3px 0 #8a6a28}
 .poster .go{box-shadow:0 3px 8px rgba(0,0,0,.35)}
-.poster.pb .go{background:#bfe3cf;color:#173f31}
+.poster.pb .go{background:#c2ecee;color:#0a3d43}
 .poster.pt .go{background:#c4d6f2;color:#14284a}
-.poster.ph .go{background:#f1c7bf;color:#3b1512}
+.poster.ph .go{background:#f6c8c0;color:#4a1210}
 .poster.ps .go{background:#d8cdf2;color:#1f1638}
 .poster.pu .go{background:#fff3c4;color:#5a3c00}
 .go svg{width:24px;height:24px}
@@ -395,8 +395,8 @@ button.upile{cursor:pointer}
 .utab tr.w td{font-weight:800}
 
 /* poker */
-.poster.pk{background:radial-gradient(90% 90% at 50% 18%,#17857a,#073d38)}
-.poster.pk .go{background:#bfeae3;color:#073d38}
+.poster.pk{background:radial-gradient(90% 90% at 50% 18%,#6e4b30,#2a190e)}
+.poster.pk .go{background:#efdcc4;color:#2a190e}
 #poker{position:fixed;inset:0;z-index:20;display:flex;flex-direction:column;background:radial-gradient(120% 90% at 50% 35%,#24302c,#0c1210);user-select:none;-webkit-user-select:none;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--pr:1.5}
 #poker[hidden]{display:none}
 #poker .chip.score small{font-size:12px;color:var(--muted);margin-right:6px}
@@ -4373,7 +4373,7 @@ function showSettings() {
     <h4>${t.deckF}</h4><div class="decks">${Object.keys(Cards.FR).map(k => `<button class="deck" data-fd="${k}" aria-pressed="${Cards.frDeck(S.fDeck) === k}"><span class="dk-cards">${['Hk', 'Sq', 'Dj'].map(c => `<span class="svgc">${Cards.frFace(c, k)}</span>`).join('')}</span><span class="dk-name"><b>${Cards.FR[k].name[S.lang]}</b><small>${Cards.FR[k].maker}</small></span></button>`).join('')}</div>
     ${Cards.FR[Cards.frDeck(S.fDeck)].backs.length > 1 ? `<div class="fbacks">${Cards.FR[Cards.frDeck(S.fDeck)].backs.map(c => `<button class="fback" data-fb="${c}" aria-pressed="${S.fBack === c}" aria-label="${c}">${Cards.frBack(S.fDeck, c)}</button>`).join('')}</div>` : ''}
     <h4>${t.speed}</h4>${seg('speed', [['normal', t.normal], ['fast', t.fast]])}
-    <p class="muted credit">${t.credit} · v51</p>
+    <p class="muted credit">${t.credit} · v52</p>
     <div class="btns"><button class="pri" id="sx">${t.close}</button></div>`, v => {
     v.querySelector('#sx').onclick = () => { closeSheet(); if (G) renderAll(); else renderHome(); };
     v.onclick = e => { if (e.target === v) { closeSheet(); if (G) renderAll(); else renderHome(); } };
