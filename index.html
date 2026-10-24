@@ -3878,7 +3878,7 @@ const STR = {
       fold: 'Odustajem', check: 'Dalje', call: 'Pratim', raise: 'Dižem', raiseTo: 'Dižem na', bet: 'Ulažem', allin: 'Sve', sb: 'MB', bb: 'VB', min: 'Min', potQ: 'Pot',
       next: 'Sljedeća ruka', pat: 'Ostajem', drawN: n => `Mijenjam ${n}`, drew: n => `mijenja ${n}`, maxDraw: n => `Najviše ${n}`, youWin: 'Pobjeda!', place: n => `${n}. mjesto`, again: 'Nova igra',
       hands: { high: 'Visoka karta', pair: 'Par', twoPair: 'Dva para', trips: 'Tris', straight: 'Skala', flush: 'Boja', fullHouse: 'Full house', quads: 'Poker', straightFlush: 'Skala u boji' } },
-    uno: { name: 'Boje', classic: 'Klasične', flip: 'Flip', players: 'Igrači', target: 'Igra se do', one: 'Jedna runda', house: 'Kućna pravila', stack: 'Slaganje +2 na +2 i +4 na +4', sevenO: '7 mijenja ruke, 0 ih okreće', jumpIn: 'Upadanje istom kartom', drawUntil: 'Vuci dok ne možeš igrati',
+    uno: { name: 'L’Unico!', classic: 'Klasične', flip: 'Flip', players: 'Igrači', target: 'Igra se do', one: 'Jedna runda', house: 'Kućna pravila', stack: 'Slaganje +2 na +2 i +4 na +4', sevenO: '7 mijenja ruke, 0 ih okreće', jumpIn: 'Upadanje istom kartom', drawUntil: 'Vuci dok ne možeš igrati',
       you: 'Ti', round: 'runda', draw: 'Vuci', pass: 'Dalje', last: 'Zadnja!', catch: 'Uhvati!', color: 'Boja', swap: 'Zamijeni ruke s', take: 'Uzmi', challenge: 'Izazovi', left: 'Karte', total: 'Ukupno', next: 'Sljedeća runda', again: 'Nova partija',
       roundWon: n => `${n} · runda`, matchWon: n => `${n} · pobjeda`, won: 'Pobjede', lost: 'Porazi',
       cols: { r: 'Crvena', y: 'Žuta', g: 'Zelena', b: 'Plava', p: 'Ružičasta', t: 'Tirkizna', o: 'Narančasta', v: 'Ljubičasta' } },
@@ -3953,7 +3953,7 @@ const STR = {
       fold: 'Fold', check: 'Check', call: 'Call', raise: 'Raise', raiseTo: 'Raise to', bet: 'Bet', allin: 'All in', sb: 'SB', bb: 'BB', min: 'Min', potQ: 'Pot',
       next: 'Next hand', pat: 'Stand pat', drawN: n => `Draw ${n}`, drew: n => `draws ${n}`, maxDraw: n => `At most ${n}`, youWin: 'You win!', place: n => `${n}${n === 2 ? 'nd' : n === 3 ? 'rd' : 'th'} place`, again: 'New game',
       hands: { high: 'High card', pair: 'Pair', twoPair: 'Two pair', trips: 'Three of a kind', straight: 'Straight', flush: 'Flush', fullHouse: 'Full house', quads: 'Four of a kind', straightFlush: 'Straight flush' } },
-    uno: { name: 'Colours', classic: 'Classic', flip: 'Flip', players: 'Players', target: 'Play to', one: 'One round', house: 'House rules', stack: 'Stack +2 on +2 and +4 on +4', sevenO: '7 swaps hands, 0 rotates them', jumpIn: 'Jump in with an identical card', drawUntil: 'Draw until you can play',
+    uno: { name: 'L’Unico!', classic: 'Classic', flip: 'Flip', players: 'Players', target: 'Play to', one: 'One round', house: 'House rules', stack: 'Stack +2 on +2 and +4 on +4', sevenO: '7 swaps hands, 0 rotates them', jumpIn: 'Jump in with an identical card', drawUntil: 'Draw until you can play',
       you: 'You', round: 'Round', draw: 'Draw', pass: 'Pass', last: 'Last card!', catch: 'Catch!', color: 'Colour', swap: 'Swap hands with', take: 'Take', challenge: 'Challenge', left: 'Cards', total: 'Total', next: 'Next round', again: 'New match',
       roundWon: n => `${n} · round`, matchWon: n => `${n} · winner`, won: 'Won', lost: 'Lost',
       cols: { r: 'Red', y: 'Yellow', g: 'Green', b: 'Blue', p: 'Pink', t: 'Teal', o: 'Orange', v: 'Purple' } },
@@ -4026,7 +4026,7 @@ const RULES = {
 <h4>Texas Hold'em</h4><ul><li>Svatko dobiva 2 karte. Na stol dolaze 3 karte (flop), pa 1 (turn) i još 1 (river); prije svake i nakon zadnje igra se krug ulaganja.</li><li>Najbolja kombinacija od 5 između svojih 2 i 5 zajedničkih karata nosi pot.</li></ul>
 <h4>Klasični poker</h4><ul><li>Svatko dobiva 5 karata. Nakon kruga ulaganja jednom se mijenja do 3 karte (do 4 ako zadržiš asa), pa slijedi još jedan krug.</li></ul>
 <h4>Kombinacije, od najjače</h4><div class="rank"><div><span>Skala u boji</span><b>9♠8♠7♠6♠5♠</b></div><div><span>Poker</span><b>Q Q Q Q</b></div><div><span>Full house</span><b>7 7 7 K K</b></div><div><span>Boja</span><b>5 iste boje</b></div><div><span>Skala</span><b>5 po redu</b></div><div><span>Tris</span><b>8 8 8</b></div><div><span>Dva para</span><b>J J 4 4</b></div><div><span>Par</span><b>A A</b></div><div><span>Visoka karta</span><b>A</b></div></div>`,
-    u: `<h3>Boje</h3>
+    u: `<h3>L’Unico!</h3>
 <h4>Cilj</h4><ul><li>Prvi koji ostane bez karata osvaja rundu i bodove za karte koje drugima ostanu u ruci. Partija se igra do zadanog broja bodova.</li></ul>
 <h4>Igra</h4><ul><li>Svatko dobiva 7 karata. Na otvorenu kartu igra se karta iste boje, istog broja ili istog znaka; divlja karta ide uvijek.</li><li>Tko ne može ili ne želi igrati, vuče jednu kartu i smije odmah odigrati samo nju.</li><li>Kad ti ostane jedna karta, pritisni „Zadnja!“ prije nego te netko uhvati; uhvaćeni vuče 2.</li></ul>
 <h4>Klasične (108 karata)</h4><ul><li>Preskoči: sljedeći igrač ne igra. Obrat: mijenja se smjer (u dvoje djeluje kao Preskoči). +2: sljedeći vuče 2 i ne igra.</li><li>Divlja: biraš boju. Divlja +4: biraš boju, sljedeći vuče 4 i ne igra. Smije se igrati samo ako nemaš karte trenutne boje; pogođeni smije izazvati: ako je blef, igrač vuče 4, a ako nije, izazivač vuče 6.</li></ul>
@@ -4099,7 +4099,7 @@ const RULES = {
 <h4>Texas Hold'em</h4><ul><li>Everyone gets 2 cards. Three shared cards are dealt (the flop), then one (the turn) and one more (the river), with a betting round before each and after the last.</li><li>The best five-card hand from your 2 and the 5 shared cards wins the pot.</li></ul>
 <h4>Five-card draw</h4><ul><li>Everyone gets 5 cards. After a betting round each player may swap up to 3 cards once (up to 4 when keeping an ace), then there is a second betting round.</li></ul>
 <h4>Hands, best first</h4><div class="rank"><div><span>Straight flush</span><b>9♠8♠7♠6♠5♠</b></div><div><span>Four of a kind</span><b>Q Q Q Q</b></div><div><span>Full house</span><b>7 7 7 K K</b></div><div><span>Flush</span><b>5 of a suit</b></div><div><span>Straight</span><b>5 in a row</b></div><div><span>Three of a kind</span><b>8 8 8</b></div><div><span>Two pair</span><b>J J 4 4</b></div><div><span>Pair</span><b>A A</b></div><div><span>High card</span><b>A</b></div></div>`,
-    u: `<h3>Colours</h3>
+    u: `<h3>L’Unico!</h3>
 <h4>Goal</h4><ul><li>The first player out of cards wins the round and scores the cards left in the other hands. A match is played to the chosen score.</li></ul>
 <h4>Play</h4><ul><li>Everyone gets 7 cards. Play a card that matches the top card by colour, number or symbol; a wild always fits.</li><li>If you can't or won't play, draw one card; only that card may then be played.</li><li>When you're down to one card, press “Last card!” before someone catches you; a caught player draws 2.</li></ul>
 <h4>Classic (108 cards)</h4><ul><li>Skip: the next player misses a turn. Reverse: the direction changes (with two players it works as a Skip). +2: the next player draws 2 and misses a turn.</li><li>Wild: you name the colour. Wild +4: you name the colour, the next player draws 4 and misses a turn. It may only be played when you hold no card of the current colour; the target may challenge: a bluff makes the player draw 4, otherwise the challenger draws 6.</li></ul>
@@ -4373,7 +4373,7 @@ function showSettings() {
     <h4>${t.deckF}</h4><div class="decks">${Object.keys(Cards.FR).map(k => `<button class="deck" data-fd="${k}" aria-pressed="${Cards.frDeck(S.fDeck) === k}"><span class="dk-cards">${['Hk', 'Sq', 'Dj'].map(c => `<span class="svgc">${Cards.frFace(c, k)}</span>`).join('')}</span><span class="dk-name"><b>${Cards.FR[k].name[S.lang]}</b><small>${Cards.FR[k].maker}</small></span></button>`).join('')}</div>
     ${Cards.FR[Cards.frDeck(S.fDeck)].backs.length > 1 ? `<div class="fbacks">${Cards.FR[Cards.frDeck(S.fDeck)].backs.map(c => `<button class="fback" data-fb="${c}" aria-pressed="${S.fBack === c}" aria-label="${c}">${Cards.frBack(S.fDeck, c)}</button>`).join('')}</div>` : ''}
     <h4>${t.speed}</h4>${seg('speed', [['normal', t.normal], ['fast', t.fast]])}
-    <p class="muted credit">${t.credit} · v50</p>
+    <p class="muted credit">${t.credit} · v51</p>
     <div class="btns"><button class="pri" id="sx">${t.close}</button></div>`, v => {
     v.querySelector('#sx').onclick = () => { closeSheet(); if (G) renderAll(); else renderHome(); };
     v.onclick = e => { if (e.target === v) { closeSheet(); if (G) renderAll(); else renderHome(); } };
