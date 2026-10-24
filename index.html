@@ -220,7 +220,7 @@ table.stats td b{display:inline-block;min-width:1.4em;font-size:15px}
 /* ---------- TABLE ---------- */
 #table{height:100%;display:flex;flex-direction:column;max-width:760px;margin:0 auto}
 .bar{display:flex;align-items:center;gap:8px;padding-block:8px 6px}
-.ib{width:38px;height:38px;border-radius:10px;border:1px solid var(--faint);background:rgba(0,0,0,.2);display:grid;place-items:center;cursor:pointer;flex:none}
+.ib{width:42px;height:42px;border-radius:11px;border:1px solid var(--faint);background:rgba(0,0,0,.2);display:grid;place-items:center;cursor:pointer;flex:none}
 .ib svg{width:20px;height:20px}
 .chip{display:flex;align-items:center;gap:6px;background:rgba(0,0,0,.25);border:1px solid var(--faint);border-radius:99px;padding:5px 11px;font-size:14px;white-space:nowrap;min-width:0}
 .chip b{font-family:var(--display);font-size:16px}
@@ -240,6 +240,10 @@ table.stats td b{display:inline-block;min-width:1.4em;font-size:15px}
 .tag{font-size:10.5px;font-weight:800;letter-spacing:.06em;border-radius:5px;padding:1px 5px;background:var(--ink);color:var(--felt-lo)}
 .tag.call{background:var(--brass);color:var(--brass-ink);padding:2px 4px;border-radius:7px;display:inline-grid;place-items:center;line-height:0}
 #trumpChip{cursor:default}
+/* narrow phones: the suit icon alone names the trump, so the top bar keeps room for the score */
+@media (max-width:400px){#trumpChip svg+b{display:none}.bar{gap:6px}.chip{padding:5px 9px}}
+/* landscape and wide screens: three tiles a row, shorter, so all six fit */
+@media (orientation:landscape) and (min-width:600px){#home .wrap{grid-template-columns:repeat(3,minmax(0,1fr));max-width:980px}#home .poster{aspect-ratio:auto;height:max(120px,calc((100vh - 112px) / 2))}#home .pfan{height:50%;top:6%}#home .pcap b{font-size:clamp(20px,3.2vw,28px)}}
 .zv{font-size:11.5px;font-weight:800;letter-spacing:.04em;background:var(--brass);color:var(--brass-ink);border-radius:99px;padding:2px 7px;margin-left:2px}
 .zlist{display:flex;flex-direction:column;gap:16px;margin:6px 0 14px}
 .zseat{display:flex;flex-direction:column;gap:4px}
@@ -4200,11 +4204,13 @@ const name = s => G && G.names ? botName(G.names[s] || '') : (G && G.seats.lengt
 // bot names by level: small herbivores up to apex predators (hr|en)
 const BOT_NAMES = {"novice": ["Zec|Hare", "Kunić|Rabbit", "Hrčak|Hamster", "Vjeverica|Squirrel", "Miš|Mouse", "Puh|Dormouse", "Kornjača|Tortoise", "Puž|Snail", "Janje|Lamb", "Lane|Fawn"], "average": ["Jelen|Deer", "Konj|Horse", "Koza|Goat", "Zebra|Zebra", "Žirafa|Giraffe", "Bizon|Bison", "Los|Moose", "Klokan|Kangaroo", "Jazavac|Badger", "Dabar|Beaver"], "pro": ["Lisica|Fox", "Ris|Lynx", "Kuna|Marten", "Lasica|Weasel", "Vidra|Otter", "Sokol|Falcon", "Jastreb|Hawk", "Sova|Owl", "Gepard|Cheetah", "Hijena|Hyena"], "cardshark": ["Lav|Lion", "Tigar|Tiger", "Vuk|Wolf", "Medvjed|Bear", "Orka|Orca", "Jaguar|Jaguar", "Leopard|Leopard", "Puma|Puma", "Krokodil|Crocodile", "Orao|Eagle"]};
 // '@level:index' is a bot; older '@level' falls back to the level's name
+// '@level:n' is a bot (an animal name for that level); any other name is shown as it is
 const botName = n => {
-  if (n[0] !== '@') return n;
-  const [lv, i] = n.slice(1).split(':'), list = BOT_NAMES[lv];
-  if (!list || i === undefined) return L().lv[lv] || lv;
-  return list[+i % list.length].split('|')[S.lang === 'hr' ? 0 : 1];
+  n = String(n == null ? '' : n);
+  const m = /^@(novice|average|pro|cardshark)(?::(\d))?$/.exec(n);
+  if (!m) return n;
+  if (m[2] === undefined) return L().lv[m[1]];
+  return BOT_NAMES[m[1]][+m[2] % BOT_NAMES[m[1]].length].split('|')[S.lang === 'hr' ? 0 : 1];
 };
 // distinct animal names for the computer seats of one match
 function pickBotNames(levels) {
@@ -4391,7 +4397,7 @@ function showSettings() {
     <h4>${t.deckF}</h4><div class="decks">${Object.keys(Cards.FR).map(k => `<button class="deck" data-fd="${k}" aria-pressed="${Cards.frDeck(S.fDeck) === k}"><span class="dk-cards">${['Hk', 'Sq', 'Dj'].map(c => `<span class="svgc">${Cards.frFace(c, k)}</span>`).join('')}</span><span class="dk-name"><b>${Cards.FR[k].name[S.lang]}</b><small>${Cards.FR[k].maker}</small></span></button>`).join('')}</div>
     ${Cards.FR[Cards.frDeck(S.fDeck)].backs.length > 1 ? `<div class="fbacks">${Cards.FR[Cards.frDeck(S.fDeck)].backs.map(c => `<button class="fback" data-fb="${c}" aria-pressed="${S.fBack === c}" aria-label="${c}">${Cards.frBack(S.fDeck, c)}</button>`).join('')}</div>` : ''}
     <h4>${t.speed}</h4>${seg('speed', [['normal', t.normal], ['fast', t.fast]])}
-    <p class="muted credit">${t.credit} · v55</p>
+    <p class="muted credit">${t.credit} · v56</p>
     <div class="btns"><button class="pri" id="sx">${t.close}</button></div>`, v => {
     v.querySelector('#sx').onclick = () => { closeSheet(); if (G) renderAll(); else renderHome(); };
     v.onclick = e => { if (e.target === v) { closeSheet(); if (G) renderAll(); else renderHome(); } };
@@ -4450,9 +4456,8 @@ function askQuit() {
   const t = L();
   if (!G) return showHome();
   if (G.online) return openSheet(`<h3>${t.leaveT}?</h3><div class="btns"><button class="sec" id="qy">${t.leaveT}</button><button class="pri" id="qn">${t.no}</button></div>`, v => { v.querySelector('#qy').onclick = leaveOnline; v.querySelector('#qn').onclick = closeSheet; });
-  openSheet(`<h3>${t.quit}</h3><p class="muted">${t.quitSub}</p><div class="btns"><button class="sec" id="qy">${t.yes}</button><button class="pri" id="qn">${t.no}</button></div>`, v => {
-    v.querySelector('#qy').onclick = showHome; v.querySelector('#qn').onclick = closeSheet;
-  });
+  // offline games are saved at every turn: leaving just goes home, and the tile picks the game up again
+  showHome();
 }
 function waitSheet(html) {
   return new Promise(res => openSheet(html, v => v.querySelectorAll('[data-go]').forEach(b => b.onclick = () => { closeSheet(); res(b.dataset.go); })));
@@ -4822,7 +4827,7 @@ async function briskulaMatch(my, cont) {
     const go = await waitSheet(`<h3>${head}</h3>
       <div class="big">${pts.map((p, i) => `<div>${p}<small>${esc(labels[i])}</small></div>`).join('<span class="sep">:</span>')}</div>
       ${over ? `<p class="verdict">${verdict}</p>` : ''}
-      <div class="tally">${G.wins.map((w, i) => `<div><span class="muted">${esc(labels[i])}</span><b class="marks">${marks(w)}</b></div>`).join('')}<div><span class="muted">${t().matchTo}</span><b>${G.opts.target}</b></div></div>
+      <div class="tally">${G.wins.map((w, i) => `<div><span class="muted">${esc(labels[i])}</span><b class="marks">${marks(w)}</b></div>`).join('')}<div><span class="muted">${t().matchTo}</span><b>${+G.opts.target}</b></div></div>
       <div class="btns">${over ? `<button class="sec" data-go="home">${t().home}</button><button class="pri" data-go="again">${t().again}</button>` : `<button class="pri" data-go="next">${t().next}</button>`}</div>`);
     check(my);
     if (go === 'home') return showHome();
@@ -4950,7 +4955,7 @@ function scoreSheetHTML(row, mw) {
      <div><span>${t.callerShort}: ${r.caller % 2 === 0 ? t.we : t.they}</span><b>${res(r)}${G.hang ? ` (${G.hang})` : ''}</b></div></div>`;
   return `<h3>${head}</h3>${detail}
     <div class="pisw"><table class="pis"><thead><tr><th></th><th>${t.we}</th><th>${t.they}</th><th></th></tr></thead><tbody>${rows}
-    <tr class="tot"><td></td><td>${G.score[0]}</td><td>${G.score[1]}</td><td class="note">${t.target(G.opts.target)}</td></tr></tbody></table></div>
+    <tr class="tot"><td></td><td>${G.score[0]}</td><td>${G.score[1]}</td><td class="note">${t.target(+G.opts.target)}</td></tr></tbody></table></div>
     <div class="btns">${mw >= 0 ? `<button class="sec" data-go="home">${t.home}</button><button class="pri" data-go="again">${t.again}</button>` : `<button class="pri" data-go="next">${t.next}</button>`}</div>`;
 }
 let myBela = true;
@@ -4989,7 +4994,7 @@ function showScore() {
   } else {
     openSheet(`<h3>${t.pisanka}</h3><div class="pisw"><table class="pis"><thead><tr><th></th><th>${t.we}</th><th>${t.they}</th><th></th></tr></thead><tbody>
       ${G.rows.map((r, i) => `<tr><td class="n">${i + 1}</td><td>${r.result === 'fall' && r.caller % 2 === 0 ? '<span class="x">—</span>' : r.add[0]}</td><td>${r.result === 'fall' && r.caller % 2 === 1 ? '<span class="x">—</span>' : r.add[1]}</td><td class="note">${Cards.suitIcon('h', r.trump, 13)}</td></tr>`).join('')}
-      <tr class="tot"><td></td><td>${G.score[0]}</td><td>${G.score[1]}</td><td class="note">${t.target(G.opts.target)}</td></tr></tbody></table></div>
+      <tr class="tot"><td></td><td>${G.score[0]}</td><td>${G.score[1]}</td><td class="note">${t.target(+G.opts.target)}</td></tr></tbody></table></div>
       <div class="btns"><button class="pri" id="sx">${t.close}</button></div>`, v => v.querySelector('#sx').onclick = closeSheet);
   }
 }
@@ -5010,7 +5015,7 @@ function tTable() {
   const t = L();
   return `<div class="pisw"><table class="pis"><thead><tr><th></th><th>${t.we}</th><th>${t.they}</th><th></th></tr></thead><tbody>
     ${G.rows.map((r, i) => `<tr><td class="n">${i + 1}</td><td>${r.add[0]}</td><td>${r.add[1]}</td><td class="note">${(r.akuze[0] + r.akuze[1]) ? `${t.akuzaPts} ${r.akuze[0]}:${r.akuze[1]}` : ''}</td></tr>`).join('')}
-    <tr class="tot"><td></td><td>${G.score[0]}</td><td>${G.score[1]}</td><td class="note">${t.target(G.opts.target)}</td></tr></tbody></table></div>`;
+    <tr class="tot"><td></td><td>${G.score[0]}</td><td>${G.score[1]}</td><td class="note">${t.target(+G.opts.target)}</td></tr></tbody></table></div>`;
 }
 async function tresetaMatch(my, cont) {
   const t = () => L();
@@ -5081,7 +5086,7 @@ if (!S.pid) { S.pid = Array.from(crypto.getRandomValues(new Uint8Array(12)), b =
 let NET = null;   // { id, ws, info, mySeat, q, busy, closing }
 const wsURL = id => SERVER.replace(/^http/, 'ws') + `/api/table/${id}/ws`;
 const gameName = g => ({ b: 'Briškula', t: 'Trešeta', h: 'Bela' })[g];
-const optsLine = (g, o) => g === 'b' ? L().target(o.target || 3) : `${L().hTo} ${o.target || (g === 't' ? 41 : 1001)}`;
+const optsLine = (g, o) => g === 'b' ? L().target(+o.target || 3) : `${L().hTo} ${+o.target || (g === 't' ? 41 : 1001)}`;
 async function showLobby() {
   const t = L();
   let alive = true, timer = null;
@@ -5184,6 +5189,8 @@ async function pump() {
   catch (e) { if (!(e instanceof Abort)) console.error(e); }
   if (NET) NET.busy = false;
 }
+// options in a view come from whoever opened the table: keep only numbers and true/false
+function netOpts(g) { const o = g.opts || {}, c = {}; for (const k in o) if (typeof o[k] === 'number' || typeof o[k] === 'boolean') c[k] = o[k]; c.target = +o.target || 0; g.opts = c; }
 async function handleNet(m) {
   const t = L();
   if (m.t === 'start') {
@@ -5197,7 +5204,7 @@ async function handleNet(m) {
     if (!NET.started) { NET.started = true; closeSheet(); token++; $('#home').hidden = true; $('#table').hidden = false; }
     $('#table').classList.add('online');
     if (m.names) NET.names = m.names;
-    G = m.view; G.online = true; G.names = NET.names; G.myPts = NET.myPts || 0;
+    G = m.view; G.online = true; G.names = NET.names; G.myPts = NET.myPts || 0; netOpts(G);
     $('#center').innerHTML = ''; layoutSizes(); renderAll();
     G.trick.forEach(x => placeTrickCard(x.seat, x.card));
     return;
@@ -5211,7 +5218,7 @@ async function handleNet(m) {
   if (m.t === 'error') { status(esc(m.msg || 'error')); return; }
   if (m.t !== 'ev') return;
   const ev = m.ev, prev = G;
-  G = m.view; G.online = true; G.names = NET.names;
+  G = m.view; G.online = true; G.names = NET.names; netOpts(G);
   if (ev.k === 'deal') { NET.myPts = 0; NET.lastHand = null; NET.nextN = 0; closeSheet(); $('#center').innerHTML = ''; }
   G.myPts = NET.myPts;
   if (prev === null || ev.k === 'deal') { layoutSizes(); renderAll(); status(''); return; }
@@ -5249,7 +5256,7 @@ async function handleNet(m) {
       if (G.game === 'b' && !over) {
         const pts = ev.pts, verdict = ev.team < 0 ? t.handDraw : ev.team === 0 ? t.handWon : t.handLost;
         hand = `<h3>${verdict}</h3><div class="big">${pts.map((p, i) => `<div>${p}<small>${i ? t.they : t.we}</small></div>`).join('<span class="sep">:</span>')}</div>
-          <div class="tally">${G.wins.map((w, i) => `<div><span class="muted">${i ? t.they : t.we}</span><b class="marks">${'|'.repeat(w) || '–'}</b></div>`).join('')}<div><span class="muted">${t.matchTo}</span><b>${G.opts.target}</b></div></div>`;
+          <div class="tally">${G.wins.map((w, i) => `<div><span class="muted">${i ? t.they : t.we}</span><b class="marks">${'|'.repeat(w) || '–'}</b></div>`).join('')}<div><span class="muted">${t.matchTo}</span><b>${+G.opts.target}</b></div></div>`;
       } else if (G.game === 'h' && !over) {
         hand = scoreSheetHTML(G.rows[G.rows.length - 1], -1).replace(/<div class="btns">[\s\S]*$/, '');
       } else if (G.game === 't' && !over) {

@@ -19,7 +19,18 @@ const CORS = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods
 const json = (o, status = 200) => new Response(JSON.stringify(o), { status, headers: { 'Content-Type': 'application/json', ...CORS } });
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const rid = () => Array.from(crypto.getRandomValues(new Uint8Array(4)), b => 'abcdefghjkmnpqrstuvwxyz23456789'[b % 31]).join('');
-const clean = s => String(s || '').replace(/[<>&"]/g, '').trim().slice(0, 16) || 'Player';
+// player names: no markup characters, and never the '@level:n' form the app reads as a bot name
+const clean = s => String(s || '').replace(/[<>&"'`]/g, '').replace(/^[@\s]+/, '').trim().slice(0, 16) || 'Player';
+// table options: only the known settings, with values from the allowed set (anything else is dropped)
+const TARGETS = { b: [2, 3, 4], t: [21, 31, 41], h: [501, 701, 1001] };
+const DEF_TARGET = { b: 3, t: 41, h: 1001 };
+function cleanOpts(game, o) {
+  o = o && typeof o === 'object' ? o : {};
+  const target = TARGETS[game].includes(+o.target) ? +o.target : DEF_TARGET[game];
+  if (game !== 't') return { target };
+  const flag = (k, d) => typeof o[k] === 'boolean' ? o[k] : d;
+  return { target, akuze: flag('akuze', true), longNap: flag('longNap', false), thirdsToLast: flag('thirdsToLast', false), signals: flag('signals', true), clockwise: flag('clockwise', false) };
+}
 const nearestLevel = (g, r) => LEVELS.reduce((a, b) => Math.abs(TIER[g][b] - r) < Math.abs(TIER[g][a] - r) ? b : a);
 
 export default {
@@ -32,9 +43,10 @@ export default {
     if (p === '/api/tables' && req.method === 'POST') {
       const b = await req.json().catch(() => ({}));
       if (!['b', 't', 'h'].includes(b.game)) return json({ error: 'game' }, 400);
+      const pid = String(b.pid || ''); if (!/^[a-f0-9]{8,64}$/.test(pid)) return json({ error: 'pid' }, 400);
       const id = rid();
       const t = env.TABLE.get(env.TABLE.idFromName(id));
-      const r = await t.fetch('https://do/init', { method: 'POST', body: JSON.stringify({ id, game: b.game, opts: b.opts || {}, host: String(b.pid || ''), hostName: clean(b.name) }) });
+      const r = await t.fetch('https://do/init', { method: 'POST', body: JSON.stringify({ id, game: b.game, opts: cleanOpts(b.game, b.opts), host: pid, hostName: clean(b.name) }) });
       return json(await r.json());
     }
     let m = p.match(/^\/api\/table\/([a-z0-9]{4})\/ws$/);
@@ -162,6 +174,8 @@ export class Table {
     }
     const pid = getPid(); if (!pid) return;
     const seat = this.seatOf(pid);
+    // seat changes are cheap to send and costly to broadcast: at most a few per second per socket
+    if (m.a === 'sit' || m.a === 'stand') { const now = Date.now(); ws.recent = (ws.recent || []).filter(t => now - t < 2000); if (ws.recent.length >= 6) return; ws.recent.push(now); }
     if (m.a === 'sit' && i.status === 'waiting') {
       const s = m.seat | 0; if (s < 0 || s > 3 || i.seats[s]) return;
       if (seat >= 0) i.seats[seat] = null;
@@ -187,6 +201,7 @@ export class Table {
     }
     if (i.status === 'playing' && seat >= 0) { const a = this.asks.get(seat); if (a) { clearTimeout(a.timer); this.asks.delete(seat); a.resolve(null); } this.pushBots(); }
     if (i.status === 'over' && this.againVotes && this.againVotes.size) await this.checkAgain();
+    if (this.nextVotes) this.checkNext();
   }
   // a finished table plays again, same seats and options, once every connected player has asked for it
   async checkAgain() {
