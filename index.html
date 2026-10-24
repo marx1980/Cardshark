@@ -122,6 +122,7 @@ table.stats td b{display:inline-block;min-width:1.4em;font-size:15px}
 /* home: two posters */
 #home .wrap{min-height:100%;box-sizing:border-box;gap:12px;display:grid;grid-template-columns:1fr 1fr;grid-auto-rows:min-content;align-content:start}
 #home .hbar{grid-column:1/-1}
+#table.online #bOpts,#table:not(.online) #bRules{display:none}
 .rejoin{grid-column:1/-1;display:flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:14px;padding:12px;background:var(--brass);color:var(--brass-ink);font:800 16px var(--display);cursor:pointer;box-shadow:0 3px 0 #8a6a28}
 .rejoin svg{width:20px;height:20px}
 #home .poster{flex:none;min-height:0;aspect-ratio:3/4;border-radius:20px}
@@ -473,6 +474,7 @@ button.upile{cursor:pointer}
       <div class="chip" id="trumpChip"></div>
       <div class="chip score" id="scoreChip"></div>
       <button class="ib" id="bLast" aria-label="Last trick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 12a8 8 0 1 0 3-6.2"/><path d="M4 4v5h5"/></svg></button>
+      <button class="ib" id="bOpts" aria-label="Options"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
       <button class="ib" id="bRules" aria-label="Rules"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14"/><circle cx="12" cy="17.2" r=".6" fill="currentColor"/></svg></button>
     </header>
     <div class="felt" id="felt">
@@ -1981,7 +1983,7 @@ const Solitaire = (() => {
     document.querySelector('#home').hidden = true; document.querySelector('#table').hidden = true; root.hidden = false;
     if (resume && api.S.solSave) { st = api.S.solSave; hist = []; }
     else {
-      st = newDeal(opts()); hist = [];
+      st = newDeal(opts()); hist = []; api.S.solSave = null; api.save();
     }
     pick = null; build(); layout(); render(true);
     clearInterval(timer); timer = setInterval(tick, 1000);
@@ -2014,6 +2016,7 @@ const Solitaire = (() => {
         <div class="chip sstat"><span class="k">${t.score}</span><b id="sScore">0</b></div>
         <div class="chip sstat"><span class="k">${t.time}</span><b id="sTime">0:00</b></div>
         <div class="chip sstat"><span class="k">${t.moves}</span><b id="sMoves">0</b></div>
+        <button class="ib" id="sOpts" aria-label="${api.L().settings}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
       </header>
       <div class="sboard" id="sBoard"></div>
       <footer class="sfoot">
@@ -2031,6 +2034,7 @@ const Solitaire = (() => {
     for (const s of SUITS) for (let r = 1; r <= 13; r++) html += `<div class="scard" data-id="${cid({ s, r })}"><div class="sf">${faceSVG({ s, r })}</div><div class="sb">${BACK()}</div></div>`;
     board.innerHTML = html;
     $('#sHome').onclick = leave;
+    $('#sOpts').onclick = () => api.showOpts('s');
     $('#sUndo').onclick = undo;
     $('#sHint').onclick = showHint;
     $('#sAuto').onclick = autoFinish;
@@ -2743,7 +2747,7 @@ const UnoUI = (() => {
     token++; run(token, sv.at).catch(e => { if (!(e instanceof Abort)) console.error(e); });
   }
   function start() {
-    api.closeSheet();
+    api.closeSheet(); clearSave();
     root = document.querySelector('#uno');
     document.querySelector('#home').hidden = true; document.querySelector('#table').hidden = true; document.querySelector('#sol').hidden = true; root.hidden = false;
     const o = opts();
@@ -2759,7 +2763,7 @@ const UnoUI = (() => {
     root.innerHTML = `<header class="ubar">
       <button class="ib" id="uHome" aria-label="${api.L().sol.home}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M15 5l-7 7 7 7"/></svg></button>
       <div class="chip score" id="uScore"></div>
-      <button class="ib" id="uRules" aria-label="${api.L().rules}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14"/><circle cx="12" cy="17.2" r=".6" fill="currentColor"/></svg></button></header>
+      <button class="ib" id="uRules" aria-label="${api.L().settings}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button></header>
       <div class="utable"><div class="uopps" id="uOpps"></div>
       <div class="ucenter" id="uCenter">
         <div class="udir" id="uDir"><svg viewBox="0 0 100 100"><path d="M50 8a42 42 0 1 1-29.7 12.3" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="6 6"/><path d="M14 10l7 11 11-6" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
@@ -2770,7 +2774,7 @@ const UnoUI = (() => {
       <div class="uact" id="uAct"></div>
       <div class="uhand" id="uHand"></div>`;
     $('#uHome').onclick = leave;
-    $('#uRules').onclick = () => api.showRules('u');
+    $('#uRules').onclick = () => api.showOpts('u');
     $('#uDraw').onclick = () => human({ draw: true });
     $('#uHand').onclick = e => { const el = e.target.closest('.ucard'); if (el) tapCard(+el.dataset.id); };
     $('#uOpps').onclick = e => { const el = e.target.closest('.ucatch'); if (el) human({ catch: +el.dataset.p }); };
@@ -3618,7 +3622,7 @@ const PokerUI = (() => {
 
   // ---------------------------------------------------------------- setup
   function start() {
-    api.closeSheet();
+    api.closeSheet(); clearSave();
     root = document.querySelector('#poker');
     for (const id of ['#home', '#table', '#sol', '#uno']) { const el = document.querySelector(id); if (el) el.hidden = true; }
     root.hidden = false;
@@ -3658,12 +3662,12 @@ const PokerUI = (() => {
     root.innerHTML = `<header class="ubar">
       <button class="ib" id="pHome" aria-label="${api.L().sol.home}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M15 5l-7 7 7 7"/></svg></button>
       <div class="chip score" id="pInfo"></div>
-      <button class="ib" id="pRules" aria-label="${api.L().rules}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14"/><circle cx="12" cy="17.2" r=".6" fill="currentColor"/></svg></button></header>
+      <button class="ib" id="pRules" aria-label="${api.L().settings}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button></header>
       <div class="ptable" id="pTable"><div class="pfelt"></div><div class="pboard" id="pBoard"></div><div class="ppot" id="pPot"></div><div id="pSeats"></div></div>
       <div class="pme" id="pMe"></div>
       <div class="pact" id="pAct"></div>`;
     $('#pHome').onclick = leave;
-    $('#pRules').onclick = () => api.showRules('p');
+    $('#pRules').onclick = () => api.showOpts('p');
     $('#pAct').onclick = e => { const b = e.target.closest('button'); if (b && b.dataset.a) onAct(b.dataset.a, b); };
     $('#pMe').onclick = e => { const el = e.target.closest('.pmine'); if (el && wait && wait.draw) toggleDiscard(+el.dataset.k); };
     root.style.setProperty('--pr', ratio());
@@ -4239,12 +4243,11 @@ function renderHome() {
   { const r = $('#goRejoin'); if (r) r.onclick = () => { joinTable(S.netTable.id, false, true); status(L().reconnecting, true); $('#home').hidden = true; $('#table').hidden = false; }; }
   $('#goStats').onclick = showStats;
   if (SERVER) $('#goOnline').onclick = showLobby;
-  $('#goB').onclick = () => showGameSheet('b');
-  $('#goH').onclick = () => showGameSheet('h');
-  $('#goT').onclick = () => showGameSheet('t');
-  $('#goS').onclick = showSolSheet;
-  $('#goU').onclick = showUnoSheet;
-  $('#goP').onclick = showPokerSheet;
+  // a tile starts the game with the last settings, or carries on the saved one; options live on the game screen
+  for (const g of ['b', 't', 'h']) $('#go' + g.toUpperCase()).onclick = () => startGame(g, hasSave(g));
+  $('#goS').onclick = () => Solitaire.start(Solitaire.hasSaved());
+  $('#goU').onclick = () => UnoUI.hasSaved() ? UnoUI.resume() : UnoUI.start();
+  $('#goP').onclick = () => PokerUI.hasSaved() ? PokerUI.resume() : PokerUI.start();
 }
 function showGameSheet(game) {
   const t = L();
@@ -4259,9 +4262,9 @@ function showGameSheet(game) {
     : lvl.replace('<div class="gsep"></div>', '') + `<div class="gsep"></div><div class="glab">${t.hTo}</div>` + seg('hTarget', [[501, '501'], [701, '701'], [1001, '1001']]);
   openSheet(`<div class="gsh"><h3>${({ b: 'Briškula', t: 'Trešeta', h: 'Bela' })[game]}</h3><button class="link" id="gRules">${t.rules}</button></div>
     <div class="gsegs">${body}</div>
-    <div class="btns">${hasSave(game) ? `<button class="sec" id="gCont">${t.sol.cont}</button>` : ''}<button class="play wide" id="gPlay">${t.start}</button></div>`, v => {
+    <div class="btns"><button class="sec" id="gClose">${L().close}</button><button class="play wide" id="gPlay">${L().sol.newGame}</button></div>`, v => {
     v.onclick = e => { if (e.target === v) closeSheet(); };
-    { const c = v.querySelector('#gCont'); if (c) c.onclick = () => startGame(game, true); }
+    v.querySelector('#gClose').onclick = closeSheet;
     v.querySelectorAll('.seg button').forEach(b => b.onclick = () => {
       let val = b.dataset.v; val = isNaN(+val) ? val : +val;
       S[b.dataset.k] = val; save(); renderHome();
@@ -4283,6 +4286,7 @@ function fitTitle() {
   while (h.scrollWidth > h.clientWidth + 1 && fs > 14) { fs -= 1; h.style.fontSize = fs + 'px'; }
 }
 addEventListener('resize', fitTitle);
+function showOpts(g) { if (g === 's') showSolSheet(); else if (g === 'u') showUnoSheet(); else if (g === 'p') showPokerSheet(); else showGameSheet(g); }
 function showSolSheet() {
   const t = L(), u = t.sol;
   if (!S.solDraw) S.solDraw = 1; if (!S.solPasses) S.solPasses = 'inf'; if (!S.solScoring) S.solScoring = 'standard';
@@ -4292,8 +4296,9 @@ function showSolSheet() {
     <div class="gsep"></div><div class="glab">${u.passes}</div>${seg('solPasses', [['inf', u.inf], ['3', '3'], ['1', '1']])}
     <div class="gsep"></div><div class="glab">${u.scoring}</div>${seg('solScoring', [['standard', u.standard], ['vegas', u.vegas], ['none', u.none]])}
     <div class="gsep"></div><div class="rules-list">${[['solTap', u.tapMove, S.solTap !== false], ['solTimed', u.timed, S.solTimed !== false], ['solLeft', u.left, !!S.solLeft]].map(([k, lab, on]) => `<label class="tog"><span><b>${lab}</b></span><input type="checkbox" data-opt="${k}" ${on ? 'checked' : ''}></label>`).join('')}</div></div>
-    <div class="btns">${Solitaire.hasSaved() ? `<button class="sec" id="gCont">${u.cont}</button>` : ''}<button class="play wide" id="gPlay">${t.start}</button></div>`, v => {
+    <div class="btns"><button class="sec" id="gClose">${L().close}</button><button class="play wide" id="gPlay">${L().sol.newGame}</button></div>`, v => {
     v.onclick = e => { if (e.target === v) closeSheet(); };
+    v.querySelector('#gClose').onclick = closeSheet;
     v.querySelectorAll('.seg button').forEach(b => b.onclick = () => {
       let val = b.dataset.v; val = b.dataset.k === 'solDraw' ? +val : val;
       S[b.dataset.k] = val; save(); renderHome();
@@ -4302,7 +4307,6 @@ function showSolSheet() {
     v.querySelectorAll('input[data-opt]').forEach(i => i.onchange = () => { S[i.dataset.opt] = i.checked; save(); });
     v.querySelector('#gRules').onclick = () => showRules('s');
     v.querySelector('#gPlay').onclick = () => Solitaire.start(false);
-    const c = v.querySelector('#gCont'); if (c) c.onclick = () => Solitaire.start(true);
   });
 }
 function showPokerSheet() {
@@ -4314,9 +4318,9 @@ function showPokerSheet() {
     <div class="gsep"></div><div class="glab">${u.players}</div>${seg('pPlayers', [2, 3, 4, 5, 6].map(n => [n, n]))}
     <div class="gsep"></div><div class="glab">${t.level}</div><div class="seg dark levels" role="group">${AI.LEVELS.map(l => `<button data-k="pLevel" data-v="${l}" aria-pressed="${S.pLevel === l}">${t.lv[l]}</button>`).join('')}</div>
     <div class="gsep"></div><div class="glab">${u.blindsUp}</div>${seg('pBlinds', [['slow', u.slow], ['fast', u.fast]])}</div>
-    <div class="btns">${PokerUI.hasSaved() ? `<button class="sec" id="gCont">${t.sol.cont}</button>` : ''}<button class="play wide" id="gPlay">${t.start}</button></div>`, v => {
+    <div class="btns"><button class="sec" id="gClose">${L().close}</button><button class="play wide" id="gPlay">${L().sol.newGame}</button></div>`, v => {
     v.onclick = e => { if (e.target === v) closeSheet(); };
-    { const c = v.querySelector('#gCont'); if (c) c.onclick = () => PokerUI.resume(); }
+    v.querySelector('#gClose').onclick = closeSheet;
     v.querySelectorAll('.seg button').forEach(b => b.onclick = () => {
       let val = b.dataset.v; val = isNaN(+val) ? val : +val;
       S[b.dataset.k] = val; save();
@@ -4338,9 +4342,9 @@ function showUnoSheet() {
     <div class="gsep"></div><div class="glab">${u.target}</div>${seg('uTarget', [[500, '500'], [250, '250'], [0, u.one]])}
     <div class="gsep"></div><div class="glab">${u.pace}</div>${seg('uPace', [['slow', u.slow], ['normal', u.normal], ['fast', u.fast]])}
     <div class="gsep"></div><div class="glab">${u.house}</div><div class="rules-list" id="uRulesList">${rules()}</div></div>
-    <div class="btns">${UnoUI.hasSaved() ? `<button class="sec" id="gCont">${t.sol.cont}</button>` : ''}<button class="play wide" id="gPlay">${t.start}</button></div>`, v => {
+    <div class="btns"><button class="sec" id="gClose">${L().close}</button><button class="play wide" id="gPlay">${L().sol.newGame}</button></div>`, v => {
     v.onclick = e => { if (e.target === v) closeSheet(); };
-    { const c = v.querySelector('#gCont'); if (c) c.onclick = () => UnoUI.resume(); }
+    v.querySelector('#gClose').onclick = closeSheet;
     const bindT = () => v.querySelectorAll('input[data-opt]').forEach(i => i.onchange = () => { S[i.dataset.opt] = i.checked; save(); });
     v.querySelectorAll('.seg button').forEach(b => b.onclick = () => {
       let val = b.dataset.v; val = isNaN(+val) ? val : +val;
@@ -4387,7 +4391,7 @@ function showSettings() {
     <h4>${t.deckF}</h4><div class="decks">${Object.keys(Cards.FR).map(k => `<button class="deck" data-fd="${k}" aria-pressed="${Cards.frDeck(S.fDeck) === k}"><span class="dk-cards">${['Hk', 'Sq', 'Dj'].map(c => `<span class="svgc">${Cards.frFace(c, k)}</span>`).join('')}</span><span class="dk-name"><b>${Cards.FR[k].name[S.lang]}</b><small>${Cards.FR[k].maker}</small></span></button>`).join('')}</div>
     ${Cards.FR[Cards.frDeck(S.fDeck)].backs.length > 1 ? `<div class="fbacks">${Cards.FR[Cards.frDeck(S.fDeck)].backs.map(c => `<button class="fback" data-fb="${c}" aria-pressed="${S.fBack === c}" aria-label="${c}">${Cards.frBack(S.fDeck, c)}</button>`).join('')}</div>` : ''}
     <h4>${t.speed}</h4>${seg('speed', [['normal', t.normal], ['fast', t.fast]])}
-    <p class="muted credit">${t.credit} · v54</p>
+    <p class="muted credit">${t.credit} · v55</p>
     <div class="btns"><button class="pri" id="sx">${t.close}</button></div>`, v => {
     v.querySelector('#sx').onclick = () => { closeSheet(); if (G) renderAll(); else renderHome(); };
     v.onclick = e => { if (e.target === v) { closeSheet(); if (G) renderAll(); else renderHome(); } };
@@ -4735,6 +4739,8 @@ function clearSave() { if (G && S.offSaves && S.offSaves[G.game]) { delete S.off
 const hasSave = game => !!(S.offSaves && S.offSaves[game]);
 function startGame(game, resume) {
   token++; pending = null; sel = null; closeSheet();
+  $('#table').classList.remove('online');
+  if (!resume && S.offSaves && S.offSaves[game]) { delete S.offSaves[game]; save(); }
   const saved = resume && hasSave(game) ? S.offSaves[game] : null;
   if (saved) {
     G = deserG(saved.G);
@@ -5181,7 +5187,7 @@ async function pump() {
 async function handleNet(m) {
   const t = L();
   if (m.t === 'start') {
-    NET.started = true; NET.names = m.names; NET.myPts = 0; NET.rating = null;
+    NET.started = true; NET.names = m.names; NET.myPts = 0; NET.rating = null; $('#table').classList.add('online');
     S.netTable = { id: NET.id, game: NET.info && NET.info.game, at: Date.now() }; save();
     closeSheet(); token++; pending = null; sel = null;
     $('#home').hidden = true; $('#table').hidden = false; $('#center').innerHTML = '';
@@ -5189,6 +5195,7 @@ async function handleNet(m) {
   }
   if (m.t === 'state') {
     if (!NET.started) { NET.started = true; closeSheet(); token++; $('#home').hidden = true; $('#table').hidden = false; }
+    $('#table').classList.add('online');
     if (m.names) NET.names = m.names;
     G = m.view; G.online = true; G.names = NET.names; G.myPts = NET.myPts || 0;
     $('#center').innerHTML = ''; layoutSizes(); renderAll();
@@ -5307,13 +5314,14 @@ async function askHuman(req) {
 { const q = new URLSearchParams(location.search).get('t'); if (q && SERVER && /^[a-z0-9]{4}$/.test(q)) setTimeout(() => joinTable(q, true), 300); }
 
 // ================= WIRING =================
-Solitaire.init({ S, save: () => save(), L: () => L(), openSheet, closeSheet, showHome, toast });
-PokerUI.init({ S, save: () => save(), L: () => L(), openSheet, closeSheet, showHome, toast, botName: n => botName(n), pickBotNames, showRules });
-UnoUI.init({ S, save: () => save(), L: () => L(), openSheet, closeSheet, showHome, toast, botName: n => botName(n), pickBotNames, showRules });
+Solitaire.init({ S, save: () => save(), L: () => L(), openSheet, closeSheet, showHome, toast, showOpts });
+PokerUI.init({ S, save: () => save(), L: () => L(), openSheet, closeSheet, showHome, toast, botName: n => botName(n), pickBotNames, showRules, showOpts });
+UnoUI.init({ S, save: () => save(), L: () => L(), openSheet, closeSheet, showHome, toast, botName: n => botName(n), pickBotNames, showRules, showOpts });
 $('#defs').innerHTML = Cards.DEFS;
 $('#bHome').onclick = askQuit;
 $('#bLast').onclick = showLastTrick;
 $('#bRules').onclick = () => showRules(G ? G.game : 'b');
+$('#bOpts').onclick = () => { if (G && !G.online) showGameSheet(G.game); };
 $('#scoreChip').onclick = showScore; $('#scoreChip').style.cursor = 'pointer';
 $('#trumpChip').onclick = () => { if (G && G.game === 'h') showZvanja(); };
 addEventListener('resize', () => { if (G) layoutSizes(); });
