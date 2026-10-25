@@ -11,6 +11,9 @@ const TIER = {
   b: { novice: 1000, average: 1134, pro: 1228, cardshark: 1314 },
   t: { novice: 1000, average: 1144, pro: 1237, cardshark: 1389 },
   h: { novice: 1000, average: 1109, pro: 1255, cardshark: 1345 },
+  p: { novice: 1000, average: 1080, pro: 1180, cardshark: 1260 },
+  r: { novice: 1000, average: 1080, pro: 1180, cardshark: 1260 },
+  l: { novice: 1000, average: 1080, pro: 1180, cardshark: 1260 },
 };
 let TURN_MS = 30000;          // time to play before the bot takes the turn (env TURN_MS overrides, for testing)
 const STALE_MS = 30 * 60e3;   // waiting tables disappear after 30 minutes
@@ -27,6 +30,24 @@ const DEF_TARGET = { b: 3, t: 41, h: 1001 };
 const B_MODES = { p4: { players: 4, activeSeats: [0, 1, 2, 3] }, s4: { players: 4, solo: true, activeSeats: [0, 1, 2, 3] }, s3: { players: 3, activeSeats: [0, 1, 3] }, d2: { players: 2, double: true, activeSeats: [0, 2] } };
 function cleanOpts(game, o) {
   o = o && typeof o === 'object' ? o : {};
+  if (game === 'p') {
+    const players = Math.max(2, Math.min(6, Math.floor(+o.players) || 6));
+    return { players, activeSeats: Array.from({ length: players }, (_, s) => s), variant: o.variant === 'draw' ? 'draw' : 'holdem', blinds: o.blinds === 'fast' ? 'fast' : 'slow' };
+  }
+  if (game === 'r') {
+    const players = Math.max(2, Math.min(6, Math.floor(+o.players) || 4));
+    return { players, activeSeats: Array.from({ length: players }, (_, s) => s), target: [0, 501, 1001].includes(+o.target) ? +o.target : 501 };
+  }
+  if (game === 'l') {
+    const players = Math.max(2, Math.min(6, Math.floor(+o.players) || 4));
+    const flag = (k, d) => typeof o[k] === 'boolean' ? o[k] : d;
+    const variant = o.variant === 'flip' ? 'flip' : 'classic';
+    return { players, activeSeats: Array.from({ length: players }, (_, s) => s), variant,
+      target: [0, 250, 500].includes(+o.target) ? +o.target : 500,
+      stack: flag('stack', false), sevenO: variant === 'classic' && flag('sevenO', false),
+      jumpIn: variant === 'classic' && flag('jumpIn', false), drawUntil: flag('drawUntil', false),
+      pace: ['slow', 'normal', 'fast'].includes(o.pace) ? o.pace : 'normal' };
+  }
   const target = TARGETS[game].includes(+o.target) ? +o.target : DEF_TARGET[game];
   if (game === 'b') return { ...(B_MODES[o.mode] || B_MODES.p4), mode: B_MODES[o.mode] ? o.mode : 'p4', target };
   if (game === 'h') return { players: 4, activeSeats: [0, 1, 2, 3], target };
@@ -46,7 +67,7 @@ export default {
     if (p === '/api/tables' && req.method === 'GET') return lobby.fetch('https://do/list');
     if (p === '/api/tables' && req.method === 'POST') {
       const b = await req.json().catch(() => ({}));
-      if (!['b', 't', 'h'].includes(b.game)) return json({ error: 'game' }, 400);
+      if (!['b', 't', 'h', 'p', 'r', 'l'].includes(b.game)) return json({ error: 'game' }, 400);
       const pid = String(b.pid || ''); if (!/^[a-f0-9]{8,64}$/.test(pid)) return json({ error: 'pid' }, 400);
       const id = rid();
       const t = env.TABLE.get(env.TABLE.idFromName(id));
@@ -81,24 +102,42 @@ export class Lobby {
 // ------------------------------------------------------------------ Registry (player records)
 export class Registry {
   constructor(state) { this.state = state; }
-  blank(name) { return { name, r: { ...Object.fromEntries(Object.entries(TIER).map(([g, t]) => [g, t.average])) }, w: { b: 0, t: 0, h: 0 }, l: { b: 0, t: 0, h: 0 } }; }
+  blank(name) { return { name, r: { ...Object.fromEntries(Object.entries(TIER).map(([g, t]) => [g, t.average])) }, w: { b: 0, t: 0, h: 0, p: 0, r: 0, l: 0 }, l: { b: 0, t: 0, h: 0, p: 0, r: 0, l: 0 } }; }
+  normalize(record, name = 'Player') {
+    const base = this.blank(record && record.name || name);
+    if (!record) return base;
+    return { ...base, ...record, r: { ...base.r, ...(record.r || {}) }, w: { ...base.w, ...(record.w || {}) }, l: { ...base.l, ...(record.l || {}) } };
+  }
   async fetch(req) {
     const url = new URL(req.url);
     if (url.pathname === '/get') {
       const pid = url.searchParams.get('pid');
-      return json((await this.state.storage.get('p:' + pid)) || this.blank('Player'));
+      return json(this.normalize(await this.state.storage.get('p:' + pid)));
     }
     if (url.pathname === '/many') {           // ratings for a table
       const { pids } = await req.json(); const out = {};
-      for (const pid of pids) out[pid] = (await this.state.storage.get('p:' + pid)) || this.blank('Player');
+      for (const pid of pids) out[pid] = this.normalize(await this.state.storage.get('p:' + pid));
       return json(out);
     }
     if (url.pathname === '/result') {         // { game, teams: [[pid...],[pid...]], botR: [r0, r1] per team for bot seats, winner, names }
       const b = await req.json(), g = b.game, K = 24;
       const recs = {};
-      for (const team of b.teams) for (const s of team) if (s.pid) recs[s.pid] = (await this.state.storage.get('p:' + s.pid)) || this.blank(s.name);
+      for (const team of b.teams) for (const s of team) if (s.pid) recs[s.pid] = this.normalize(await this.state.storage.get('p:' + s.pid), s.name);
       const teamR = b.teams.map(team => team.reduce((x, s) => x + (s.pid ? recs[s.pid].r[g] : s.r), 0) / team.length);
       const changes = {};
+      if (b.teams.length > 2) {
+        b.teams.forEach((team, i) => {
+          const exp = teamR.reduce((x, r, j) => j === i ? x : x + 1 / (1 + Math.pow(10, (r - teamR[i]) / 400)), 0) / (teamR.length - 1);
+          const score = b.winner === i ? 1 : 0;
+          for (const s of team) if (s.pid) {
+            const rec = recs[s.pid], d = Math.round(K * (score - exp));
+            rec.r[g] += d; if (score) rec.w[g]++; else rec.l[g]++;
+            changes[s.pid] = { d, r: rec.r[g] };
+          }
+        });
+        for (const pid in recs) await this.state.storage.put('p:' + pid, recs[pid]);
+        return json(changes);
+      }
       b.teams.forEach((team, i) => {
         const exp = 1 / (1 + Math.pow(10, (teamR[1 - i] - teamR[i]) / 400)), score = b.winner === i ? 1 : 0;
         for (const s of team) if (s.pid) {
@@ -131,6 +170,7 @@ export class Table {
   async load() { if (!this.info) this.info = (await this.state.storage.get('info')) || null; }
   async save() { await this.state.storage.put('info', this.info); }
   publicInfo() { const i = this.info; return { id: i.id, game: i.game, opts: i.opts, activeSeats: i.opts.activeSeats || [0, 1, 2, 3], hostName: i.hostName, status: i.status, seats: i.seats.map(s => s ? { name: s.name, bot: !!s.bot, level: s.level || null, host: !!s.pid && s.pid === i.host } : null) }; }
+  seatMod() { return ['p', 'r', 'l'].includes(this.info.game) ? this.info.seats.length : 4; }
   async announce() {
     await this.save();
     const info = this.publicInfo();
@@ -146,7 +186,8 @@ export class Table {
     const url = new URL(req.url);
     if (url.pathname === '/init') {
       const b = await req.json();
-      this.info = { id: b.id, game: b.game, opts: b.opts, host: b.host, hostName: b.hostName, status: 'waiting', seats: [null, null, null, null], created: Date.now() };
+      const nSeats = Math.max(...(b.opts.activeSeats || [0, 1, 2, 3])) + 1;
+      this.info = { id: b.id, game: b.game, opts: b.opts, host: b.host, hostName: b.hostName, status: 'waiting', seats: Array(nSeats).fill(null), created: Date.now() };
       await this.announce();
       return json({ id: b.id });
     }
@@ -223,15 +264,15 @@ export class Table {
   pushBots() {
     if (!this.info || this.info.status !== 'playing') return;
     const b = this.botted();
-    for (const s of this.humanSeats()) this.sendSeat(s, { t: 'bots', seats: b.map(x => ((x - s) % 4 + 4) % 4) });
+    for (const s of this.humanSeats()) this.sendSeat(s, { t: 'bots', seats: b.map(x => ((x - s) % this.seatMod() + this.seatMod()) % this.seatMod()) });
   }
-  namesFor(me) { const n = {}; for (let s = 0; s < 4; s++) { const x = this.info.seats[s]; n[((s - me) % 4 + 4) % 4] = x ? x.name : ''; } return n; }
+  namesFor(me) { const n = {}, mod = this.seatMod(); for (let s = 0; s < this.info.seats.length; s++) { const x = this.info.seats[s]; n[((s - me) % mod + mod) % mod] = x ? x.name : ''; } return n; }
   humanSeats() { return (this.info.opts.activeSeats || [0, 1, 2, 3]).filter(s => this.info.seats[s] && this.info.seats[s].pid); }
 
   // bot level: the level closest to the average rating of the humans it plays against
   levelFor(seat) {
     const g = this.info.game, hum = this.humanSeats();
-    const individual = (g === 'b' && (this.info.opts.solo || this.info.opts.players === 3)) || ((g === 'b' || g === 't') && this.info.opts.players === 2);
+    const individual = ['p', 'r', 'l'].includes(g) || (g === 'b' && (this.info.opts.solo || this.info.opts.players === 3)) || ((g === 'b' || g === 't') && this.info.opts.players === 2);
     const opp = hum.filter(s => individual ? s !== seat : s % 2 !== seat % 2), pool = opp.length ? opp : hum;
     if (!pool.length) return 'average';
     const avg = pool.reduce((x, s) => x + (this.ratings[this.info.seats[s].pid]?.r?.[g] ?? TIER[g].average), 0) / pool.length;
@@ -262,7 +303,9 @@ export class Table {
       sleep, send: (seat, msg) => this.sendSeat(seat, { ...msg, names: undefined }),
       isHuman: seat => !!(i.seats[seat] && i.seats[seat].pid),
       level: seat => this.levels[seat],
+      name: seat => i.seats[seat] && i.seats[seat].name,
       ask: (seat, req) => this.ask(seat, req),
+      askQuick: (seat, req, ms) => this.askQuick(seat, req, ms),
       waitNext: ms => this.waitNext(ms),
       save: data => this.state.storage.put('game', data),
     };
@@ -290,6 +333,16 @@ export class Table {
       this.sendWs(ws, { t: 'ask', req, ms: TURN_MS });
     });
   }
+  askQuick(seat, req, ms) {
+    const s = this.info.seats[seat], ws = s && s.pid && this.socks.get(s.pid);
+    if (!ws || this.away.has(seat)) return Promise.resolve(null);
+    return new Promise(resolve => {
+      const deadline = Date.now() + ms;
+      const timer = setTimeout(() => { this.asks.delete(seat); resolve(null); }, ms);
+      this.asks.set(seat, { resolve, timer, req, deadline });
+      this.sendWs(ws, { t: 'ask', req, ms });
+    });
+  }
   // between hands: everyone reads the result; the next hand starts when all players still here are ready,
   // at most 5 s after the first one is (a locked phone would otherwise hold the table up), or after ms anyway
   waitNext(ms) {
@@ -312,7 +365,9 @@ export class Table {
     const i = this.info, g = i.game;
     const active = i.opts.activeSeats || [0, 1, 2, 3];
     let groups;
-    if (i.game === 'b' && (i.opts.solo || i.opts.players === 3)) {
+    if (['p', 'r', 'l'].includes(i.game)) {
+      groups = active.map(s => [s]);
+    } else if (i.game === 'b' && (i.opts.solo || i.opts.players === 3)) {
       const winnerSeat = this.runner.st.seats[winner];
       groups = [[winnerSeat], active.filter(s => s !== winnerSeat)];
     } else if ((i.game === 'b' || i.game === 't') && i.opts.players === 2) groups = [[0], [2]];

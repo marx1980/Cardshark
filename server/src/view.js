@@ -1,7 +1,13 @@
 // What one player may see, seen from their own chair (they are always seat 0 on their screen).
 // Hidden cards are replaced by placeholders; seats and team-indexed values are rotated.
 const HIDDEN = { id: 'x', hidden: true };
+const P = require('./poker.js');
+const R = require('./remi.js');
+const U = require('./unico.js');
 function makeView(st, me) {
+  if (st.game === 'p') return P.view(st, me);
+  if (st.game === 'r') return R.view(st, me);
+  if (st.game === 'l') return U.view(st, me);
   const k = me, rot = s => (s === null || s === undefined || s < 0) ? s : ((s - k) % 4 + 4) % 4;
   const swap = st.seats.length === 2 ? k === 2 : k % 2 === 1; // my team becomes team 0
   const soloOrder = st.teams > 2 ? st.seats.slice(st.seats.indexOf(me)).concat(st.seats.slice(0, st.seats.indexOf(me))) : null;
