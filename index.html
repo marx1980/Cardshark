@@ -59,8 +59,9 @@ button{font:inherit;color:inherit}
 .namef{display:flex;flex-direction:column;gap:4px;margin:4px 0 10px;font-size:13px;color:var(--sheet-muted);font-weight:700}
 .namef input{font:600 16px var(--ui,inherit);padding:10px 12px;border-radius:10px;border:1px solid var(--sheet-line);background:#fff;color:var(--sheet-ink)}
 .tlist{display:flex;flex-direction:column;gap:8px;max-height:38vh;overflow:auto;margin:6px 0}
-.trow{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;align-items:baseline;text-align:left;background:rgba(0,0,0,.05);border:0;border-radius:12px;padding:10px 12px;color:var(--sheet-ink);cursor:pointer}
-.trow b{font-size:16px}.trow small{color:var(--sheet-muted);font-size:12.5px}.trow .tseats{grid-column:1/3;font-size:13.5px}
+.trow{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;align-items:baseline;text-align:left;background:#e6f1e9;border:1px solid #9ab8a0;border-radius:12px;padding:10px 12px;color:var(--sheet-ink);cursor:pointer;box-shadow:0 2px 5px rgba(42,33,24,.1)}
+.trow:active{background:#dcebdd}
+.trow b{font-size:16px}.trow small{color:var(--sheet-muted);font-size:12.5px}.trow .tseats{grid-column:1/3;font-size:13.5px}.trow .thost{display:block;margin-bottom:3px;color:var(--sheet-muted);font-size:12px}.trow .thost b{color:#245b3d;font-size:15px}
 .wtable{display:grid;grid-template-rows:auto auto auto;gap:10px;margin:12px 0;justify-items:center}
 .w13{display:flex;gap:8px;width:100%;justify-content:space-between;align-items:center}.w13 .wseat{width:36%;min-width:0}
 .wfelt{flex:1;align-self:stretch;min-height:58px;border-radius:50%/45%;background:radial-gradient(100% 90% at 50% 40%,#2a7a5c,#14432f);border:4px solid #5a3a22;box-shadow:inset 0 0 0 1px rgba(255,255,255,.1)}
@@ -70,6 +71,8 @@ button{font:inherit;color:inherit}
 .wseat b{font-size:15px;display:flex;align-items:center;gap:5px}
 .wseat.free b::before{content:"+";display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;background:#3e9a6c;color:#fff;font-size:15px;line-height:1}
 .wseat.taken{border:2px solid #c99a3e;background:#f7ebcd;color:#5a3a0c;cursor:default}
+.wseat.partner{border-color:#7192ad;background:#e7eff5;color:#294760}
+.wseat.opponent{border-color:#c97a62;background:#f8e7df;color:#653224}
 .wseat.me{border:2px solid var(--brass);background:#1d4a3a;color:#fff;box-shadow:0 0 0 3px rgba(214,171,82,.45),0 4px 12px rgba(0,0,0,.25)}
 .wseat.me small{opacity:.85;color:var(--brass)}
 .robo{width:15px;height:15px;margin-left:5px;vertical-align:-2px;color:var(--brass);flex:none}
@@ -240,8 +243,8 @@ table.stats td b{display:inline-block;min-width:1.4em;font-size:15px}
 .tag{font-size:10.5px;font-weight:800;letter-spacing:.06em;border-radius:5px;padding:1px 5px;background:var(--ink);color:var(--felt-lo)}
 .tag.call{background:var(--brass);color:var(--brass-ink);padding:2px 4px;border-radius:7px;display:inline-grid;place-items:center;line-height:0}
 #trumpChip{cursor:default}
-/* narrow phones: the suit icon alone names the trump, so the top bar keeps room for the score */
-@media (max-width:400px){#trumpChip svg+b{display:none}.bar{gap:6px}.chip{padding:5px 9px}}
+/* narrow phones: keep the trump name visible while preserving room for the score */
+@media (max-width:400px){.bar{gap:6px}.chip{padding:5px 9px}#trumpChip{gap:4px;padding-inline:7px}#trumpChip b{font-size:14px}#trumpChip .zv{font-size:10px;padding:2px 5px}}
 /* landscape and wide screens: three tiles a row, shorter, so all six fit */
 @media (orientation:landscape) and (min-width:600px){#home .wrap{grid-template-columns:repeat(3,minmax(0,1fr));max-width:980px}#home .poster{aspect-ratio:auto;height:max(120px,calc((100vh - 112px) / 2))}#home .pfan{height:50%;top:6%}#home .pcap b{font-size:clamp(20px,3.2vw,28px)}}
 .zv{font-size:11.5px;font-weight:800;letter-spacing:.04em;background:var(--brass);color:var(--brass-ink);border-radius:99px;padding:2px 7px;margin-left:2px}
@@ -4665,7 +4668,7 @@ const STR = {
       cols: { r: 'Crvena', y: 'Žuta', g: 'Zelena', b: 'Plava', p: 'Ružičasta', t: 'Tirkizna', o: 'Narančasta', v: 'Ljubičasta' } },
     sol: { name: 'Pasijans', score: 'Bodovi', time: 'Vrijeme', moves: 'Potezi', newGame: 'Nova igra', restart: 'Ista podjela', hint: 'Savjet', undo: 'Natrag', auto: 'Završi', won: 'Pasijans je složen!', noMoves: 'Nema više poteza', home: 'Izbornik',
       draw: 'Vučenje', draw1: '1 karta', draw3: '3 karte', passes: 'Prolazi kroz špil', inf: 'Bez ograničenja', scoring: 'Bodovanje', standard: 'Standardno', vegas: 'Vegas', none: 'Bez bodova', timed: 'Bodovi ovise o vremenu', tapMove: 'Dodir sam premješta kartu', left: 'Špil na desnoj strani', cont: 'Nastavi', played: 'Odigrano', wonN: 'Riješeno', best: 'Najbolje vrijeme', bestScore: 'Najviše bodova', streak: 'Niz pobjeda' },
-    online: 'Online', rejoin: 'Nastavi online igru', gameGone: 'Ta igra više ne postoji', playAgain: 'Igraj opet', waitOthers: (n, m) => `Čeka se ostale · ${n}/${m}`, tables: 'Stolovi', newTable: 'Novi stol', noTables: 'Nema otvorenih stolova', yourName: 'Tvoje ime', sit: 'Sjedni', free: 'Slobodno', startT: 'Započni', waitHost: 'Čeka se domaćin', invite: 'Pozovi', leaveT: 'Izađi', botPlays: 'Bot igra za tebe', takeOver: 'Preuzmi', rating: 'Rejting', offline: 'Nema veze sa serverom', reconnecting: 'Ponovno spajanje…', copied: 'Poveznica kopirana', bots: 'Prazna mjesta igraju botovi', create: 'Otvori stol',
+    online: 'Online', rejoin: 'Nastavi online igru', gameGone: 'Ta igra više ne postoji', playAgain: 'Igraj opet', waitOthers: (n, m) => `Čeka se ostale · ${n}/${m}`, tables: 'Otvoreni stolovi', newTable: 'Novi stol', noTables: 'Nema otvorenih stolova', host: 'Domaćin', yourName: 'Tvoje ime', sit: 'Sjedni', free: 'Slobodno', startT: 'Započni', waitHost: 'Čeka se domaćin', invite: 'Pozovi', leaveT: 'Izađi', botPlays: 'Bot igra za tebe', takeOver: 'Preuzmi', rating: 'Rejting', offline: 'Nema veze sa serverom', reconnecting: 'Ponovno spajanje…', copied: 'Poveznica kopirana', bots: 'Prazna mjesta igraju botovi', create: 'Otvori stol',
     level: 'Protivnici', partner: 'Partner', stats: 'Statistika', lvShort: { novice: 'Poč.', average: 'Pros.', pro: 'Pro', cardshark: 'Shark' }, lv: { novice: 'Početnik', average: 'Prosječan', pro: 'Pro', cardshark: 'Cardshark' },
     speed: 'Brzina', normal: 'Normalno', fast: 'Brzo', tap: 'Igranje karte', tap1: 'Jedan dodir', tap2: 'Dva dodira',
     rules: 'Pravila', rulesB: 'Pravila briškule', rulesH: 'Pravila bele',
@@ -4743,7 +4746,7 @@ const STR = {
       cols: { r: 'Red', y: 'Yellow', g: 'Green', b: 'Blue', p: 'Pink', t: 'Teal', o: 'Orange', v: 'Purple' } },
     sol: { name: 'Solitaire', score: 'Score', time: 'Time', moves: 'Moves', newGame: 'New game', restart: 'Same deal', hint: 'Hint', undo: 'Undo', auto: 'Finish', won: 'Solved!', noMoves: 'No more moves', home: 'Menu',
       draw: 'Draw', draw1: '1 card', draw3: '3 cards', passes: 'Passes through the stock', inf: 'Unlimited', scoring: 'Scoring', standard: 'Standard', vegas: 'Vegas', none: 'None', timed: 'Timed scoring', tapMove: 'Tap moves the card for you', left: 'Stock on the right', cont: 'Continue', played: 'Played', wonN: 'Solved', best: 'Best time', bestScore: 'Best score', streak: 'Win streak' },
-    online: 'Online', rejoin: 'Rejoin online game', gameGone: 'That game no longer exists', playAgain: 'Play again', waitOthers: (n, m) => `Waiting for others · ${n}/${m}`, tables: 'Tables', newTable: 'New table', noTables: 'No open tables', yourName: 'Your name', sit: 'Sit', free: 'Free', startT: 'Start', waitHost: 'Waiting for the host', invite: 'Invite', leaveT: 'Leave', botPlays: 'A bot is playing for you', takeOver: 'Take over', rating: 'Rating', offline: 'Can’t reach the server', reconnecting: 'Reconnecting…', copied: 'Link copied', bots: 'Empty seats are played by bots', create: 'Open table',
+    online: 'Online', rejoin: 'Rejoin online game', gameGone: 'That game no longer exists', playAgain: 'Play again', waitOthers: (n, m) => `Waiting for others · ${n}/${m}`, tables: 'Open tables', newTable: 'New table', noTables: 'No open tables', host: 'Host', yourName: 'Your name', sit: 'Sit', free: 'Free', startT: 'Start', waitHost: 'Waiting for the host', invite: 'Invite', leaveT: 'Leave', botPlays: 'A bot is playing for you', takeOver: 'Take over', rating: 'Rating', offline: 'Can’t reach the server', reconnecting: 'Reconnecting…', copied: 'Link copied', bots: 'Empty seats are played by bots', create: 'Open table',
     level: 'Opponents', partner: 'Partner', stats: 'Stats', lvShort: { novice: 'Nov.', average: 'Avg.', pro: 'Pro', cardshark: 'Shark' }, lv: { novice: 'Novice', average: 'Average', pro: 'Pro', cardshark: 'Cardshark' },
     speed: 'Speed', normal: 'Normal', fast: 'Fast', tap: 'Playing a card', tap1: 'One tap', tap2: 'Two taps',
     rules: 'Rules', rulesB: 'Briškula rules', rulesH: 'Bela rules',
@@ -5197,7 +5200,7 @@ function showSettings() {
     <h4>${t.deckF}</h4><div class="decks">${Object.keys(Cards.FR).map(k => `<button class="deck" data-fd="${k}" aria-pressed="${Cards.frDeck(S.fDeck) === k}"><span class="dk-cards">${['Hk', 'Sq', 'Dj'].map(c => `<span class="svgc">${Cards.frFace(c, k)}</span>`).join('')}</span><span class="dk-name"><b>${Cards.FR[k].name[S.lang]}</b><small>${Cards.FR[k].maker}</small></span></button>`).join('')}</div>
     ${Cards.FR[Cards.frDeck(S.fDeck)].backs.length > 1 ? `<div class="fbacks">${Cards.FR[Cards.frDeck(S.fDeck)].backs.map(c => `<button class="fback" data-fb="${c}" aria-pressed="${S.fBack === c}" aria-label="${c}">${Cards.frBack(S.fDeck, c)}</button>`).join('')}</div>` : ''}
     <h4>${t.speed}</h4>${seg('speed', [['normal', t.normal], ['fast', t.fast]])}
-    <p class="muted credit">${t.credit} · v57</p>
+    <p class="muted credit">${t.credit} · v58</p>
     <div class="btns"><button class="pri" id="sx">${t.close}</button></div>`, v => {
     v.querySelector('#sx').onclick = () => { closeSheet(); if (G) renderAll(); else renderHome(); };
     v.onclick = e => { if (e.target === v) { closeSheet(); if (G) renderAll(); else renderHome(); } };
@@ -5897,7 +5900,7 @@ async function showLobby() {
     try {
       const r = await (await fetch(SERVER + '/api/tables')).json();
       const el = document.querySelector('#tList'); if (!el) return;
-      el.innerHTML = r.tables.length ? r.tables.map(x => `<button class="trow" data-id="${x.id}"><b>${gameName(x.game)}</b><small>${esc(optsLine(x.game, x.opts))}</small><span class="tseats">${x.seats.map(n => n ? esc(botName(n)) : '·').join(' · ')}</span></button>`).join('') : `<p class="muted">${t.noTables}</p>`;
+      el.innerHTML = r.tables.length ? r.tables.map(x => `<button class="trow" data-id="${x.id}"><b>${gameName(x.game)}</b><small>${esc(optsLine(x.game, x.opts))}</small><span class="tseats"><span class="thost">${t.host}: <b>${esc(x.hostName || '')}</b></span><span>${x.seats.map(n => n ? esc(botName(n)) : '·').join(' · ')}</span></span></button>`).join('') : `<p class="muted">${t.noTables}</p>`;
       el.querySelectorAll('.trow').forEach(b => b.onclick = () => { alive = false; clearInterval(timer); joinTable(b.dataset.id); });
     } catch (e) { const el = document.querySelector('#tList'); if (el) el.innerHTML = `<p class="muted">${t.offline}</p>`; }
   };
@@ -5964,7 +5967,7 @@ function showWaiting() {
   if (me < 0) NET.anchor = undefined;
   const bottom = NET.anchor !== undefined ? NET.anchor : (NET.isHost ? 0 : hostSeat >= 0 ? (hostSeat + 2) & 3 : 0);
   const lab = s => rel(s) === 0 ? t.names[0] : rel(s) === 2 ? t.partner : t.level;
-  const seatBtn = s => { const x = i.seats[s]; return `<button class="wseat${x ? ' taken' : ' free'}${s === me ? ' me' : ''}" data-seat="${s}" ${x ? 'disabled' : ''}><small>${me >= 0 ? lab(s) : ''}</small><b>${x ? esc(botName(x.name)) : t.free}</b></button>`; };
+  const seatBtn = s => { const x = i.seats[s], role = me < 0 || !x ? '' : rel(s) === 0 ? ' me' : rel(s) === 2 ? ' partner' : ' opponent'; return `<button class="wseat${x ? ' taken' : ' free'}${role}" data-seat="${s}" ${x ? 'disabled' : ''}><small>${me >= 0 && x ? lab(s) : ''}</small><b>${x ? esc(botName(x.name)) : t.free}</b></button>`; };
   const host = NET.isHost;
   openSheet(`<div class="gsh"><h3>${gameName(i.game)}</h3><button class="link" id="wInv">${t.invite}</button></div>
     <p class="muted">${esc(optsLine(i.game, i.opts))} · ${i.id.toUpperCase()}</p>
