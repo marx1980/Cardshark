@@ -129,9 +129,8 @@ table.stats td b{display:inline-block;min-width:1.4em;font-size:15px}
 .rejoin{grid-column:1/-1;display:flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:14px;padding:12px;background:var(--brass);color:var(--brass-ink);font:800 16px var(--display);cursor:pointer;box-shadow:0 3px 0 #8a6a28}
 .rejoin svg{width:20px;height:20px}
 #home .poster{flex:none;min-height:0;aspect-ratio:3/4;border-radius:20px}
-#home .pfan{height:48%;top:10%}
-#home .poster.pu .pfan{height:42%;top:12%}
-#home .pcap{padding:12px 12px}
+#home .pfan{height:38%;top:8%}
+#home .pcap{padding:12px;flex-direction:column-reverse;align-items:center;gap:6px;text-align:center}
 #home .pcap b{font-size:clamp(22px,6.4vw,30px)}
 #home .go{width:42px;height:42px}
 #home .go svg{width:22px;height:22px}
@@ -246,7 +245,7 @@ table.stats td b{display:inline-block;min-width:1.4em;font-size:15px}
 /* narrow phones: keep the trump name visible while preserving room for the score */
 @media (max-width:400px){.bar{gap:6px}.chip{padding:5px 9px}#trumpChip{gap:4px;padding-inline:7px}#trumpChip b{font-size:14px}#trumpChip .zv{font-size:10px;padding:2px 5px}}
 /* landscape and wide screens: three tiles a row, shorter, so all six fit */
-@media (orientation:landscape) and (min-width:600px){#home .wrap{grid-template-columns:repeat(3,minmax(0,1fr));max-width:980px}#home .poster{aspect-ratio:auto;height:max(120px,calc((100vh - 112px) / 2))}#home .pfan{height:50%;top:6%}#home .pcap b{font-size:clamp(20px,3.2vw,28px)}}
+@media (orientation:landscape) and (min-width:600px){#home .wrap{grid-template-columns:repeat(3,minmax(0,1fr));max-width:980px}#home .poster{aspect-ratio:auto;height:max(120px,calc((100vh - 112px) / 2))}#home .pfan{height:32%;top:6%}#home .pcap{padding:6px 8px;gap:3px}#home .go{width:32px;height:32px}#home .go svg{width:18px;height:18px}#home .pcap b{font-size:clamp(18px,3vw,22px)}}
 .zv{font-size:11.5px;font-weight:800;letter-spacing:.04em;background:var(--brass);color:var(--brass-ink);border-radius:99px;padding:2px 7px;margin-left:2px}
 .zlist{display:flex;flex-direction:column;gap:16px;margin:6px 0 14px}
 .zseat{display:flex;flex-direction:column;gap:4px}
@@ -5202,7 +5201,7 @@ function showSettings() {
     <h4>${t.deckF}</h4><div class="decks">${Object.keys(Cards.FR).map(k => `<button class="deck" data-fd="${k}" aria-pressed="${Cards.frDeck(S.fDeck) === k}"><span class="dk-cards">${['Hk', 'Sq', 'Dj'].map(c => `<span class="svgc">${Cards.frFace(c, k)}</span>`).join('')}</span><span class="dk-name"><b>${Cards.FR[k].name[S.lang]}</b><small>${Cards.FR[k].maker}</small></span></button>`).join('')}</div>
     ${Cards.FR[Cards.frDeck(S.fDeck)].backs.length > 1 ? `<div class="fbacks">${Cards.FR[Cards.frDeck(S.fDeck)].backs.map(c => `<button class="fback" data-fb="${c}" aria-pressed="${S.fBack === c}" aria-label="${c}">${Cards.frBack(S.fDeck, c)}</button>`).join('')}</div>` : ''}
     <h4>${t.speed}</h4>${seg('speed', [['normal', t.normal], ['fast', t.fast]])}
-    <p class="muted credit">${t.credit} · v59</p>
+    <p class="muted credit">${t.credit} · v60</p>
     <div class="btns"><button class="pri" id="sx">${t.close}</button></div>`, v => {
     v.querySelector('#sx').onclick = () => { closeSheet(); if (G) renderAll(); else renderHome(); };
     v.onclick = e => { if (e.target === v) { closeSheet(); if (G) renderAll(); else renderHome(); } };
@@ -5448,6 +5447,7 @@ $('#center').addEventListener('click', () => { });
 // why the hint card. Two parts:
 //  1. a named rule, only when it truly applies to this card (the same tests the computer players use)
 //  2. what actually decided it: the result of the simulated deals (or the Bela rule that picked the card outright)
+const HINT_CLOSE_MARGIN = { b: 1, h: 2, t: 0.2 };
 function hintWhy(card, legal, res) {
   const t = L().why, g = G.game, T = g === 't' ? null : G.trump, hand = G.hands[0], trick = G.trick, pos = trick.length;
   const order = g === 'b' ? E.bOrder(G) : E.roundFrom(G, G.leader), lastToPlay = pos === order.length - 1;
@@ -5482,7 +5482,7 @@ function hintWhy(card, legal, res) {
     const m = res.means, i = res.legal.findIndex(c => c.id === card.id);
     const gap = Math.max(0, m[i] - Math.max(...m.filter((_, j) => j !== i)));
     const d = g === 't' ? Math.round(gap * 10) / 10 : Math.round(gap);
-    const tie = gap < ({ b: 1, h: 2, t: 0.15 })[g];
+    const tie = gap < HINT_CLOSE_MARGIN[g];
     sim = rule ? t.short(res.n, tie ? null : d) : tie ? t.close(res.n) : t.search(res.n, d);
   }
   const bulb = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/></svg>';
@@ -5515,7 +5515,7 @@ function showHint() {
           const s = AI.cardshark(g, G, 0, { timeMs: 1200, withValues: true });
           if (s && s.means) {
             res = s;
-            const best = Math.max(...s.means), margin = ({ b: 1, h: 2, t: 0.15 })[g];
+            const best = Math.max(...s.means), margin = HINT_CLOSE_MARGIN[g];
             const pts = c => g === 'b' ? c.p : g === 'h' ? E.hPts(c, G.trump) : E.tThirds(c);
             const rank = c => g === 'b' ? c.st : g === 'h' ? E.hStr(c, G.trump) : E.tStr(c);
             const cheaper = (a, b) => pts(a) - pts(b)
