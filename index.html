@@ -330,7 +330,17 @@ table.stats td b{display:inline-block;min-width:1.4em;font-size:15px}
 .net-board .net-cards{display:flex;gap:4px;justify-content:center;align-items:center}
 .net-board .svgc{width:clamp(30px,9vw,54px);filter:drop-shadow(0 2px 4px rgba(0,0,0,.35))}
 .net-board .net-disc{display:flex;gap:12px;align-items:center}
-.net-board .ucard{display:block;width:clamp(38px,11vw,66px);height:auto;filter:drop-shadow(0 3px 5px rgba(0,0,0,.4))}
+.net-board .ucard{display:block;width:clamp(38px,11vw,66px);height:auto;aspect-ratio:2/3;filter:drop-shadow(0 3px 5px rgba(0,0,0,.4))}
+.ucard svg{width:100%;height:100%;display:block}
+.hc .ucard,.net-pile .ucard{display:block;width:100%;aspect-ratio:2/3}
+.net-pile .ucard{width:clamp(38px,11vw,66px)}
+#table.net-l{background:radial-gradient(120% 90% at 50% 38%,#2c3652,#111522)}
+.net-l .net-seat{border-color:rgba(255,255,255,.1);background:rgba(0,0,0,.2);border-radius:14px}
+.net-l .net-seat.turn{border-color:var(--brass);box-shadow:0 0 0 2px var(--brass) inset,0 0 16px rgba(214,170,80,.35)}
+.net-l .net-fan .ucard{width:22px;margin-left:-14px;flex:none}
+.net-l .net-fan .ucard:first-child{margin-left:0}
+.net-l .net-fan{height:33px}
+.net-l .net-board{z-index:2}
 .net-board .net-meta{font-size:13px;font-weight:800;text-align:center;text-shadow:0 1px 3px #000}
 .net-seats{position:absolute;inset:0;z-index:2;pointer-events:none}
 .net-seat{position:absolute;left:clamp(42px,calc(var(--x)*1%),calc(100% - 42px));top:calc(var(--y)*1%);transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:2px;max-width:34%;min-width:72px;padding:3px 5px;border:1px solid rgba(255,255,255,.12);border-radius:12px;background:rgba(0,0,0,.32);font-size:12px;text-align:center}
@@ -355,9 +365,6 @@ table.stats td b{display:inline-block;min-width:1.4em;font-size:15px}
 .net-fan .ucard,.hc .ucard{display:block;width:100%;height:auto}
 .hc .svgc{display:block;width:100%}
 .net-card-back{display:block;aspect-ratio:5/7;border:1px solid rgba(255,255,255,.5);border-radius:5px;background:repeating-linear-gradient(45deg,#1d4a3a,#1d4a3a 4px,#376c54 4px,#376c54 8px);box-shadow:inset 0 0 0 2px rgba(255,255,255,.2)}
-.net-uno-face,.net-uno-back{display:grid;place-items:center;width:100%;height:100%;aspect-ratio:2/3;border:3px solid #fbf7ee;border-radius:9px;color:#fff;font:900 18px/1 Arial,sans-serif;text-shadow:0 2px 2px #222;box-shadow:inset 0 0 0 2px rgba(0,0,0,.2)}
-.net-uno-face{transform:rotate(-8deg)}
-.net-uno-back{background:linear-gradient(135deg,#d8382e 0 25%,#f0bd22 25% 50%,#2f9a4c 50% 75%,#2a68c2 75%)}
 .net-joker-face{display:grid;place-items:center;aspect-ratio:2/3;border-radius:6px;background:#eee;color:#333;font-weight:800;font-size:11px}
 @media(max-width:420px){.net-seat{min-width:62px;max-width:30%;font-size:10.5px}.net-seat small{font-size:9px}.net-fan{height:22px}.net-fan .svgc{width:15px;margin-left:-10px}}
 
@@ -427,10 +434,11 @@ table.pis{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;
 .ucatch{position:absolute;left:4px;right:4px;bottom:-12px;background:#d8382e;color:#fff;border:0;border-radius:10px;padding:7px 2px;font:900 14px var(--display);animation:upulse .5s infinite alternate;z-index:3;cursor:pointer}
 @keyframes upulse{to{transform:scale(1.08)}}
 .ucenter{position:relative;flex:1;display:flex;align-items:center;justify-content:center;gap:24px;min-height:0}
-.udir{position:absolute;width:min(80vw,310px,34vh);aspect-ratio:1;left:50%;top:50%;transform:translate(-50%,-50%);opacity:.5;pointer-events:none;transition:color .3s}
+.udir{position:absolute;width:min(80vw,310px,34vh);aspect-ratio:1;left:50%;top:50%;transform:translate(-50%,-50%);opacity:.7;pointer-events:none;transition:color .3s;filter:drop-shadow(0 0 8px currentColor)}
 .udir.ccw{transform:translate(-50%,-50%) scaleX(-1)}
 .udir svg{width:100%;height:100%;animation:uspin 16s linear infinite}
 @keyframes uspin{to{transform:rotate(360deg)}}
+.udir.ccw svg{animation-direction:reverse}
 .upile{position:relative;width:var(--pw);height:calc(var(--pw) * 1.5);padding:0;border:0;background:none;flex:none;color:var(--ink)}
 button.upile{cursor:pointer}
 .upile .ucard.big{position:absolute;inset:0}
@@ -2804,6 +2812,7 @@ const UnoUI = (() => {
     const q = (a, c) => { const a0 = a * Math.PI / 2 - Math.PI / 2, a1 = a0 + Math.PI / 2; return `<path d="M0 0L${(r * Math.cos(a0)).toFixed(2)} ${(r * Math.sin(a0)).toFixed(2)}A${r} ${r} 0 0 1 ${(r * Math.cos(a1)).toFixed(2)} ${(r * Math.sin(a1)).toFixed(2)}Z" fill="${HEX[c]}"/>`; };
     return cols.map((c, i) => q(i, c)).join('');
   };
+  const DIR_SVG = `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><defs><marker id="udArr" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="4.2" markerHeight="4.2" orient="auto-start-reverse"><path d="M1 1L9 5 1 9Z" fill="currentColor"/></marker></defs><circle cx="50" cy="50" r="42" fill="none" stroke="currentColor" stroke-width="7" opacity=".12"/><g fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" marker-end="url(#udArr)"><path d="M64.4 10.5A42 42 0 0 1 71 86.4"/><path d="M35.6 89.5A42 42 0 0 1 29 13.6"/></g></svg>`;
   const cache = {};
   // one face of a card as SVG (60 × 90)
   function faceSVG(f, side) {
@@ -2883,7 +2892,7 @@ const UnoUI = (() => {
       <button class="ib" id="uRules" aria-label="${api.L().settings}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button></header>
       <div class="utable"><div class="uopps" id="uOpps"></div>
       <div class="ucenter" id="uCenter">
-        <div class="udir" id="uDir"><svg viewBox="0 0 100 100"><path d="M50 8a42 42 0 1 1-29.7 12.3" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="6 6"/><path d="M14 10l7 11 11-6" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="udir" id="uDir">${DIR_SVG}</div>
         <button class="upile" id="uDraw" aria-label="${T().draw}"></button>
         <div class="upile udisc" id="uDisc"></div>
         <div class="upend" id="uPend" hidden></div>
@@ -3226,7 +3235,7 @@ const UnoUI = (() => {
     const r = m[lv] = m[lv] || [0, 0]; r[won ? 0 : 1]++; api.save();
   }
   const FACE = (c, side = 'L') => cardFace(c, side);
-  return { init, start, resume, hasSaved, FACE, faceSVG, BACK, HEX };
+  return { init, start, resume, hasSaved, FACE, faceSVG, BACK, HEX, DIR_SVG };
 })();
 if (typeof module !== 'undefined') module.exports = UnoUI;
 </script>
@@ -4727,7 +4736,7 @@ const B_MODES = { p4: { players: 4 }, s4: { players: 4, solo: true }, s3: { play
 const save = () => { try { localStorage.setItem('stih.v1', JSON.stringify(S)); } catch (e) { } };
 const applyDecks = () => { Cards.setDeck('b', S.bDeck); Cards.setDeck('h', S.hDeck); };
 applyDecks();
-const SPEED = () => S.speed === 'fast' ? { ai: 320, trick: 600, deal: 200 } : { ai: 700, trick: 1100, deal: 400 };
+const SPEED = () => S.speed === 'fast' ? { ai: 320, trick: 800, deal: 200 } : { ai: 700, trick: 1500, deal: 400 };
 
 // ---------- strings ----------
 const hrBod = n => n % 10 === 1 && n % 100 !== 11 ? 'bod' : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % 100 > 14) ? 'boda' : 'bodova';
@@ -5475,15 +5484,10 @@ const frRank = r => ({ 1: 'a', 11: 'j', 12: 'q', 13: 'k', 14: 'a' })[r] || Strin
 function netFaceNode(c) {
   if (G.game === 'l') {
     const card = document.createElement('div'); card.className = 'ucard';
-    const f = c && !c.hidden ? c[G.side] : null, face = document.createElement('div');
-    if (!f) { face.className = 'net-uno-back'; }
-    else {
-      const cols = { r:'#d8382e', y:'#f0bd22', g:'#2f9a4c', b:'#2a68c2', p:'#e2408f', t:'#14a39c', o:'#f27a17', v:'#7c45c4' };
-      face.className = 'net-uno-face';
-      face.style.background = f.c ? (cols[f.c] || '#333') : 'conic-gradient(#d8382e 0 25%,#f0bd22 25% 50%,#2f9a4c 50% 75%,#2a68c2 75%)';
-      face.textContent = f.k === 'n' ? String(f.n) : ({ d2:'+2', d1:'+1', d5:'+5', wd4:'+4', wd2:'+2', skip:'⊘', skipall:'⊘', rev:'↻', flip:'↔', wild:'WILD', wdc:'WILD' })[f.k] || '';
-    }
-    card.append(face); return card;
+    const f = c && !c.hidden ? c[G.side] : null;
+    // the card SVGs are generated locally by UnoUI (no user content)
+    card.innerHTML = f ? UnoUI.faceSVG(f, G.side) : UnoUI.BACK;
+    return card;
   }
   const outer = document.createElement('div'); outer.className = 'svgc';
   const deck = Cards.frDeck(S.fDeck), dims = Cards.FR[deck];
@@ -5562,6 +5566,8 @@ function renderNetBoard() {
   const top = G.discard?.[G.discard.length - 1];
   const colors = { r:'#d8382e', y:'#f0bd22', g:'#2f9a4c', b:'#2a68c2', p:'#e2408f', t:'#14a39c', o:'#f27a17', v:'#7c45c4' };
   meta.textContent = `${G.variant === 'flip' ? L().uno.flip : L().uno.classic} · ${G.side === 'D' ? L().uno.flip : ''} · ${G.pending ? `+${G.pending}` : ''}`;
+  const dir = document.createElement('div'); dir.className = `udir${G.dir < 0 ? ' ccw' : ''}`; dir.innerHTML = UnoUI.DIR_SVG;
+  dir.style.color = G.color && colors[G.color] ? colors[G.color] : 'rgba(255,255,255,.3)'; board.prepend(dir);
   const disc = document.createElement('div'); disc.className = 'net-disc';
   const draw = document.createElement('button'); draw.className = 'net-pile'; draw.dataset.pile = 'draw'; draw.append(netFaceNode({ hidden: true }));
   const drawCount = document.createElement('small'); drawCount.textContent = String(G.drawCount || 0); draw.append(drawCount); disc.append(draw);
@@ -5618,7 +5624,7 @@ function renderNetHand() {
   el.replaceChildren(...nodes);
 }
 function renderNetAll() {
-  $('#table').classList.add('online-new');
+  $('#table').classList.add('online-new'); $('#table').classList.toggle('net-l', G.game === 'l');
   renderNetBar();
   $('#center').replaceChildren(renderNetBoard(), renderNetSeats());
   renderNetHand();
@@ -5859,7 +5865,7 @@ function renderHand() {
   if (showTalon) for (let i = 0; i < 2; i++) html += `<div class="hc talon" style="left:${x0 + (cards.length + i) * step}px">${Cards.back('h')}</div>`;
   el.innerHTML = html;
 }
-function renderAll() { if (netMulti()) { renderNetAll(); return; } $('#table').classList.remove('online-new'); renderBar(); renderSeats(); renderStock(); renderHand(); }
+function renderAll() { if (netMulti()) { renderNetAll(); return; } $('#table').classList.remove('online-new', 'net-l'); renderBar(); renderSeats(); renderStock(); renderHand(); }
 function setAction(html) { $('#action').innerHTML = html; }
 function status(text, muted) { setAction(`<div class="msg">${muted ? `<span class="m">${text}</span>` : text}</div>`); }
 
@@ -5904,8 +5910,8 @@ function placeTrickCard(seat, card) {
 async function collectTrick(winner) {
   const o = ORIGIN[winner];
   const els = [...$('#center').children];
-  els.forEach(el => el.animate([{ opacity: 1 }, { left: o[0] + '%', top: o[1] + '%', opacity: 0 }], { duration: 360, easing: 'ease-in', fill: 'forwards' }));
-  await sleep(370);
+  els.forEach(el => el.animate([{ opacity: 1 }, { left: o[0] + '%', top: o[1] + '%', opacity: 0 }], { duration: 480, easing: 'ease-in', fill: 'forwards' }));
+  await sleep(490);
   $('#center').innerHTML = '';
 }
 
@@ -6598,7 +6604,7 @@ async function handleNet(m) {
   const t = L();
   if (m.t === 'start') {
     NET.started = true; NET.names = m.names; NET.myPts = 0; NET.rating = null; $('#table').classList.add('online');
-    $('#table').classList.remove('online-new');
+    $('#table').classList.remove('online-new', 'net-l');
     S.netTable = { id: NET.id, game: NET.info && NET.info.game, at: Date.now() }; save();
     closeSheet(); token++; pending = null; sel = null;
     $('#home').hidden = true; $('#table').hidden = false; $('#center').innerHTML = '';
