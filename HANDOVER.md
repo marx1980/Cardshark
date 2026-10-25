@@ -1,4 +1,4 @@
-# Cardshark — handover (25 Oct 2026, live: v60)
+# Cardshark — handover (25 Oct 2026, live: v61)
 
 Live: GitHub Pages from `marx1980/Cardshark` `main` (the repo was renamed from `cardshark`; GitHub redirects, but push to `https://github.com/marx1980/Cardshark.git`).
 
@@ -26,8 +26,9 @@ Shipped since v50:
 - **v58**: online-table UI polish: show localized trump suit names on narrow phones, distinguish you/partner/opponents/free seats in the waiting table, and highlight available tables and host names in the lobby. No game logic or networking changes.
 - **v59**: stabilized hints by caching each result and choosing the cheapest card among close simulation results; localized English game names as **Briscola**, **Tressette**, **Belote**, and **Rummy**; added a confirmation sheet before leaving a waiting-room table. No game logic or networking changes.
 - **v60**: moved home-tile launch arrows above game names with space from card art; tuned the Trešeta close-hint margin to 0.2 points (matching the displayed tenths); and verified the Briškula face-up hint with a targeted state check.
+- **v61**: matched Remi’s opponents and visible card backs to Poker’s around-the-table seating layout. Online table creation now offers all offline Briškula formats (including 2-player double hand) and 2-player / 4-player Trešeta; server seats, bot fill, view rotation, and ratings follow those choices. Poker, Remi, and L’Unico! remain offline-only.
 
-The service-worker cache version is `cardshark-v60` at `sw.js:2`.
+The service-worker cache version is `cardshark-v61` at `sw.js:2`.
 
 ## How the hint works (index.html, main UI script)
 
@@ -76,4 +77,4 @@ Check at 375×667 and 390×780/844. The only expected console error is Google Fo
 - **More play rules from Marko** for the hint; this needs the rule descriptions before implementation.
 - Commits for v45–v47 were made under Marko's email, so GitHub shows them as Unverified. They weren't rewritten, because that needs a force-push to `main`. From now on, commit as `Claude <norepl[...]
 - Hint stays offline only, to keep online ratings fair. Revisit if Marko wants it in online play.
-- Remi is offline only. Multiplayer (local network or online) can be considered after testing and polish.
+- Online play currently supports Briškula, Trešeta, and Bela. Poker, Remi, and L’Unico! still need server-authoritative multiplayer engines and client integration.

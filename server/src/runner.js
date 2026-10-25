@@ -11,7 +11,14 @@ function rotEvent(ev, me, st) {
   const r = { ...ev };
   for (const k of ['seat', 'winner']) if (typeof r[k] === 'number') r[k] = rotSeat(r[k], me);
   const swap = st.seats.length === 2 ? me === 2 : me % 2 === 1;
-  if (typeof r.team === 'number' && swap) r.team = 1 - r.team;
+  if (typeof r.team === 'number' && r.team >= 0) {
+    if (st.teams > 2) r.team = (r.team - st.seats.indexOf(me) + st.teams) % st.teams;
+    else if (swap) r.team = 1 - r.team;
+  }
+  if (Array.isArray(r.pts) && st.teams > 2) {
+    const order = st.seats.slice(st.seats.indexOf(me)).concat(st.seats.slice(0, st.seats.indexOf(me)));
+    r.pts = order.map(s => r.pts[st.seats.indexOf(s)]);
+  }
   if (Array.isArray(r.pts) && r.pts.length === 2 && swap) r.pts = [r.pts[1], r.pts[0]];
   return r;
 }
