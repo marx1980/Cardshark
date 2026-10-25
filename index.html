@@ -4454,12 +4454,18 @@ const RemiUI = (() => {
     $('#rScore').innerHTML = st.opts.target ? `<span>${t.you}</span><b>${st.scores[0]}</b><small>/ ${st.opts.target}</small>` : `<small>${t.round}</small><b>${st.round}</b>`;
     // opponents
     $('#rOpps').innerHTML = Array.from({ length: st.n - 1 }, (_, k) => k + 1).map(p => {
-      const [x, y] = SPOTS[st.n - 1][p - 1], count = st.hands[p].length;
+      const [x, y] = SPOTS[st.n - 1][p - 1];
       return `<div class="ropp${st.turn === p && st.winner === null ? ' turn' : ''}${st.opened[p] ? ' open' : ''}" data-p="${p}" style="--x:${x};--y:${y}">
-      <div class="rcount">${Array.from({ length: Math.min(count, 6) }, () => `<span class="rback">${back()}</span>`).join('')}<b>${count}</b></div>
-      <div class="rname"><b>${esc(nm(p))}</b></div>
-      ${st.opts.target ? `<small>${st.scores[p]}</small>` : ''}</div>`;
+      <div class="rcount">${Array.from({ length: Math.min(st.hands[p].length, 6) }, () => `<span class="rback">${back()}</span>`).join('')}<b data-count></b></div>
+      <div class="rname"><b data-name></b></div>
+      ${st.opts.target ? '<small data-score></small>' : ''}</div>`;
     }).join('');
+    for (let p = 1; p < st.n; p++) {
+      const opp = $(`#rOpps [data-p="${p}"]`);
+      opp.querySelector('[data-count]').textContent = st.hands[p].length;
+      opp.querySelector('[data-name]').textContent = nm(p);
+      const score = opp.querySelector('[data-score]'); if (score) score.textContent = st.scores[p];
+    }
     // the table: melds by owner
     const melds = st.melds;
     $('#rTable').innerHTML = melds.length ? melds.map(m => `<div class="rmeld${m.owner === 0 ? ' mine' : ''}${lastMeld === m.id ? ' new' : ''}${flash === m.id ? ' fl' : ''}" data-m="${m.id}" style="--k:${m.cards.length}">${m.cards.map(c => card(c)).join('')}</div>`).join('') : '';
