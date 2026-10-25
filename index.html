@@ -472,15 +472,16 @@ button.upile{cursor:pointer}
 #remi{position:fixed;inset:0;z-index:20;display:flex;flex-direction:column;background:radial-gradient(120% 90% at 50% 35%,#2c3416,#10140a);user-select:none;-webkit-user-select:none;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--rr:1.5}
 #remi[hidden]{display:none}
 #remi .chip.score small{color:var(--muted);font-size:12px}
-.ropps{display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));gap:6px;padding:4px 8px;flex:none}
-.ropp{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 2px;border-radius:12px;border:1px solid rgba(255,255,255,.1);background:rgba(0,0,0,.22);min-width:0;font-size:12.5px}
+.rboard{position:relative;flex:1;min-height:0}
+.ropps{position:absolute;inset:0;z-index:2;pointer-events:none}
+.ropp{position:absolute;left:clamp(48px,calc(var(--x) * 1%),calc(100% - 48px));top:calc(var(--y) * 1%);transform:translate(-50%,-50%);width:clamp(86px,24vw,150px);box-sizing:border-box;display:flex;flex-direction:column;align-items:center;gap:2px;padding:5px 4px;border-radius:12px;border:1px solid rgba(255,255,255,.1);background:rgba(0,0,0,.34);min-width:0;font-size:12.5px}
 .ropp.turn{border-color:var(--brass);box-shadow:0 0 0 2px rgba(214,171,82,.35)}
 .ropp.open .rname b{color:#d9e7a8}
 .ropp .rname{max-width:100%;overflow:hidden}.ropp .rname b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
-.rcount{display:flex;align-items:center;gap:5px}.rcount b{font-size:14px}
-.rback{display:block;width:16px;height:calc(16px * var(--rr))}.rback>*{width:100%!important;height:100%!important}
+.rcount{display:flex;align-items:center;justify-content:center;height:calc(25px * var(--rr));max-width:100%;position:relative}.rcount b{font-size:13px;position:absolute;right:-8px;top:-5px;background:rgba(0,0,0,.72);border-radius:99px;padding:0 5px}
+.rback{display:block;width:18px;height:calc(18px * var(--rr));margin-left:-11px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.4))}.rback:first-child{margin-left:0}.rback>*{width:100%!important;height:100%!important}
 .ropp small{color:var(--muted);font-variant-numeric:tabular-nums}
-.rtable{flex:1;min-height:0;overflow-y:auto;display:flex;flex-wrap:wrap;align-content:flex-start;gap:8px 8px;padding:8px 10px;--mw:clamp(40px,11.5vw,52px)}
+.rtable{position:absolute;inset:0;overflow-y:auto;display:flex;flex-wrap:wrap;align-content:center;justify-content:center;gap:8px;padding:82px 10px 24px;--mw:clamp(40px,11.5vw,52px)}
 .rmeld{display:flex;padding:3px;border-radius:8px;background:rgba(0,0,0,.18);border:1px solid rgba(255,255,255,.08);cursor:pointer}
 .rmeld.mine{border-color:rgba(214,171,82,.45)}
 .rmeld .rc{width:var(--mw);height:calc(var(--mw) * var(--rr));margin-left:calc(var(--mw) * -.62)}
@@ -4425,8 +4426,7 @@ const RemiUI = (() => {
       <button class="ib" id="rHome" aria-label="${api.L().sol.home}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M15 5l-7 7 7 7"/></svg></button>
       <div class="chip score" id="rScore"></div>
       <button class="ib" id="rOpts" aria-label="${api.L().settings}">${G}</button></header>
-      <div class="ropps" id="rOpps"></div>
-      <div class="rtable" id="rTable"></div>
+      <div class="rboard"><div class="ropps" id="rOpps"></div><div class="rtable" id="rTable"></div></div>
       <div class="rpiles"><button class="rpile" id="rStock"></button><button class="rpile" id="rDisc"></button><div class="rstage" id="rStage"></div></div>
       <div class="ract" id="rAct"></div>
       <div class="rhand" id="rHand"></div>`;
@@ -4440,15 +4440,25 @@ const RemiUI = (() => {
     $('#rAct').onclick = e => { const b = e.target.closest('button'); if (b) human({ a: b.dataset.a }); };
   }
   const myTurn = () => wait && st.turn === 0;
+  const SPOTS = {
+    1: [[50, 4]],
+    2: [[17, 14], [83, 14]],
+    3: [[13, 40], [50, 4], [87, 40]],
+    4: [[13, 52], [22, 10], [78, 10], [87, 52]],
+    5: [[12, 56], [14, 18], [50, 3], [86, 18], [88, 56]]
+  };
   function render() {
     if (!st || !root) return;
     const t = T();
     $('#rScore').innerHTML = st.opts.target ? `<span>${t.you}</span><b>${st.scores[0]}</b><small>/ ${st.opts.target}</small>` : `<small>${t.round}</small><b>${st.round}</b>`;
     // opponents
-    $('#rOpps').style.setProperty('--n', st.n - 1);
-    $('#rOpps').innerHTML = Array.from({ length: st.n - 1 }, (_, k) => k + 1).map(p => `<div class="ropp${st.turn === p && st.winner === null ? ' turn' : ''}${st.opened[p] ? ' open' : ''}" data-p="${p}">
-      <div class="rname"><b>${esc(nm(p))}</b></div><div class="rcount"><span class="rback">${back()}</span><b>${st.hands[p].length}</b></div>
-      ${st.opts.target ? `<small>${st.scores[p]}</small>` : ''}</div>`).join('');
+    $('#rOpps').innerHTML = Array.from({ length: st.n - 1 }, (_, k) => k + 1).map(p => {
+      const [x, y] = SPOTS[st.n - 1][p - 1], count = st.hands[p].length;
+      return `<div class="ropp${st.turn === p && st.winner === null ? ' turn' : ''}${st.opened[p] ? ' open' : ''}" data-p="${p}" style="--x:${x};--y:${y}">
+      <div class="rcount">${Array.from({ length: Math.min(count, 6) }, () => `<span class="rback">${back()}</span>`).join('')}<b>${count}</b></div>
+      <div class="rname"><b>${esc(nm(p))}</b></div>
+      ${st.opts.target ? `<small>${st.scores[p]}</small>` : ''}</div>`;
+    }).join('');
     // the table: melds by owner
     const melds = st.melds;
     $('#rTable').innerHTML = melds.length ? melds.map(m => `<div class="rmeld${m.owner === 0 ? ' mine' : ''}${lastMeld === m.id ? ' new' : ''}${flash === m.id ? ' fl' : ''}" data-m="${m.id}" style="--k:${m.cards.length}">${m.cards.map(c => card(c)).join('')}</div>`).join('') : '';
