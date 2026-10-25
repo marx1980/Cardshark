@@ -7,7 +7,7 @@ const Poker = require('./poker.js');
 const Remi = require('./remi.js');
 const Unico = require('./unico.js');
 
-const PACE = { bot: 800, trick: 1300, deal: 700, decl: 3200, akuza: 1600, called: 1100 };
+const PACE = { bot: 800, trick: 1800, deal: 700, decl: 3200, akuza: 1600, called: 1100 };
 const relSeat = (seat, viewer, n) => ((seat - viewer) % n + n) % n;
 const absSeat = (seat, viewer, n) => ((seat + viewer) % n + n) % n;
 
