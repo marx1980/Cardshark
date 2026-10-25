@@ -334,6 +334,11 @@ table.stats td b{display:inline-block;min-width:1.4em;font-size:15px}
 .net-stage{font-size:12px;color:var(--muted);text-align:center}
 .net-fan .ucard,.hc .ucard{display:block;width:100%;height:auto}
 .hc .svgc{display:block;width:100%}
+.net-card-back{display:block;aspect-ratio:5/7;border:1px solid rgba(255,255,255,.5);border-radius:5px;background:repeating-linear-gradient(45deg,#1d4a3a,#1d4a3a 4px,#376c54 4px,#376c54 8px);box-shadow:inset 0 0 0 2px rgba(255,255,255,.2)}
+.net-uno-face,.net-uno-back{display:grid;place-items:center;width:100%;height:100%;aspect-ratio:2/3;border:3px solid #fbf7ee;border-radius:9px;color:#fff;font:900 18px/1 Arial,sans-serif;text-shadow:0 2px 2px #222;box-shadow:inset 0 0 0 2px rgba(0,0,0,.2)}
+.net-uno-face{transform:rotate(-8deg)}
+.net-uno-back{background:linear-gradient(135deg,#d8382e 0 25%,#f0bd22 25% 50%,#2f9a4c 50% 75%,#2a68c2 75%)}
+.net-joker-face{display:grid;place-items:center;aspect-ratio:2/3;border-radius:6px;background:#eee;color:#333;font-weight:800;font-size:11px}
 @media(max-width:420px){.net-seat{min-width:62px;max-width:30%;font-size:10.5px}.net-seat small{font-size:9px}.net-fan{height:22px}.net-fan .svgc{width:15px;margin-left:-10px}}
 
 /* ---------- SHEET (overlays) ---------- */
@@ -4485,13 +4490,25 @@ const RemiUI = (() => {
     const t = T();
     $('#rScore').innerHTML = st.opts.target ? `<span>${t.you}</span><b>${st.scores[0]}</b><small>/ ${st.opts.target}</small>` : `<small>${t.round}</small><b>${st.round}</b>`;
     // opponents
-    $('#rOpps').innerHTML = Array.from({ length: st.n - 1 }, (_, k) => k + 1).map(p => {
+    const opponents = $('#rOpps'); opponents.replaceChildren();
+    for (let p = 1; p < st.n; p++) {
       const [x, y] = SPOTS[st.n - 1][p - 1];
-      return `<div class="ropp${st.turn === p && st.winner === null ? ' turn' : ''}${st.opened[p] ? ' open' : ''}" data-p="${p}" style="--x:${x};--y:${y}">
-      <div class="rcount">${Array.from({ length: Math.min(st.hands[p].length, 6) }, () => `<span class="rback">${back()}</span>`).join('')}<b data-count></b></div>
-      <div class="rname"><b data-name></b></div>
-      ${st.opts.target ? '<small data-score></small>' : ''}</div>`;
-    }).join('');
+      const opp = document.createElement('div');
+      opp.className = `ropp${st.turn === p && st.winner === null ? ' turn' : ''}${st.opened[p] ? ' open' : ''}`;
+      opp.dataset.p = String(p); opp.style.setProperty('--x', String(x)); opp.style.setProperty('--y', String(y));
+      const count = document.createElement('div'); count.className = 'rcount';
+      for (let i = 0; i < Math.min(st.hands[p].length, 6); i++) {
+        const card = document.createElement('span'); card.className = 'rback';
+        const backCard = document.createElement('span'); backCard.className = 'net-card-back'; backCard.style.aspectRatio = String(Cards.frRatio(api.S.fDeck));
+        card.append(backCard); count.append(card);
+      }
+      const countLabel = document.createElement('b'); countLabel.dataset.count = ''; count.append(countLabel);
+      const nameBox = document.createElement('div'); nameBox.className = 'rname';
+      const nameLabel = document.createElement('b'); nameLabel.dataset.name = ''; nameBox.append(nameLabel);
+      opp.append(count, nameBox);
+      if (st.opts.target) { const scoreLabel = document.createElement('small'); scoreLabel.dataset.score = ''; opp.append(scoreLabel); }
+      opponents.append(opp);
+    }
     for (let p = 1; p < st.n; p++) {
       const opp = $(`#rOpps [data-p="${p}"]`);
       opp.querySelector('[data-count]').textContent = st.hands[p].length;
@@ -5347,11 +5364,34 @@ function slotFor(seat, nth) {
 }
 const netMulti = () => !!(G && G.online && ['p', 'r', 'l'].includes(G.game));
 const frRank = r => ({ 1: 'a', 11: 'j', 12: 'q', 13: 'k', 14: 'a' })[r] || String(r);
-function netFace(c) {
-  if (!c || c.hidden) return `<div class="svgc">${Cards.frBack(S.fDeck)}</div>`;
-  if (G.game === 'l') return `<div class="ucard">${UnoUI.FACE(c, G.side)}</div>`;
-  if (G.game === 'r' && c.s === 'X') return `<div class="svgc">${Cards.frJoker(S.fDeck, c.joker)}</div>`;
-  return `<div class="svgc">${Cards.frFace(`${c.s}${frRank(c.r)}`, S.fDeck)}</div>`;
+function netFaceNode(c) {
+  if (G.game === 'l') {
+    const card = document.createElement('div'); card.className = 'ucard';
+    const f = c && !c.hidden ? c[G.side] : null, face = document.createElement('div');
+    if (!f) { face.className = 'net-uno-back'; }
+    else {
+      const cols = { r:'#d8382e', y:'#f0bd22', g:'#2f9a4c', b:'#2a68c2', p:'#e2408f', t:'#14a39c', o:'#f27a17', v:'#7c45c4' };
+      face.className = 'net-uno-face';
+      face.style.background = f.c ? (cols[f.c] || '#333') : 'conic-gradient(#d8382e 0 25%,#f0bd22 25% 50%,#2f9a4c 50% 75%,#2a68c2 75%)';
+      face.textContent = f.k === 'n' ? String(f.n) : ({ d2:'+2', d1:'+1', d5:'+5', wd4:'+4', wd2:'+2', skip:'⊘', skipall:'⊘', rev:'↻', flip:'↔', wild:'WILD', wdc:'WILD' })[f.k] || '';
+    }
+    card.append(face); return card;
+  }
+  const outer = document.createElement('div'); outer.className = 'svgc';
+  const deck = Cards.frDeck(S.fDeck), dims = Cards.FR[deck];
+  if (!c || c.hidden) {
+    const back = document.createElement('div'); back.className = 'net-card-back'; back.style.aspectRatio = `${dims.w}/${dims.h}`; outer.append(back); return outer;
+  }
+  if (G.game === 'r' && c.s === 'X') {
+    const joker = document.createElement('span'); joker.className = 'net-joker-face'; joker.style.aspectRatio = `${dims.w}/${dims.h}`; joker.textContent = 'JOKER'; outer.append(joker); return outer;
+  }
+  const cols = ['a', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'j', 'q', 'k'];
+  const row = 'SHDC'.indexOf(c.s), col = cols.indexOf(frRank(c.r));
+  if (row < 0 || col < 0) { const back = document.createElement('div'); back.className = 'net-card-back'; back.style.aspectRatio = `${dims.w}/${dims.h}`; outer.append(back); return outer; }
+  const face = document.createElement('div'); face.className = 'ci';
+  face.style.aspectRatio = `${dims.w}/${dims.h}`; face.style.backgroundImage = `url(cards/${deck}.webp)`;
+  face.style.backgroundSize = '1300% 500%'; face.style.backgroundPosition = `${(col / 12 * 100).toFixed(3)}% ${(row / 4 * 100).toFixed(3)}%`;
+  outer.append(face); return outer;
 }
 function netCardsFor(seat) {
   return G.game === 'p' ? (G.seats[seat]?.hand || []) : (G.hands[seat] || []);
@@ -5359,47 +5399,89 @@ function netCardsFor(seat) {
 function renderNetSeats() {
   const n = G.n || G.seats?.length || G.hands?.length || 2;
   const turn = G.game === 'p' ? G.toAct : G.turn;
-  const seatHtml = [];
+  const seats = document.createElement('div'); seats.className = 'net-seats';
   for (let s = 0; s < n; s++) {
     const a = Math.PI / 2 + 2 * Math.PI * s / n;
     const x = 50 + 39 * Math.cos(a), y = 50 + 37 * Math.sin(a);
     const cards = netCardsFor(s), count = G.game === 'p' ? cards.length : ((G.handCounts || [])[s] ?? cards.length);
-    const fan = s && count ? `<div class="net-fan">${Array.from({ length: Math.min(count, 8) }, () => G.game === 'l' ? `<span class="ucard">${UnoUI.BACK}</span>` : netFace({ hidden: true })).join('')}</div>` : '';
+    const seatNode = document.createElement('div');
+    seatNode.className = `net-seat${turn === s ? ' turn' : ''}`; seatNode.style.setProperty('--x', x.toFixed(1)); seatNode.style.setProperty('--y', y.toFixed(1));
+    const playerName = document.createElement('b'); playerName.textContent = name(s) || (s === 0 ? L().names[0] : ''); seatNode.append(playerName);
     const seat = G.game === 'p' ? G.seats[s] : null;
     const info = seat ? `${seat.out ? '·' : seat.folded ? L().poker.fold : seat.chips} ${seat.last?.amt ? `· ${seat.last.amt}` : ''}` : `${count} · ${G.game === 'r' ? L().remi.left : L().uno.left}`;
-    seatHtml.push(`<div class="net-seat${turn === s ? ' turn' : ''}" style="--x:${x.toFixed(1)};--y:${y.toFixed(1)}"><b>${esc(name(s) || (s === 0 ? L().names[0] : ''))}</b><small>${info}</small>${fan}</div>`);
+    const sub = document.createElement('small'); sub.textContent = info; seatNode.append(sub);
+    if (s && count) {
+      const fan = document.createElement('div'); fan.className = 'net-fan';
+      for (let i = 0; i < Math.min(count, 8); i++) fan.append(netFaceNode({ hidden: true }));
+      seatNode.append(fan);
+    }
+    seats.append(seatNode);
   }
-  return `<div class="net-seats">${seatHtml.join('')}</div>`;
+  return seats;
 }
 function renderNetBoard() {
+  const board = document.createElement('div'); board.className = 'net-board';
+  const meta = document.createElement('div'); meta.className = 'net-meta'; board.append(meta);
   if (G.game === 'p') {
     const pot = G.seats.reduce((n, s) => n + (s.total || 0), 0);
-    const board = G.board || [];
-    return `<div class="net-board"><div class="net-meta">${L().poker.potQ}: ${pot} · ${esc(String(G.street || '').toUpperCase())}</div><div class="net-cards">${board.map(netFace).join('')}</div></div>`;
+    meta.textContent = `${L().poker.potQ}: ${pot} · ${String(G.street || '').toUpperCase()}`;
+    const cards = document.createElement('div'); cards.className = 'net-cards';
+    (G.board || []).forEach(c => cards.append(netFaceNode(c))); board.append(cards); return board;
   }
   if (G.game === 'r') {
-    const melds = (G.melds || []).map(m => `<div class="net-meld"><small>${esc(name(m.owner))}</small>${m.cards.map(netFace).join('')}</div>`).join('');
+    meta.textContent = `${L().remi.round} ${G.round || 1} · ${(G.scores || []).map((p, i) => `${name(i)}: ${p}`).join(' · ')}`;
+    const melds = document.createElement('div'); melds.className = 'net-melds';
+    for (const m of G.melds || []) {
+      const meld = document.createElement('div'); meld.className = 'net-meld';
+      const owner = document.createElement('small'); owner.textContent = name(m.owner); meld.append(owner);
+      m.cards.forEach(c => meld.append(netFaceNode(c))); melds.append(meld);
+    }
     const top = G.discard?.[G.discard.length - 1];
-    const stock = `<button class="net-pile" data-pile="stock">${L().remi.stock} · ${G.stock?.length || 0}</button>`;
-    const discard = `<button class="net-pile" data-pile="take" ${!top || !NET?.req || NET.req.phase !== 'draw' ? 'disabled' : ''}>${top ? netFace(top) : '—'}<small>${G.discard?.length || 0}</small></button>`;
-    return `<div class="net-board"><div class="net-meta">${L().remi.round} ${G.round || 1} · ${G.scores?.map((p, i) => `${esc(name(i))}: ${p}`).join(' · ') || ''}</div><div class="net-disc">${stock}${discard}</div><div class="net-melds">${melds || `<span class="net-meta">—</span>`}</div>${G.staged?.length ? `<div class="net-stage">${L().remi.meld}: ${G.staged.map(m => m.map(netFace).join('')).join(' · ')}</div>` : ''}</div>`;
+    const disc = document.createElement('div'); disc.className = 'net-disc';
+    const stock = document.createElement('button'); stock.className = 'net-pile'; stock.dataset.pile = 'stock'; stock.textContent = `${L().remi.stock} · ${G.stock?.length || 0}`;
+    const discard = document.createElement('button'); discard.className = 'net-pile'; discard.dataset.pile = 'take';
+    discard.disabled = !top || !NET?.req || NET.req.phase !== 'draw';
+    if (top) discard.append(netFaceNode(top)); else discard.textContent = '—';
+    const discardCount = document.createElement('small'); discardCount.textContent = String(G.discard?.length || 0); discard.append(discardCount);
+    disc.append(stock, discard); board.append(disc, melds);
+    if (!melds.childElementCount) { const empty = document.createElement('span'); empty.className = 'net-meta'; empty.textContent = '—'; melds.append(empty); }
+    if (G.staged?.length) {
+      const staged = document.createElement('div'); staged.className = 'net-stage'; staged.textContent = `${L().remi.meld}: `;
+      for (const group of G.staged) group.forEach(c => staged.append(netFaceNode(c))); board.append(staged);
+    }
+    return board;
   }
   const top = G.discard?.[G.discard.length - 1];
-  const colors = L().uno.cols;
-  const wildColor = G.color ? `<span class="net-pile" style="border-color:${({ r:'#d8382e',y:'#f0bd22',g:'#2f9a4c',b:'#2a68c2',p:'#e2408f',t:'#14a39c',o:'#f27a17',v:'#7c45c4' })[G.color]}">${esc(colors[G.color] || G.color)}</span>` : '';
-  return `<div class="net-board"><div class="net-meta">${G.variant === 'flip' ? L().uno.flip : L().uno.classic} · ${G.side === 'D' ? L().uno.flip : ''} · ${G.pending ? `+${G.pending}` : ''}</div><div class="net-disc"><button class="net-pile" data-pile="draw">${UnoUI.BACK}<small>${G.drawCount || 0}</small></button>${top ? netFace(top) : ''}${wildColor}</div></div>`;
+  const colors = { r:'#d8382e', y:'#f0bd22', g:'#2f9a4c', b:'#2a68c2', p:'#e2408f', t:'#14a39c', o:'#f27a17', v:'#7c45c4' };
+  meta.textContent = `${G.variant === 'flip' ? L().uno.flip : L().uno.classic} · ${G.side === 'D' ? L().uno.flip : ''} · ${G.pending ? `+${G.pending}` : ''}`;
+  const disc = document.createElement('div'); disc.className = 'net-disc';
+  const draw = document.createElement('button'); draw.className = 'net-pile'; draw.dataset.pile = 'draw'; draw.append(netFaceNode({ hidden: true }));
+  const drawCount = document.createElement('small'); drawCount.textContent = String(G.drawCount || 0); draw.append(drawCount); disc.append(draw);
+  if (top) disc.append(netFaceNode(top));
+  if (G.color && colors[G.color]) {
+    const currentColor = document.createElement('span'); currentColor.className = 'net-pile';
+    currentColor.style.borderColor = colors[G.color]; currentColor.textContent = L().uno.cols[G.color] || G.color; disc.append(currentColor);
+  }
+  board.append(disc); return board;
 }
 function renderNetBar() {
   const t = L();
+  const fill = (el, label, value, suffix = '') => {
+    const parts = [];
+    if (label) { const k = document.createElement('span'); k.className = 'k'; k.textContent = label; parts.push(k); }
+    if (value !== null && value !== undefined && value !== '') { const b = document.createElement('b'); b.textContent = String(value); parts.push(b); }
+    if (suffix) { const tail = document.createElement('span'); tail.className = 'k'; tail.textContent = suffix; parts.push(tail); }
+    el.replaceChildren(...parts);
+  };
   if (G.game === 'p') {
-    $('#trumpChip').innerHTML = `${t.poker.name}<b>${G.variant === 'draw' ? t.poker.draw : t.poker.holdem}</b>`;
-    $('#scoreChip').innerHTML = `<span class="k">${t.poker.blinds}</span><b>${G.sb || 0}/${G.bb || 0}</b>`;
+    fill($('#trumpChip'), t.poker.name, G.variant === 'draw' ? t.poker.draw : t.poker.holdem);
+    fill($('#scoreChip'), t.poker.blinds, `${G.sb || 0}/${G.bb || 0}`);
   } else if (G.game === 'r') {
-    $('#trumpChip').innerHTML = `${t.remi.name}<b>${t.remi.round} ${G.round || 1}</b>`;
-    $('#scoreChip').innerHTML = `<span class="k">${esc(name(0))}</span><b>${G.scores?.[0] || 0}</b>`;
+    fill($('#trumpChip'), t.remi.name, `${t.remi.round} ${G.round || 1}`);
+    fill($('#scoreChip'), name(0), G.scores?.[0] || 0);
   } else {
-    $('#trumpChip').innerHTML = `${t.uno.name}<b>${G.color ? t.uno.cols[G.color] || '' : ''}</b>`;
-    $('#scoreChip').innerHTML = `<span class="k">${esc(name(0))}</span><b>${G.scores?.[0] || 0}</b><span class="k">/ ${G.opts?.target || '—'}</span>`;
+    fill($('#trumpChip'), t.uno.name, G.color ? t.uno.cols[G.color] || '' : '');
+    fill($('#scoreChip'), name(0), G.scores?.[0] || 0, `/ ${G.opts?.target || '—'}`);
   }
 }
 function renderNetHand() {
@@ -5416,16 +5498,21 @@ function renderNetHand() {
       : ['unico', 'unicoDrawn', 'unicoJump'].includes(req?.kind);
   const selected = NET?.selected || new Set();
   el.classList.toggle('live', !!selectable);
-  el.innerHTML = cards.map((c, i) => {
+  const nodes = cards.map((c, i) => {
     const key = G.game === 'p' ? String(i) : String(c.id);
     const off = !!legal && !legal.has(c.id);
-    return `<button class="hc${selected.has(key) ? ' sel net-picked' : ''}${off ? ' off' : ''}" data-net-id="${esc(key)}" data-id="${esc(c.id)}" style="left:${x0 + i * step}px" aria-label="${esc(String(c.id))}" ${off ? 'aria-disabled="true"' : ''}>${netFace(c)}</button>`;
-  }).join('');
+    const button = document.createElement('button');
+    button.className = `hc${selected.has(key) ? ' sel net-picked' : ''}${off ? ' off' : ''}`;
+    button.dataset.netId = key; button.dataset.id = String(c.id); button.style.left = `${x0 + i * step}px`;
+    button.setAttribute('aria-label', String(c.id)); if (off) button.setAttribute('aria-disabled', 'true');
+    button.append(netFaceNode(c)); return button;
+  });
+  el.replaceChildren(...nodes);
 }
 function renderNetAll() {
   $('#table').classList.add('online-new');
   renderNetBar();
-  $('#center').innerHTML = renderNetBoard() + renderNetSeats();
+  $('#center').replaceChildren(renderNetBoard(), renderNetSeats());
   renderNetHand();
   renderNetAction();
 }
