@@ -1,4 +1,4 @@
-# Cardshark — handover (25 Oct 2026, live: v58)
+# Cardshark — handover (25 Oct 2026, live: v59)
 
 Live: GitHub Pages from `marx1980/Cardshark` `main` (the repo was renamed from `cardshark`; GitHub redirects, but push to `https://github.com/marx1980/Cardshark.git`).
 
@@ -40,6 +40,8 @@ Next release is **v59**. The service-worker cache version is `cardshark-v58` at 
   - `cantWin`: no legal card wins, and the chosen card is the cheapest.
 - The rules **explain, they don't force**. If a rule applies but the simulation picks another card, the simulation line is shown instead. Only the Bela `hRules` actually force the move, and that w[...]
 - Strings live in `STR.hr.why` / `STR.en.why` (`hrBod(n)` gives Croatian bod/boda/bodova). The second line uses `short(n, d)`; `d === null` means nearly a tie. Tie thresholds: Briškula < 1 point,[...]
+
+- **v59 stability**: the hint is cached on `pending.hint = { card, res }`, so pressing it again in the same turn shows the same card without re-simulating (a new turn has a new `pending`). Hidden hands are re-dealt with unseeded `Math.random()` and the 1200 ms cap gives a varying sample count, so near-equal cards could flip between presses. Among cards within the tie margin of the best (Briscola 1, Bela 2, Tressette 0.15, same as `hintWhy`) it now picks the cheapest: fewest points, no trump, lowest rank. Also in v59: English game names (Briscola, Tressette, Rummy) and a confirmation when leaving an online waiting room.
 
 ### Adding Marko's next rules
 1. Add a detector branch in `hintWhy` (keep it a statement that is literally true from public info only).
