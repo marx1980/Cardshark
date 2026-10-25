@@ -63,6 +63,8 @@ button{font:inherit;color:inherit}
 .trow:active{background:#dcebdd}
 .trow b{font-size:16px}.trow small{color:var(--sheet-muted);font-size:12.5px}.trow .tseats{grid-column:1/3;font-size:13.5px}.trow .thost{display:block;margin-bottom:3px;color:var(--sheet-muted);font-size:12px}.trow .thost b{color:#245b3d;font-size:15px}
 .wtable{display:grid;grid-template-rows:auto auto auto;gap:10px;margin:12px 0;justify-items:center}
+.wtable.wn{grid-template-rows:none;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.wtable.wn .wseat{width:100%;min-width:0}
 .w13{display:flex;gap:8px;width:100%;justify-content:space-between;align-items:center}.w13 .wseat{width:36%;min-width:0}
 .wfelt{flex:1;align-self:stretch;min-height:58px;border-radius:50%/45%;background:radial-gradient(100% 90% at 50% 40%,#2a7a5c,#14432f);border:4px solid #5a3a22;box-shadow:inset 0 0 0 1px rgba(255,255,255,.1)}
 .wseat{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:46%;padding:10px 8px;border-radius:12px;border:2px dashed #3e9a6c;background:#e3f4ea;color:#17603e;cursor:pointer;transition:transform .1s,box-shadow .15s}
@@ -303,6 +305,36 @@ table.stats td b{display:inline-block;min-width:1.4em;font-size:15px}
 .hc.talon{filter:brightness(.8)}
 @media (hover:hover) and (pointer:fine){.hand.live .hc:not(.off):not(.sel):hover{transform:translateY(-8%)}}
 .hc{touch-action:manipulation;-webkit-user-select:none;user-select:none}
+.online-new .seat,.online-new #stock{display:none!important}
+.net-board{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:7px;max-width:80%;z-index:1}
+.net-board .net-cards{display:flex;gap:4px;justify-content:center;align-items:center}
+.net-board .svgc{width:clamp(30px,9vw,54px);filter:drop-shadow(0 2px 4px rgba(0,0,0,.35))}
+.net-board .net-disc{display:flex;gap:12px;align-items:center}
+.net-board .ucard{display:block;width:clamp(38px,11vw,66px);height:auto;filter:drop-shadow(0 3px 5px rgba(0,0,0,.4))}
+.net-board .net-meta{font-size:13px;font-weight:800;text-align:center;text-shadow:0 1px 3px #000}
+.net-seats{position:absolute;inset:0;z-index:2;pointer-events:none}
+.net-seat{position:absolute;left:clamp(42px,calc(var(--x)*1%),calc(100% - 42px));top:calc(var(--y)*1%);transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:2px;max-width:34%;min-width:72px;padding:3px 5px;border:1px solid rgba(255,255,255,.12);border-radius:12px;background:rgba(0,0,0,.32);font-size:12px;text-align:center}
+.net-seat.turn{border-color:var(--brass);box-shadow:0 0 0 2px rgba(214,171,82,.4)}
+.net-seat small{color:var(--muted);font-size:10px}
+.net-fan{display:flex;justify-content:center;height:27px;max-width:100%;overflow:hidden}
+.net-fan .svgc{width:18px;margin-left:-11px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.35))}
+.net-fan .svgc:first-child{margin-left:0}
+.net-melds{display:flex;flex-wrap:wrap;justify-content:center;gap:5px;max-height:30vh;overflow:auto}
+.net-meld{display:flex;align-items:center;gap:2px;padding:3px;border:1px solid rgba(255,255,255,.2);border-radius:8px;background:rgba(0,0,0,.28)}
+.net-meld .svgc{width:clamp(25px,7vw,42px)}
+.net-pile{border:1px solid rgba(255,255,255,.35);border-radius:8px;padding:5px 8px;background:rgba(0,0,0,.25);color:var(--ink);font-weight:800;cursor:pointer}
+.net-pile:disabled{opacity:.5}
+.net-controls{display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;width:100%}
+.net-controls button,.net-controls select{min-height:42px;border:1px solid var(--faint);border-radius:10px;padding:8px 12px;background:rgba(0,0,0,.25);color:var(--ink);font-weight:700;cursor:pointer}
+.net-controls button:disabled{opacity:.45;cursor:not-allowed}
+.net-controls .color{min-width:42px;border-radius:50%;border:2px solid rgba(255,255,255,.65);color:transparent}
+.hc.net-picked{outline:3px solid var(--brass);outline-offset:1px}
+.hc.net-locked{opacity:.5;cursor:not-allowed}
+.net-bet{width:min(150px,40vw);accent-color:var(--brass)}
+.net-stage{font-size:12px;color:var(--muted);text-align:center}
+.net-fan .ucard,.hc .ucard{display:block;width:100%;height:auto}
+.hc .svgc{display:block;width:100%}
+@media(max-width:420px){.net-seat{min-width:62px;max-width:30%;font-size:10.5px}.net-seat small{font-size:9px}.net-fan{height:22px}.net-fan .svgc{width:15px;margin-left:-10px}}
 
 /* ---------- SHEET (overlays) ---------- */
 .veil{position:fixed;inset:0;z-index:20;background:rgba(6,16,12,.6);display:flex;align-items:flex-end;justify-content:center;animation:fade .2s}
@@ -4663,7 +4695,7 @@ const SPEED = () => S.speed === 'fast' ? { ai: 320, trick: 600, deal: 200 } : { 
 const hrBod = n => n % 10 === 1 && n % 100 !== 11 ? 'bod' : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % 100 > 14) ? 'boda' : 'bodova';
 const STR = {
   hr: {
-    gameNames: { b: 'Briškula', t: 'Trešeta', h: 'Bela' },
+    gameNames: { b: 'Briškula', t: 'Trešeta', h: 'Bela', p: 'Poker', r: 'Remi', l: 'L’Unico!' },
     tagline: 'Briškula i bela za kafanskim stolom — ti i tri igrača s druge strane.',
     bSub: 'Tršćanske karte · 40 karata · adut je briškula', hSub: 'Mađarice · 32 karte · zvanja, bela, 1001',
     players: 'Igrači', p2: '2 · jedan na jedan', p4: '4 · u paru',
@@ -4672,7 +4704,7 @@ const STR = {
     matchTo: 'Partija do', winsN: n => `${n} dobivene`,
     reveal: 'Partner pokazuje karte kad se špil potroši',
     hTo: 'Igra se do', start: 'Igraj',
-    remi: { name: 'Remi', players: 'Igrači', target: 'Igra se do', one: 'Jedna runda', you: 'Ti', round: 'runda', meld: 'Spusti', open: 'Otvori', untake: 'Vrati', discard: 'Odbaci', sort: 'Poredaj', took: 'uzima s hrpe', opened: 'otvara', remi: 'remi!', left: 'Karte', pts: 'Bodovi', total: 'Ukupno', closed: 'zatvoren', next: 'Sljedeća runda', again: 'Nova igra',
+    remi: { name: 'Remi', players: 'Igrači', target: 'Igra se do', one: 'Jedna runda', you: 'Ti', round: 'runda', stock: 'Špil', meld: 'Spusti', open: 'Otvori', untake: 'Vrati', discard: 'Odbaci', layoff: 'Priključi', swapJoker: 'Zamijeni džokera', sort: 'Poredaj', took: 'uzima s hrpe', opened: 'otvara', remi: 'remi!', left: 'Karte', pts: 'Bodovi', total: 'Ukupno', closed: 'zatvoren', next: 'Sljedeća runda', again: 'Nova igra',
       roundWon: n => `${n} · runda`, matchWon: n => `${n} · pobjeda`, noWinner: 'Špil je potrošen',
       err: { 51: 'Za otvaranje treba 51', mustUse: 'Uzetu kartu treba iskoristiti', joker: 'Joker treba iskoristiti', keep: 'Jedna karta ostaje za odbacivanje', meld: 'To nije kombinacija', cantUse: 'Tu kartu sada ne možeš iskoristiti', notOpen: 'Prvo otvori', turn: 'Nije tvoj red', swap: 'Ne može', bad: 'Ne može' } },
     poker: { name: 'Poker', holdem: "Texas Hold'em", draw: 'Klasični', players: 'Igrači', blindsUp: 'Blindovi rastu', slow: 'Svakih 10 ruku', fast: 'Svakih 5 ruku', you: 'Ti', blinds: 'Blindovi',
@@ -4742,7 +4774,7 @@ const STR = {
     sHacc: ['herc', 'bundevu', 'zeleni', 'žir'], sBacc: ['kupe', 'dinare', 'špade', 'baštone']
   },
   en: {
-    gameNames: { b: 'Briscola', t: 'Tressette', h: 'Belote' },
+    gameNames: { b: 'Briscola', t: 'Tressette', h: 'Belote', p: 'Poker', r: 'Rummy', l: 'L’Unico!' },
     tagline: 'Briscola and Belote at the café table — you against three computer players.',
     bSub: 'Triestine cards · 40 cards · trump suit (briscola)', hSub: 'German-suited cards · 32 cards · declarations, belote, 1001',
     players: 'Players', p2: '2 · head to head', p4: '4 · partners',
@@ -4751,7 +4783,7 @@ const STR = {
     matchTo: 'Match to', winsN: n => `${n} hands won`,
     reveal: 'Partner shows their cards once the deck runs out',
     hTo: 'Play to', start: 'Play',
-    remi: { name: 'Rummy', players: 'Players', target: 'Play to', one: 'One round', you: 'You', round: 'Round', meld: 'Meld', open: 'Open', untake: 'Put back', discard: 'Discard', sort: 'Sort', took: 'takes the discard', opened: 'opens', remi: 'remi!', left: 'Cards', pts: 'Points', total: 'Total', closed: 'not open', next: 'Next round', again: 'New game',
+    remi: { name: 'Rummy', players: 'Players', target: 'Play to', one: 'One round', you: 'You', round: 'Round', stock: 'Stock', meld: 'Meld', open: 'Open', untake: 'Put back', discard: 'Discard', layoff: 'Lay off', swapJoker: 'Swap joker', sort: 'Sort', took: 'takes the discard', opened: 'opens', remi: 'remi!', left: 'Cards', pts: 'Points', total: 'Total', closed: 'not open', next: 'Next round', again: 'New game',
       roundWon: n => `${n} · round`, matchWon: n => `${n} · winner`, noWinner: 'The stock ran out',
       err: { 51: '51 needed to open', mustUse: 'Use the card you took', joker: 'Use the joker', keep: 'Keep one card to discard', meld: 'Not a meld', cantUse: 'You can’t use that card now', notOpen: 'Open first', turn: 'Not your turn', swap: 'Not possible', bad: 'Not possible' } },
     poker: { name: 'Poker', holdem: "Texas Hold'em", draw: 'Five-card draw', players: 'Players', blindsUp: 'Blinds go up', slow: 'Every 10 hands', fast: 'Every 5 hands', you: 'You', blinds: 'Blinds',
@@ -5218,7 +5250,7 @@ function showSettings() {
     <h4>${t.deckF}</h4><div class="decks">${Object.keys(Cards.FR).map(k => `<button class="deck" data-fd="${k}" aria-pressed="${Cards.frDeck(S.fDeck) === k}"><span class="dk-cards">${['Hk', 'Sq', 'Dj'].map(c => `<span class="svgc">${Cards.frFace(c, k)}</span>`).join('')}</span><span class="dk-name"><b>${Cards.FR[k].name[S.lang]}</b><small>${Cards.FR[k].maker}</small></span></button>`).join('')}</div>
     ${Cards.FR[Cards.frDeck(S.fDeck)].backs.length > 1 ? `<div class="fbacks">${Cards.FR[Cards.frDeck(S.fDeck)].backs.map(c => `<button class="fback" data-fb="${c}" aria-pressed="${S.fBack === c}" aria-label="${c}">${Cards.frBack(S.fDeck, c)}</button>`).join('')}</div>` : ''}
     <h4>${t.speed}</h4>${seg('speed', [['normal', t.normal], ['fast', t.fast]])}
-    <p class="muted credit">${t.credit} · v61</p>
+    <p class="muted credit">${t.credit} · v62</p>
     <div class="btns"><button class="pri" id="sx">${t.close}</button></div>`, v => {
     v.querySelector('#sx').onclick = () => { closeSheet(); if (G) renderAll(); else renderHome(); };
     v.onclick = e => { if (e.target === v) { closeSheet(); if (G) renderAll(); else renderHome(); } };
@@ -5313,7 +5345,245 @@ function slotFor(seat, nth) {
   const x = (TL.cx + ox * TL.tw) / TL.W * 100, y = (TL.cy + oy * TL.ch) / TL.H * 100;
   return { x, y, r: nth ? 9 - seat * 5 : (seat * 7 % 9) - 4 };
 }
+const netMulti = () => !!(G && G.online && ['p', 'r', 'l'].includes(G.game));
+const frRank = r => ({ 1: 'a', 11: 'j', 12: 'q', 13: 'k', 14: 'a' })[r] || String(r);
+function netFace(c) {
+  if (!c || c.hidden) return `<div class="svgc">${Cards.frBack(S.fDeck)}</div>`;
+  if (G.game === 'l') return `<div class="ucard">${UnoUI.FACE(c, G.side)}</div>`;
+  if (G.game === 'r' && c.s === 'X') return `<div class="svgc">${Cards.frJoker(S.fDeck, c.joker)}</div>`;
+  return `<div class="svgc">${Cards.frFace(`${c.s}${frRank(c.r)}`, S.fDeck)}</div>`;
+}
+function netCardsFor(seat) {
+  return G.game === 'p' ? (G.seats[seat]?.hand || []) : (G.hands[seat] || []);
+}
+function renderNetSeats() {
+  const n = G.n || G.seats?.length || G.hands?.length || 2;
+  const turn = G.game === 'p' ? G.toAct : G.turn;
+  const seatHtml = [];
+  for (let s = 0; s < n; s++) {
+    const a = Math.PI / 2 + 2 * Math.PI * s / n;
+    const x = 50 + 39 * Math.cos(a), y = 50 + 37 * Math.sin(a);
+    const cards = netCardsFor(s), count = G.game === 'p' ? cards.length : ((G.handCounts || [])[s] ?? cards.length);
+    const fan = s && count ? `<div class="net-fan">${Array.from({ length: Math.min(count, 8) }, () => G.game === 'l' ? `<span class="ucard">${UnoUI.BACK}</span>` : netFace({ hidden: true })).join('')}</div>` : '';
+    const seat = G.game === 'p' ? G.seats[s] : null;
+    const info = seat ? `${seat.out ? '·' : seat.folded ? L().poker.fold : seat.chips} ${seat.last?.amt ? `· ${seat.last.amt}` : ''}` : `${count} · ${G.game === 'r' ? L().remi.left : L().uno.left}`;
+    seatHtml.push(`<div class="net-seat${turn === s ? ' turn' : ''}" style="--x:${x.toFixed(1)};--y:${y.toFixed(1)}"><b>${esc(name(s) || (s === 0 ? L().names[0] : ''))}</b><small>${info}</small>${fan}</div>`);
+  }
+  return `<div class="net-seats">${seatHtml.join('')}</div>`;
+}
+function renderNetBoard() {
+  if (G.game === 'p') {
+    const pot = G.seats.reduce((n, s) => n + (s.total || 0), 0);
+    const board = G.board || [];
+    return `<div class="net-board"><div class="net-meta">${L().poker.potQ}: ${pot} · ${esc(String(G.street || '').toUpperCase())}</div><div class="net-cards">${board.map(netFace).join('')}</div></div>`;
+  }
+  if (G.game === 'r') {
+    const melds = (G.melds || []).map(m => `<div class="net-meld"><small>${esc(name(m.owner))}</small>${m.cards.map(netFace).join('')}</div>`).join('');
+    const top = G.discard?.[G.discard.length - 1];
+    const stock = `<button class="net-pile" data-pile="stock">${L().remi.stock} · ${G.stock?.length || 0}</button>`;
+    const discard = `<button class="net-pile" data-pile="take" ${!top || !NET?.req || NET.req.phase !== 'draw' ? 'disabled' : ''}>${top ? netFace(top) : '—'}<small>${G.discard?.length || 0}</small></button>`;
+    return `<div class="net-board"><div class="net-meta">${L().remi.round} ${G.round || 1} · ${G.scores?.map((p, i) => `${esc(name(i))}: ${p}`).join(' · ') || ''}</div><div class="net-disc">${stock}${discard}</div><div class="net-melds">${melds || `<span class="net-meta">—</span>`}</div>${G.staged?.length ? `<div class="net-stage">${L().remi.meld}: ${G.staged.map(m => m.map(netFace).join('')).join(' · ')}</div>` : ''}</div>`;
+  }
+  const top = G.discard?.[G.discard.length - 1];
+  const colors = L().uno.cols;
+  const wildColor = G.color ? `<span class="net-pile" style="border-color:${({ r:'#d8382e',y:'#f0bd22',g:'#2f9a4c',b:'#2a68c2',p:'#e2408f',t:'#14a39c',o:'#f27a17',v:'#7c45c4' })[G.color]}">${esc(colors[G.color] || G.color)}</span>` : '';
+  return `<div class="net-board"><div class="net-meta">${G.variant === 'flip' ? L().uno.flip : L().uno.classic} · ${G.side === 'D' ? L().uno.flip : ''} · ${G.pending ? `+${G.pending}` : ''}</div><div class="net-disc"><button class="net-pile" data-pile="draw">${UnoUI.BACK}<small>${G.drawCount || 0}</small></button>${top ? netFace(top) : ''}${wildColor}</div></div>`;
+}
+function renderNetBar() {
+  const t = L();
+  if (G.game === 'p') {
+    $('#trumpChip').innerHTML = `${t.poker.name}<b>${G.variant === 'draw' ? t.poker.draw : t.poker.holdem}</b>`;
+    $('#scoreChip').innerHTML = `<span class="k">${t.poker.blinds}</span><b>${G.sb || 0}/${G.bb || 0}</b>`;
+  } else if (G.game === 'r') {
+    $('#trumpChip').innerHTML = `${t.remi.name}<b>${t.remi.round} ${G.round || 1}</b>`;
+    $('#scoreChip').innerHTML = `<span class="k">${esc(name(0))}</span><b>${G.scores?.[0] || 0}</b>`;
+  } else {
+    $('#trumpChip').innerHTML = `${t.uno.name}<b>${G.color ? t.uno.cols[G.color] || '' : ''}</b>`;
+    $('#scoreChip').innerHTML = `<span class="k">${esc(name(0))}</span><b>${G.scores?.[0] || 0}</b><span class="k">/ ${G.opts?.target || '—'}</span>`;
+  }
+}
+function renderNetHand() {
+  const el = $('#hand'), cards = netCardsFor(0).slice(), width = el.clientWidth || 360;
+  $('#bHint').hidden = true;
+  const cw = Math.min(G.game === 'l' ? 58 : 72, width / (1 + Math.max(0, cards.length - 1) * 0.58));
+  const step = cards.length > 1 ? Math.min(cw * 1.04, (width - cw) / (cards.length - 1)) : 0;
+  const x0 = (width - (cw + step * (cards.length - 1))) / 2;
+  el.style.setProperty('--cw', cw + 'px');
+  el.style.height = `${cw * (G.game === 'l' ? 1.5 : Cards.frRatio(S.fDeck)) + 6}px`;
+  const req = NET?.req, legal = req?.legal ? new Set(req.legal) : null;
+  const selectable = G.game === 'r' ? req?.kind === 'remi' && req.phase === 'play'
+    : G.game === 'p' ? req?.kind === 'pokerDraw'
+      : ['unico', 'unicoDrawn', 'unicoJump'].includes(req?.kind);
+  const selected = NET?.selected || new Set();
+  el.classList.toggle('live', !!selectable);
+  el.innerHTML = cards.map((c, i) => {
+    const key = G.game === 'p' ? String(i) : String(c.id);
+    const off = !!legal && !legal.has(c.id);
+    return `<button class="hc${selected.has(key) ? ' sel net-picked' : ''}${off ? ' off' : ''}" data-net-id="${esc(key)}" data-id="${esc(c.id)}" style="left:${x0 + i * step}px" aria-label="${esc(String(c.id))}" ${off ? 'aria-disabled="true"' : ''}>${netFace(c)}</button>`;
+  }).join('');
+}
+function renderNetAll() {
+  $('#table').classList.add('online-new');
+  renderNetBar();
+  $('#center').innerHTML = renderNetBoard() + renderNetSeats();
+  renderNetHand();
+  renderNetAction();
+}
+function netBtn(action, label, disabled = false, attrs = '') {
+  return `<button data-net-action="${action}" ${disabled ? 'disabled' : ''} ${attrs}>${label}</button>`;
+}
+function netRummyValue(melds) {
+  return (melds || []).reduce((sum, m) => sum + Remi.meldValue(m), 0);
+}
+function renderNetAction() {
+  if (!netMulti()) return;
+  const t = L(), req = NET?.req;
+  if (!req) { setAction('<div class="msg"><span class="m">…</span></div>'); return; }
+  let controls = '';
+  if (req.kind === 'pokerAction') {
+    const o = req.options || {};
+    controls = `${o.fold ? netBtn('fold', t.poker.fold) : ''}${o.check ? netBtn('check', t.poker.check) : ''}${o.call ? netBtn('call', `${t.poker.call} ${o.call}`) : ''}${o.minTo !== undefined ? `<label class="net-controls"><span>${t.poker.raiseTo}</span><input id="netRaise" class="net-bet" type="range" min="${o.minTo}" max="${o.maxTo}" value="${o.minTo}"><b id="netRaiseValue">${o.minTo}</b>${netBtn('raise', t.poker.raise)}</label>` : ''}`;
+  } else if (req.kind === 'pokerDraw') {
+    controls = `${netBtn('draw', t.poker.pat)}${netBtn('draw', t.poker.drawN((NET.selected || new Set()).size), (NET.selected || new Set()).size > req.max, 'data-draw="true"')}`;
+  } else if (req.kind === 'remi') {
+    if (req.phase === 'draw') controls = `${netBtn('stock', `${t.stock} · ${G.stock?.length || 0}`)}${G.discard?.length ? netBtn('take', `${t.remi.took} · ${G.discard[G.discard.length - 1].id}`) : ''}`;
+    else {
+      const selected = [...(NET.selected || new Set())];
+      const staged = G.staged || [];
+      const opened = G.opened?.[0];
+      const selectedCards = selected.map(id => G.hands[0].find(c => c.id === id)).filter(Boolean);
+      const validMeld = selectedCards.length >= 3 && G.hands[0].length - selectedCards.length >= 1 && !!Remi.analyze(selectedCards);
+      const blockedDiscard = (G.mustUse && G.hands[0].some(c => c.id === G.mustUse)) || (G.swapped && G.hands[0].some(c => c.id === G.swapped));
+      controls = `${!opened ? `${netBtn('stage', t.remi.meld, !validMeld)}${staged.length ? netBtn('open', t.remi.open, netRummyValue(staged) < 51) : ''}` : `${netBtn('meld', t.remi.meld, !validMeld)}${selected.length === 1 ? (G.melds || []).map(m => {
+        const c = selectedCards[0];
+        return `${netBtn('layoff', `${t.remi.layoff} #${m.id}`, !c || !Remi.canLayOff(G, c, m), `data-card="${esc(selected[0])}" data-meld="${m.id}"`)}${netBtn('swap', `${t.remi.swapJoker} #${m.id}`, !c || !Remi.canSwap(G, c, m), `data-card="${esc(selected[0])}" data-meld="${m.id}"`)}`;
+      }).join('') : ''}`}${selected.length === 1 ? netBtn('discard', t.remi.discard, blockedDiscard) : ''}`;
+      if (staged.length) controls += `<span class="net-stage">${staged.map((m, i) => netBtn('unstage', `${t.remi.untake} ${i + 1}`, false, `data-index="${i}"`)).join('')}</span>`;
+    }
+  } else if (req.kind === 'unico') {
+    controls = `${netBtn('draw', t.uno.draw, !!G.pending)}${G.hands[0].length === 2 ? netBtn('uno', t.uno.last, false, `aria-pressed="${!!NET.callUno}"`) : ''}${(req.catchTargets || []).map(s => netBtn('catch', `${t.uno.catch} ${esc(name(s))}`, false, `data-target="${s}"`)).join('')}`;
+  } else if (req.kind === 'unicoDrawn') {
+    controls = `${netBtn('pass', t.uno.pass)}<span class="net-meta">${t.uno.draw}</span>`;
+  } else if (req.kind === 'unicoColor') {
+    controls = (req.colors || []).map(c => netBtn('color', t.uno.cols[c] || c, false, `data-color="${c}" class="color" style="background:${({ r:'#d8382e',y:'#f0bd22',g:'#2f9a4c',b:'#2a68c2',p:'#e2408f',t:'#14a39c',o:'#f27a17',v:'#7c45c4' })[c]}"`)).join('');
+  } else if (req.kind === 'unicoChallenge') {
+    controls = `${netBtn('challenge', t.uno.challenge)}${netBtn('pass', t.uno.take)}`;
+  } else if (req.kind === 'unicoJump') {
+    controls = `<span class="net-meta">${t.uno.jumpIn}</span>`;
+  }
+  const prompt = req.kind === 'remi' ? (req.phase === 'draw' ? t.remi.players : t.yourTurn) : t.yourTurn;
+  setAction(`<div class="msg">${prompt}</div><div class="net-controls">${controls}</div>`);
+  const raise = $('#netRaise'); if (raise) raise.oninput = () => { const v = $('#netRaiseValue'); if (v) v.textContent = raise.value; };
+}
+function netSendMove(fields) {
+  if (!NET) return;
+  NET.req = null; NET.selected = new Set(); NET.playCard = null; NET.callUno = false;
+  netSend({ a: 'move', ...fields });
+  if (netMulti()) renderNetAction();
+}
+function finishNetUnoPlay(card, color, sevenTarget) {
+  const fields = { action: 'play', card: card.id, color, sevenTarget, uno: !!NET.callUno };
+  netSendMove(fields);
+}
+function chooseNetUnoCard(card, jump = false) {
+  const req = NET?.req, face = card && card[G.side];
+  if (!req || !face) return;
+  if (jump) {
+    const target = req.sevenTargets?.[0];
+    netSendMove({ card: card.id, ...(G.opts.sevenO && face.k === 'n' && face.n === 7 ? { sevenTarget: target } : {}) });
+    return;
+  }
+  NET.playCard = card;
+  const targets = req.kind === 'unicoJump' ? req.sevenTargets : req.kind === 'unico' || req.kind === 'unicoDrawn' ? Array.from({ length: G.n }, (_, i) => i).filter(i => i !== 0) : [];
+  const needsTarget = G.opts?.sevenO && face.k === 'n' && face.n === 7 && G.hands[0].length > 1;
+  const colors = req.kind === 'unicoColor' ? req.colors : (face.c === null ? (G.side === 'D' ? ['p', 't', 'o', 'v'] : ['r', 'y', 'g', 'b']) : []);
+  if (colors.length) {
+    NET.pendingColors = colors; NET.pendingTarget = needsTarget ? targets : null;
+    setAction(`<div class="msg">${L().uno.color}</div><div class="net-controls">${colors.map(c => netBtn('color', L().uno.cols[c] || c, false, `data-color="${c}" class="color" style="background:${({ r:'#d8382e',y:'#f0bd22',g:'#2f9a4c',b:'#2a68c2',p:'#e2408f',t:'#14a39c',o:'#f27a17',v:'#7c45c4' })[c]}"`)).join('')}</div>`);
+    return;
+  }
+  if (needsTarget) {
+    NET.pendingTarget = targets;
+    setAction(`<div class="msg">${L().uno.swap}</div><div class="net-controls">${targets.map(s => netBtn('target', esc(name(s)), false, `data-target="${s}"`)).join('')}</div>`);
+    return;
+  }
+  finishNetUnoPlay(card, null);
+}
+function playNetFromHand(e) {
+  if (e.type === 'touchstart' || (e.type === 'click' && e.detail > 0 && 'ontouchstart' in window)) return;
+  const b = e.target.closest('.hc[data-net-id]'); if (!b || !NET?.req) return;
+  if (b.classList.contains('off')) return;
+  const req = NET.req, key = b.dataset.netId, id = b.dataset.id;
+  if (G.game === 'p' && req.kind === 'pokerDraw') {
+    e.preventDefault();
+    const selected = NET.selected || (NET.selected = new Set());
+    if (selected.has(key)) selected.delete(key);
+    else if (selected.size < req.max) selected.add(key);
+    renderNetHand(); renderNetAction(); return;
+  }
+  if (G.game === 'r' && req.kind === 'remi' && req.phase === 'play') {
+    e.preventDefault();
+    const selected = NET.selected || (NET.selected = new Set());
+    if (selected.has(id)) selected.delete(id); else selected.add(id);
+    renderNetHand(); renderNetAction(); return;
+  }
+  if (G.game === 'l' && ['unico', 'unicoDrawn', 'unicoJump'].includes(req.kind)) {
+    e.preventDefault();
+    const card = netCardsFor(0).find(c => String(c.id) === id);
+    if (card) chooseNetUnoCard(card, req.kind === 'unicoJump');
+  }
+}
+function handleNetAction(e) {
+  const b = e.target.closest('[data-net-action]'); if (!b || b.disabled) return;
+  const action = b.dataset.netAction, req = NET?.req; if (!req) return;
+  e.preventDefault();
+  if (req.kind === 'pokerAction') {
+    const fields = { action };
+    if (action === 'raise') fields.to = +$('#netRaise')?.value;
+    netSendMove(fields); return;
+  }
+  if (req.kind === 'pokerDraw' && action === 'draw') {
+    const draw = b.dataset.draw ? [...(NET.selected || [])].map(Number) : [];
+    netSendMove({ draw }); return;
+  }
+  if (req.kind === 'remi') {
+    const ids = [...(NET.selected || [])];
+    if (['stage', 'meld'].includes(action)) netSendMove({ action, ids });
+    else if (action === 'discard') netSendMove({ action, id: ids[0] });
+    else if (action === 'layoff' || action === 'swap') netSendMove({ action, id: b.dataset.card, meld: +b.dataset.meld });
+    else if (action === 'unstage') netSendMove({ action, index: +b.dataset.index });
+    else netSendMove({ action });
+    return;
+  }
+  if (req.kind === 'unico' && action === 'uno') { NET.callUno = !NET.callUno; renderNetAction(); return; }
+  if (req.kind === 'unico' && action === 'catch') { netSendMove({ action, target: +b.dataset.target }); return; }
+  if (req.kind === 'unico') { netSendMove({ action }); return; }
+  if (req.kind === 'unicoDrawn' && action === 'pass') { netSendMove({ action }); return; }
+  if (req.kind === 'unicoChallenge') { netSendMove({ action: action === 'challenge' ? 'challenge' : 'pass', challenge: action === 'challenge' }); return; }
+  if (action === 'color' && NET.playCard) {
+    const color = b.dataset.color;
+    const targets = NET.pendingTarget;
+    if (targets?.length) {
+      NET.pendingColor = color;
+      setAction(`<div class="msg">${L().uno.swap}</div><div class="net-controls">${targets.map(s => netBtn('target', esc(name(s)), false, `data-target="${s}"`)).join('')}</div>`);
+    } else finishNetUnoPlay(NET.playCard, color);
+    return;
+  }
+  if (action === 'color' && req.kind === 'unicoColor') { netSendMove({ color: b.dataset.color }); return; }
+  if (action === 'target' && NET.playCard) {
+    if (NET.pendingColor) finishNetUnoPlay(NET.playCard, NET.pendingColor, +b.dataset.target);
+    else finishNetUnoPlay(NET.playCard, null, +b.dataset.target);
+  }
+}
+function handleNetCenter(e) {
+  const b = e.target.closest('[data-pile]'); if (!b || b.disabled || !NET?.req) return;
+  if (G.game === 'r' && NET.req.kind === 'remi' && NET.req.phase === 'draw')
+    netSendMove({ action: b.dataset.pile === 'take' ? 'take' : 'stock' });
+  else if (G.game === 'l' && NET.req.kind === 'unico' && b.dataset.pile === 'draw')
+    netSendMove({ action: 'draw' });
+}
 function renderSeats() {
+  if (netMulti()) { renderNetAll(); return; }
   const t = L();
   for (const s of [1, 2, 3]) {
     const el = $('#seat' + s);
@@ -5335,12 +5605,14 @@ function renderSeats() {
 }
 function renderStock() {
   const st = $('#stock');
+  if (netMulti()) { st.hidden = true; return; }
   if (G.game === 'h' || !G.stock || !G.stock.length) { st.hidden = true; return; }
   st.hidden = false;
   felt().style.setProperty('--cr', Cards.ratio('b'));
   st.innerHTML = G.game === 't' ? `<div class="pile">${backHTML('b')}<div class="cnt">${G.stock.length}</div></div>` : `<div class="tr">${cardHTML('b', G.trumpCard)}</div>${G.stock.length > 1 ? `<div class="pile">${backHTML('b')}<div class="cnt">${G.stock.length}</div></div>` : ''}`;
 }
 function renderBar() {
+  if (netMulti()) { renderNetBar(); return; }
   const t = L();
   if (G.game === 'b') {
     $('#trumpChip').innerHTML = `${Cards.suitIcon('b', G.trump, 20)}<b>${suitName('b', G.trump)}</b>`;
@@ -5363,6 +5635,7 @@ function renderBar() {
   }
 }
 function renderHand() {
+  if (netMulti()) { renderNetHand(); return; }
   const el = $('#hand'); if (!G || !G.hands) { el.innerHTML = ''; return; }
   const cards = G.hands[0].slice();
   const showTalon = G.game === 'h' && G.phase === 'bid';
@@ -5391,7 +5664,7 @@ function renderHand() {
   if (showTalon) for (let i = 0; i < 2; i++) html += `<div class="hc talon" style="left:${x0 + (cards.length + i) * step}px">${Cards.back('h')}</div>`;
   el.innerHTML = html;
 }
-function renderAll() { renderBar(); renderSeats(); renderStock(); renderHand(); }
+function renderAll() { if (netMulti()) { renderNetAll(); return; } $('#table').classList.remove('online-new'); renderBar(); renderSeats(); renderStock(); renderHand(); }
 function setAction(html) { $('#action').innerHTML = html; }
 function status(text, muted) { setAction(`<div class="msg">${muted ? `<span class="m">${text}</span>` : text}</div>`); }
 
@@ -5446,6 +5719,7 @@ function humanPick(legalIds) {
   return new Promise(res => { pending = { legal: new Set(legalIds), res }; sel = null; hintId = null; hintMsg = null; renderHand(); });
 }
 function playFromHand(e) {
+  if (netMulti()) { playNetFromHand(e); return; }
   const b = e.target.closest('.hc'); if (!b || !pending || !b.dataset.id) return;
   const id = b.dataset.id;
   if (!pending.legal.has(id)) return;
@@ -5459,7 +5733,8 @@ function playFromHand(e) {
 $('#hand').addEventListener('pointerdown', e => { if (e.pointerType !== 'mouse') playFromHand(e); });
 $('#hand').addEventListener('touchstart', e => playFromHand(e), { passive: false });
 $('#hand').addEventListener('click', playFromHand);
-$('#center').addEventListener('click', () => { });
+$('#center').addEventListener('click', handleNetCenter);
+$('#action').addEventListener('click', handleNetAction);
 // hint: the Cardshark player picks a card for my seat from what I can see (hidden hands are re-dealt, never peeked at)
 // why the hint card. Two parts:
 //  1. a named rule, only when it truly applies to this card (the same tests the computer players use)
@@ -5926,7 +6201,15 @@ if (!S.pid) { S.pid = Array.from(crypto.getRandomValues(new Uint8Array(12)), b =
 let NET = null;   // { id, ws, info, mySeat, q, busy, closing }
 const wsURL = id => SERVER.replace(/^http/, 'ws') + `/api/table/${id}/ws`;
 const gameName = g => L().gameNames[g];
-const optsLine = (g, o) => g === 'b' ? `${L().modeN(o.mode || 'p4')} · ${L().target(+o.target || 3)}` : `${g === 't' ? L().tModeN(+o.players === 2 ? 2 : 4) + ' · ' : ''}${L().hTo} ${+o.target || (g === 't' ? 41 : 1001)}`;
+const optsLine = (g, o) => {
+  const t = L();
+  if (g === 'b') return `${t.modeN(o.mode || 'p4')} · ${t.target(+o.target || 3)}`;
+  if (g === 't') return `${t.tModeN(+o.players === 2 ? 2 : 4)} · ${t.hTo} ${+o.target || 41}`;
+  if (g === 'p') return `${t.playersN(o.players || 6)} · ${o.variant === 'draw' ? t.poker.draw : t.poker.holdem} · ${o.blinds === 'fast' ? t.poker.fast : t.poker.slow}`;
+  if (g === 'r') return `${t.playersN(o.players || 4)} · ${t.remi.target} ${+o.target === 0 ? t.remi.one : (+o.target || 501)}`;
+  if (g === 'l') return `${t.playersN(o.players || 4)} · ${o.variant === 'flip' ? t.uno.flip : t.uno.classic} · ${t.uno.target} ${+o.target === 0 ? t.uno.one : (+o.target || 500)}`;
+  return `${t.hTo} ${+o.target || 1001}`;
+};
 async function showLobby() {
   const t = L();
   let alive = true, timer = null;
@@ -5939,37 +6222,71 @@ async function showLobby() {
     } catch (e) { const el = document.querySelector('#tList'); if (el) el.innerHTML = `<p class="muted">${t.offline}</p>`; }
   };
   const seg = (key, opts) => `<div class="seg dark" role="group">${opts.map(([v, lab]) => `<button data-k="${key}" data-v="${v}" aria-pressed="${S[key] === v}">${lab}</button>`).join('')}</div>`;
+  const checkOpt = (key, label, value) => `<label class="check dark"><input type="checkbox" data-opt="${key}" ${value ? 'checked' : ''}><span>${label}</span></label>`;
   const optionsHTML = g => g === 'b'
     ? `<div class="glab">${t.mode}</div>${seg('onBMode', ['p4', 's4', 's3', 'd2'].map(m => [m, t.modeN(m)]))}<div class="glab">${t.matchTo}</div>${seg('bTarget', [[2, t.target(2)], [3, t.target(3)], [4, t.target(4)]])}`
     : g === 't'
       ? `<div class="glab">${t.players}</div>${seg('onTPlayers', [[4, t.tModeN(4)], [2, t.tModeN(2)]])}<div class="glab">${t.hTo}</div>${seg('tTarget', [[21, '21'], [31, '31'], [41, '41']])}`
-      : `<div class="glab">${t.hTo}</div>${seg('hTarget', [[501, '501'], [701, '701'], [1001, '1001']])}`;
+      : g === 'h'
+        ? `<div class="glab">${t.hTo}</div>${seg('hTarget', [[501, '501'], [701, '701'], [1001, '1001']])}`
+        : g === 'p'
+          ? `<div class="glab">${t.poker.name}</div>${seg('onPVariant', [['holdem', t.poker.holdem], ['draw', t.poker.draw]])}<div class="glab">${t.players}</div>${seg('onPPlayers', [2, 3, 4, 5, 6].map(n => [n, n]))}<div class="glab">${t.poker.blindsUp}</div>${seg('onPBlinds', [['slow', t.poker.slow], ['fast', t.poker.fast]])}`
+          : g === 'r'
+            ? `<div class="glab">${t.remi.players}</div>${seg('onRPlayers', [2, 3, 4, 5, 6].map(n => [n, n]))}<div class="glab">${t.remi.target}</div>${seg('onRTarget', [[501, '501'], [1001, '1001'], [0, t.remi.one]])}`
+            : `<div class="glab">${t.uno.players}</div>${seg('onLPlayers', [2, 3, 4, 5, 6].map(n => [n, n]))}<div class="glab">${t.uno.classic} / ${t.uno.flip}</div>${seg('onLVariant', [['classic', t.uno.classic], ['flip', t.uno.flip]])}<div class="glab">${t.uno.target}</div>${seg('onLTarget', [[500, '500'], [250, '250'], [0, t.uno.one]])}
+              <div class="glab">${t.uno.pace}</div>${seg('onLPace', [['slow', t.uno.slow], ['normal', t.uno.normal], ['fast', t.uno.fast]])}<div class="glab">${t.uno.house}</div>
+              ${checkOpt('onLStack', t.uno.stack, S.onLStack)}${S.onLVariant !== 'flip' ? `${checkOpt('onLSevenO', t.uno.sevenO, S.onLSevenO)}${checkOpt('onLJumpIn', t.uno.jumpIn, S.onLJumpIn)}` : ''}${checkOpt('onLDrawUntil', t.uno.drawUntil, S.onLDrawUntil)}`;
   const bindOptions = v => v.querySelectorAll('#lobbyOpts .seg button').forEach(b => b.onclick = () => {
     let val = b.dataset.v; val = isNaN(+val) ? val : +val; S[b.dataset.k] = val; save();
     b.parentNode.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b));
   });
+  const bindChecks = v => v.querySelectorAll('#lobbyOpts input[data-opt]').forEach(b => b.onchange = () => { S[b.dataset.opt] = b.checked; save(); });
+  const bindVariant = v => v.querySelectorAll('#lobbyOpts .seg button[data-k="onLVariant"]').forEach(b => b.onclick = () => {
+    S.onLVariant = b.dataset.v; save(); b.parentNode.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b));
+    v.querySelector('#lobbyOpts').innerHTML = optionsHTML(S.onGame); bindLobbyOptions(v);
+  });
+  const bindLobbyOptions = v => { bindOptions(v); bindChecks(v); bindVariant(v); };
   if (!S.onGame) S.onGame = 'h';
   if (!S.onBMode) S.onBMode = S.bMode || 'p4';
   if (!S.onTPlayers) S.onTPlayers = S.tMode || 4;
+  if (S.onPPlayers === undefined) S.onPPlayers = S.pPlayers || 6;
+  if (!S.onPVariant) S.onPVariant = S.pVar || 'holdem';
+  if (!S.onPBlinds) S.onPBlinds = S.pBlinds || 'slow';
+  if (S.onRPlayers === undefined) S.onRPlayers = S.rPlayers || 4;
+  if (S.onRTarget === undefined) S.onRTarget = S.rTarget ?? 501;
+  if (S.onLPlayers === undefined) S.onLPlayers = S.uPlayers || 4;
+  if (!S.onLVariant) S.onLVariant = S.uVar || 'classic';
+  if (S.onLTarget === undefined) S.onLTarget = S.uTarget ?? 500;
+  if (!S.onLPace) S.onLPace = S.uPace || 'normal';
+  if (S.onLStack === undefined) S.onLStack = !!S.uStack;
+  if (S.onLSevenO === undefined) S.onLSevenO = !!S.uSevenO;
+  if (S.onLJumpIn === undefined) S.onLJumpIn = !!S.uJumpIn;
+  if (S.onLDrawUntil === undefined) S.onLDrawUntil = !!S.uDrawUntil;
   openSheet(`<h3>${t.tables}</h3>
     <label class="namef"><span>${t.yourName}</span><input id="nm" maxlength="16" value="${esc(S.name || '')}" autocomplete="nickname"></label>
     <div class="tlist" id="tList"><p class="muted">…</p></div>
     <div class="gsep"></div><div class="glab">${t.newTable}</div>
-    ${seg('onGame', ['b', 't', 'h'].map(g => [g, gameName(g)]))}
+    ${seg('onGame', ['b', 't', 'h', 'p', 'r', 'l'].map(g => [g, gameName(g)]))}
     <div id="lobbyOpts">${optionsHTML(S.onGame)}</div>
     <div class="btns"><button class="sec" id="lx">${t.close}</button><button class="pri" id="lnew">${t.create}</button></div>`, v => {
     const nm = v.querySelector('#nm');
     nm.oninput = () => { S.name = nm.value.trim().slice(0, 16); save(); };
     v.querySelectorAll('.seg button[data-k="onGame"]').forEach(b => b.onclick = () => {
       S.onGame = b.dataset.v; save(); b.parentNode.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b));
-      v.querySelector('#lobbyOpts').innerHTML = optionsHTML(S.onGame); bindOptions(v);
+      v.querySelector('#lobbyOpts').innerHTML = optionsHTML(S.onGame); bindLobbyOptions(v);
     });
-    bindOptions(v);
+    bindLobbyOptions(v);
     v.querySelector('#lx').onclick = () => { alive = false; clearInterval(timer); closeSheet(); };
     v.querySelector('#lnew').onclick = async () => {
       if (!S.name) { nm.focus(); return; }
       const g = S.onGame;
-      const opts = g === 'b' ? { mode: S.onBMode || S.bMode || 'p4', target: S.bTarget } : g === 't' ? { players: +(S.onTPlayers || S.tMode || 4), target: S.tTarget, akuze: S.tAkuze, longNap: S.tLongNap, thirdsToLast: S.tThirdsLast, signals: S.tSignals, clockwise: S.tClockwise } : { target: S.hTarget };
+      const opts = g === 'b' ? { mode: S.onBMode || S.bMode || 'p4', target: S.bTarget }
+        : g === 't' ? { players: +(S.onTPlayers || S.tMode || 4), target: S.tTarget, akuze: S.tAkuze, longNap: S.tLongNap, thirdsToLast: S.tThirdsLast, signals: S.tSignals, clockwise: S.tClockwise }
+          : g === 'h' ? { target: S.hTarget }
+            : g === 'p' ? { players: +(S.onPPlayers || S.pPlayers || 6), variant: S.onPVariant || S.pVar || 'holdem', blinds: S.onPBlinds || S.pBlinds || 'slow' }
+              : g === 'r' ? { players: +(S.onRPlayers || S.rPlayers || 4), target: S.onRTarget === undefined ? (S.rTarget ?? 501) : S.onRTarget }
+                : { players: +(S.onLPlayers || S.uPlayers || 4), variant: S.onLVariant || S.uVar || 'classic', target: S.onLTarget === undefined ? (S.uTarget ?? 500) : S.onLTarget,
+                  stack: !!S.onLStack, sevenO: !!S.onLSevenO, jumpIn: !!S.onLJumpIn, drawUntil: !!S.onLDrawUntil, pace: S.onLPace || S.uPace || 'normal' };
       try {
         const r = await (await fetch(SERVER + '/api/tables', { method: 'POST', body: JSON.stringify({ game: g, opts, pid: S.pid, name: S.name }) })).json();
         alive = false; clearInterval(timer); joinTable(r.id, true);
@@ -6010,6 +6327,30 @@ function onNet(m) {
 function showWaiting() {
   const t = L(), i = NET.info, me = NET.mySeat;
   const active = i.activeSeats || [0, 1, 2, 3];
+  if (['p', 'r', 'l'].includes(i.game)) {
+    const host = NET.isHost;
+    const seatBtn = s => {
+      const x = i.seats[s], role = me < 0 || !x ? '' : s === me ? ' me' : ' opponent';
+      return `<button class="wseat${x ? ' taken' : ' free'}${role}" data-seat="${s}" ${x ? 'disabled' : ''}><small>${x && s === me ? t.names[0] : ''}</small><b>${x ? esc(botName(x.name)) : t.free}</b></button>`;
+    };
+    openSheet(`<div class="gsh"><h3>${gameName(i.game)}</h3><button class="link" id="wInv">${t.invite}</button></div>
+      <p class="muted">${esc(optsLine(i.game, i.opts))} · ${i.id.toUpperCase()}</p>
+      <div class="wtable wn">${active.map(seatBtn).join('')}</div>
+      <p class="muted">${host ? t.bots : t.waitHost}</p>
+      <div class="btns"><button class="sec" id="wl">${t.leaveT}</button>${host ? `<button class="pri" id="ws" ${me < 0 ? 'disabled' : ''}>${t.startT}</button>` : ''}</div>`, v => {
+      v.querySelectorAll('.wseat:not(.taken)').forEach(b => b.onclick = () => netSend({ a: 'sit', seat: +b.dataset.seat, name: S.name }));
+      v.querySelector('#wl').onclick = () => openSheet(`<h3>${t.leaveConfirm}</h3><div class="btns"><button class="sec" id="wly">${t.leaveT}</button><button class="pri" id="wln">${t.no}</button></div>`, c => {
+        c.querySelector('#wly').onclick = () => { netSend({ a: 'stand' }); leaveOnline(); };
+        c.querySelector('#wln').onclick = showWaiting;
+      });
+      const st = v.querySelector('#ws'); if (st) st.onclick = () => netSend({ a: 'start' });
+      v.querySelector('#wInv').onclick = async () => {
+        const url = location.origin + location.pathname + '?t=' + i.id;
+        try { if (navigator.share) await navigator.share({ title: 'Cardshark', text: gameName(i.game), url }); else { await navigator.clipboard.writeText(url); status(t.copied); } } catch (e) { }
+      };
+    });
+    return;
+  }
   const rel = s => me < 0 ? s : ((s - me) % 4 + 4) % 4;                  // 0 = me, 2 = partner
   // the seat drawn at the bottom: the host's own seat for the host; for anyone joining, the seat across from the host,
   // so the host sits at the top. It stays put once you sit down, so the table does not turn under you.
@@ -6060,6 +6401,7 @@ async function handleNet(m) {
   const t = L();
   if (m.t === 'start') {
     NET.started = true; NET.names = m.names; NET.myPts = 0; NET.rating = null; $('#table').classList.add('online');
+    $('#table').classList.remove('online-new');
     S.netTable = { id: NET.id, game: NET.info && NET.info.game, at: Date.now() }; save();
     closeSheet(); token++; pending = null; sel = null;
     $('#home').hidden = true; $('#table').hidden = false; $('#center').innerHTML = '';
@@ -6071,7 +6413,7 @@ async function handleNet(m) {
     if (m.names) NET.names = m.names;
     G = m.view; G.online = true; G.names = NET.names; G.myPts = NET.myPts || 0; netOpts(G);
     $('#center').innerHTML = ''; layoutSizes(); renderAll();
-    G.trick.forEach(x => placeTrickCard(x.seat, x.card));
+    if (G.trick) G.trick.forEach(x => placeTrickCard(x.seat, x.card));
     return;
   }
   if (m.t === 'ask') return askHuman(m.req);
@@ -6084,6 +6426,34 @@ async function handleNet(m) {
   if (m.t !== 'ev') return;
   const ev = m.ev, prev = G;
   G = m.view; G.online = true; G.names = NET.names; netOpts(G);
+  if (netMulti()) {
+    if (ev.k === 'deal') {
+      NET.myPts = 0; NET.lastHand = null; NET.nextN = 0; NET.req = null; NET.selected = new Set();
+      closeSheet(); $('#center').innerHTML = '';
+    }
+    G.myPts = NET.myPts;
+    renderAll();
+    if (ev.k === 'turn') {
+      NET.req = null;
+      if (ev.seat === 0) status(t.yourTurn);
+      else status(t.thinking(esc(name(ev.seat))), true);
+      renderNetSeats();
+    } else if (ev.k === 'action' || ev.k === 'play' || ev.k === 'draw' || ev.k === 'jump') {
+      if (ev.seat !== undefined && ev.seat !== 0) status(t.thinking(esc(name(ev.seat))), true);
+    }
+    if (ev.k === 'handEnd') {
+      const html = netResultHTML(ev, false);
+      NET.lastHand = html;
+      if (!ev.over && !(G.game === 'p' && ev.champion !== null && ev.champion !== undefined)) onlineSheet(html, false);
+    } else if (ev.k === 'matchEnd') {
+      const won = ev.winner === 0;
+      const last = NET.lastHand ? NET.lastHand.replace(/<h3>/g, '<h4>').replace(/<\/h3>/g, '</h4>') : '';
+      NET.lastHand = null;
+      onlineSheet(`${netResultHTML(ev, true)}<p class="muted" id="ratingLine">${NET.rating ? `${t.rating} ${NET.rating.r} (${NET.rating.d >= 0 ? '+' : ''}${NET.rating.d})` : ''}</p>${last}`, true);
+      if (S.netTable) { S.netTable = null; save(); }
+    }
+    return;
+  }
   if (ev.k === 'deal') { NET.myPts = 0; NET.lastHand = null; NET.nextN = 0; closeSheet(); $('#center').innerHTML = ''; }
   G.myPts = NET.myPts;
   if (prev === null || ev.k === 'deal') { layoutSizes(); renderAll(); status(''); return; }
@@ -6153,6 +6523,24 @@ function onlineSheet(html, over) {
 }
 const ROBOT = '<svg class="robo" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="2.5" r="1.5" fill="currentColor"/><rect x="4" y="6" width="16" height="13" rx="4" fill="currentColor"/><circle cx="9" cy="12" r="1.8" fill="#14251d"/><circle cx="15" cy="12" r="1.8" fill="#14251d"/><path d="M9 16h6" stroke="#14251d" stroke-width="1.6" stroke-linecap="round"/><path d="M2 11v4M22 11v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
 // stays on the table until tapped: a bot plays your turns meanwhile
+function netResultHTML(ev, match) {
+  const t = L(), scores = ev.scores || ev.result?.won || ev.result?.pts || G.scores || [];
+  const winner = ev.winner ?? ev.champion ?? ev.result?.winner ??
+    (G.game === 'p' && Array.isArray(ev.result?.won) ? ev.result.won.indexOf(Math.max(...ev.result.won)) : null);
+  const title = match
+    ? (winner === 0 ? t.matchWon : t.matchLost)
+    : G.game === 'r' && winner < 0 ? t.remi.noWinner
+      : G.game === 'l' && ev.result?.points !== undefined ? `${winner === 0 ? t.uno.roundWon(t.uno.you) : t.uno.roundWon(name(winner))}`
+        : G.game === 'r' ? `${winner === 0 ? t.remi.roundWon(t.remi.you) : t.remi.roundWon(esc(name(winner)))}`
+          : G.game === 'p' ? `${t.poker.name} · ${t.poker.next}`
+            : t.uno.roundWon(winner === 0 ? t.uno.you : esc(name(winner)));
+  const rows = Array.from({ length: G.n || scores.length }, (_, i) => {
+    const value = Array.isArray(scores) ? scores[i] : G.game === 'p' ? G.seats?.[i]?.chips : scores[i];
+    return `<tr${i === winner ? ' class="w"' : ''}><td>${esc(name(i))}</td><td>${Number.isFinite(value) ? value : '—'}</td></tr>`;
+  }).join('');
+  const note = !match && G.game === 'l' && ev.result?.points !== undefined ? `<p class="verdict">+${ev.result.points}</p>` : '';
+  return `<h3>${title}</h3>${note}<table class="pis"><tbody>${rows}</tbody></table>`;
+}
 function showAway(on) {
   let el = document.querySelector('#awayPill');
   if (!on) { if (el) el.remove(); return; }
@@ -6163,6 +6551,10 @@ function showAway(on) {
 async function askHuman(req) {
   const t = L();
   showAway(false);
+  if (netMulti()) {
+    NET.req = req; NET.selected = new Set(); NET.playCard = null; NET.callUno = false; NET.pendingColor = null; NET.pendingTarget = null;
+    G.turn = 0; renderNetAll(); status(t.yourTurn); return;
+  }
   if (req.kind === 'bid') {
     G.turn = 0; renderSeats();
     humanBid(!!req.dealer).then(suit => netSend({ a: 'move', suit })); return;

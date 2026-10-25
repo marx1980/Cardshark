@@ -10,7 +10,7 @@ Briškula, Trešeta, Bela, Poker, Rummy, L’Unico!, and Solitaire on your phone
 - **L’Unico!** — colour-matching game, classic and Flip decks, 2–6 players.
 - **Solitaire** — Klondike with draw-1/draw-3 and several scoring modes.
 
-Online tables support Briškula, Trešeta, and Bela. Online Briškula supports all four offline modes; Trešeta supports 2-player head-to-head and 4-player pairs.
+Online tables support every multiplayer game: Briškula, Trešeta, Bela, Poker, Remi, and L’Unico!. Poker, Remi, and L’Unico! support 2–6 players; their online settings include the offline variants and applicable house rules. Briškula offers every offline format, including two-player double hand; Trešeta offers its two-player and four-player formats. Solitaire remains offline-only.
 
 Single-page web app, no build step. Works offline once loaded and can be added to the Home Screen.
 Card art and logo are original SVG drawn in code.
