@@ -19,6 +19,9 @@ I will **promptly inform you when work is complete** without waiting for you to 
 
 I will not rely on you to check status—I'll tell you proactively with clear summaries of what was accomplished.
 
+### Visual issue reports
+When the user reports a visual issue and asks for a fix, don't re-check whether it exists; focus on fixing it. Only ask for screenshots if they are needed to understand the issue, and ask for them upfront to avoid unnecessary credit use.
+
 ---
 
 ## Repository Context
