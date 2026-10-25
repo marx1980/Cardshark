@@ -1,4 +1,4 @@
-# Cardshark — handover (25 Oct 2026, live: v59)
+# Cardshark — handover (25 Oct 2026, live: v60)
 
 Live: GitHub Pages from `marx1980/Cardshark` `main` (the repo was renamed from `cardshark`; GitHub redirects, but push to `https://github.com/marx1980/Cardshark.git`).
 
@@ -25,8 +25,9 @@ Shipped since v50:
 - **v57**: added **Remi**, Croatian rummy, playable against bots at four levels. The game supports 2–6 players, two decks plus four jokers, a 51-point opening, laying off cards, and swapping jokers.
 - **v58**: online-table UI polish: show localized trump suit names on narrow phones, distinguish you/partner/opponents/free seats in the waiting table, and highlight available tables and host names in the lobby. No game logic or networking changes.
 - **v59**: stabilized hints by caching each result and choosing the cheapest card among close simulation results; localized English game names as **Briscola**, **Tressette**, **Belote**, and **Rummy**; added a confirmation sheet before leaving a waiting-room table. No game logic or networking changes.
+- **v60**: moved home-tile launch arrows above game names with space from card art; tuned the Trešeta close-hint margin to 0.2 points (matching the displayed tenths); and verified the Briškula face-up hint with a targeted state check.
 
-The service-worker cache version is `cardshark-v59` at `sw.js:2`.
+The service-worker cache version is `cardshark-v60` at `sw.js:2`.
 
 ## How the hint works (index.html, main UI script)
 
@@ -72,9 +73,7 @@ Headless Chromium at `/opt/pw-browsers/chromium-1243/chrome-linux64/chrome` with
 Check at 375×667 and 390×780/844. The only expected console error is Google Fonts being blocked in the sandbox.
 
 ## Open items
-- **More play rules from Marko** for the hint (he'll supply them).
-- The `faceUp` rule didn't occur in the test hands (it's one trick per hand). Worth a targeted check.
-- In Trešeta, the simulation line is often "nearly a tie" (16 deals, small margins). That's honest, but maybe tune the thresholds.
+- **More play rules from Marko** for the hint; this needs the rule descriptions before implementation.
 - Commits for v45–v47 were made under Marko's email, so GitHub shows them as Unverified. They weren't rewritten, because that needs a force-push to `main`. From now on, commit as `Claude <norepl[...]
 - Hint stays offline only, to keep online ratings fair. Revisit if Marko wants it in online play.
 - Remi is offline only. Multiplayer (local network or online) can be considered after testing and polish.
