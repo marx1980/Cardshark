@@ -2840,7 +2840,7 @@ const UnoUI = (() => {
   const sleep = ms => { const t = token; return new Promise((res, rej) => setTimeout(() => t === token ? res() : rej(new Abort()), ms)); };
   const check = t => { if (t !== token) throw new Abort(); };
   const $ = s => root.querySelector(s);
-  const speed = () => api.S.speed === 'fast' ? 0.55 : 1;
+  const speed = () => api.S.speed === 'slow' ? 2 : api.S.speed === 'fast' ? 0.55 : 1;
   // how quickly the opponents react: thinking, challenging, jumping in, catching a missed call
   const react = () => speed() * ({ slow: 1.8, normal: 1, fast: 0.5 })[api.S.uPace || 'normal'];
   const nm = p => p === 0 ? T().you : api.botName(names[p]);
@@ -3731,7 +3731,7 @@ const PokerUI = (() => {
   const sleep = ms => { const t = token; return new Promise((res, rej) => setTimeout(() => t === token ? res() : rej(new Abort()), ms)); };
   const check = t => { if (t !== token) throw new Abort(); };
   const $ = s => root.querySelector(s);
-  const speed = () => api.S.speed === 'fast' ? 0.55 : 1;
+  const speed = () => api.S.speed === 'slow' ? 2 : api.S.speed === 'fast' ? 0.55 : 1;
   const nm = p => p === 0 ? T().you : api.botName(names[p]);
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
   const fmt = n => n.toLocaleString(api.S.lang === 'hr' ? 'hr-HR' : 'en-US');
@@ -4445,7 +4445,7 @@ const RemiUI = (() => {
   const sleep = ms => { const t = token; return new Promise((res, rej) => setTimeout(() => t === token ? res() : rej(new Abort()), ms)); };
   const check = t => { if (t !== token) throw new Abort(); };
   const $ = s => root.querySelector(s);
-  const speed = () => api.S.speed === 'fast' ? 0.55 : 1;
+  const speed = () => api.S.speed === 'slow' ? 2 : api.S.speed === 'fast' ? 0.55 : 1;
   const nm = p => p === 0 ? T().you : api.botName(names[p]);
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
   function init(a) { api = a; }
@@ -4730,7 +4730,7 @@ const B_MODES = { p4: { players: 4 }, s4: { players: 4, solo: true }, s3: { play
 const save = () => { try { localStorage.setItem('stih.v1', JSON.stringify(S)); } catch (e) { } };
 const applyDecks = () => { Cards.setDeck('b', S.bDeck); Cards.setDeck('h', S.hDeck); };
 applyDecks();
-const SPEED = () => S.speed === 'fast' ? { ai: 320, trick: 800, deal: 200 } : { ai: 700, trick: 1500, deal: 400 };
+const SPEED = () => S.speed === 'slow' ? { ai: 1400, trick: 3000, deal: 800 } : S.speed === 'fast' ? { ai: 320, trick: 800, deal: 200 } : { ai: 700, trick: 1500, deal: 400 };
 
 // ---------- strings ----------
 const hrBod = n => n % 10 === 1 && n % 100 !== 11 ? 'bod' : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % 100 > 14) ? 'boda' : 'bodova';
@@ -4760,7 +4760,7 @@ const STR = {
       draw: 'Vučenje', draw1: '1 karta', draw3: '3 karte', passes: 'Prolazi kroz špil', inf: 'Bez ograničenja', scoring: 'Bodovanje', standard: 'Standardno', vegas: 'Vegas', none: 'Bez bodova', timed: 'Bodovi ovise o vremenu', tapMove: 'Dodir sam premješta kartu', left: 'Špil na desnoj strani', cont: 'Nastavi', played: 'Odigrano', wonN: 'Riješeno', best: 'Najbolje vrijeme', bestScore: 'Najviše bodova', streak: 'Niz pobjeda' },
     online: 'Online', rejoin: 'Nastavi online igru', gameGone: 'Ta igra više ne postoji', playAgain: 'Igraj opet', waitOthers: (n, m) => `Čeka se ostale · ${n}/${m}`, tables: 'Otvoreni stolovi', newTable: 'Novi stol', noTables: 'Nema otvorenih stolova', host: 'Domaćin', yourName: 'Tvoje ime', sit: 'Sjedni', free: 'Slobodno', startT: 'Započni', waitHost: 'Čeka se domaćin', invite: 'Pozovi', leaveT: 'Izađi', leaveConfirm: 'Izaći sa stola?', botPlays: 'Bot igra za tebe', takeOver: 'Preuzmi', rating: 'Rejting', offline: 'Nema veze sa serverom', reconnecting: 'Ponovno spajanje…', copied: 'Poveznica kopirana', bots: 'Prazna mjesta igraju botovi', create: 'Otvori stol',
     level: 'Protivnici', partner: 'Partner', stats: 'Statistika', lvShort: { novice: 'Poč.', average: 'Pros.', pro: 'Pro', cardshark: 'Shark' }, lv: { novice: 'Početnik', average: 'Prosječan', pro: 'Pro', cardshark: 'Cardshark' },
-    speed: 'Brzina', normal: 'Normalno', fast: 'Brzo', tap: 'Igranje karte', tap1: 'Jedan dodir', tap2: 'Dva dodira',
+    speed: 'Brzina', slow: 'Sporo', normal: 'Normalno', fast: 'Brzo', tap: 'Igranje karte', tap1: 'Jedan dodir', tap2: 'Dva dodira',
     rules: 'Pravila', rulesB: 'Pravila briškule', rulesH: 'Pravila bele',
     settings: 'Postavke', language: 'Jezik',
     sumT: () => `${S.tMode === 2 ? '2 igrača' : '4 igrača · u paru'} · do ${S.tTarget}`, tModeN: n => n === 2 ? '2 · jedan na jedan' : '4 · u paru',
@@ -4773,7 +4773,6 @@ const STR = {
     playersN: n => `${n} igrača`, modeN: n => ({ p4: '4 · u paru', s4: '4 · svatko za sebe', s3: '3 igrača', d2: '2 · dupla' })[n],
     handWonBy: n => `${n} dobiva ruku.`, handTie: 'Neriješeno.', pairNote: 'Dupla: 4 karte, svatko igra dvaput u štihu.', cardsN: n => n === 4 ? '4 karte · dupla' : '3 karte',
     sumB: () => `${({ p4: '4 igrača · u paru', s4: '4 igrača · svatko za sebe', s3: '3 igrača', d2: '2 igrača · dupla' })[S.bMode]} · do ${S.bTarget}`, sumH: () => `4 igrača · do ${S.hTarget}`, deckB: 'Karte za briškulu i trešetu', deckF: 'Francuske karte', deckH: 'Karte za belu', lowRes: 'niža rezolucija',
-    credit: 'Slike karata su fotografije pravih špilova (Modiano, Masenghini, Dal Negro, Fournier, Piatnik).',
     foot: 'Igra se protiv računala. Postavke se pamte na ovom uređaju.',
     names: { 0: 'Ti', 1: 'Ante', 2: 'Mare', 3: 'Jure' }, names2: { 0: 'Ti', 2: 'Ante' },
     we: 'Mi', they: 'Vi', mine: 'Ja',
@@ -4839,7 +4838,7 @@ const STR = {
       draw: 'Draw', draw1: '1 card', draw3: '3 cards', passes: 'Passes through the stock', inf: 'Unlimited', scoring: 'Scoring', standard: 'Standard', vegas: 'Vegas', none: 'None', timed: 'Timed scoring', tapMove: 'Tap moves the card for you', left: 'Stock on the right', cont: 'Continue', played: 'Played', wonN: 'Solved', best: 'Best time', bestScore: 'Best score', streak: 'Win streak' },
     online: 'Online', rejoin: 'Rejoin online game', gameGone: 'That game no longer exists', playAgain: 'Play again', waitOthers: (n, m) => `Waiting for others · ${n}/${m}`, tables: 'Open tables', newTable: 'New table', noTables: 'No open tables', host: 'Host', yourName: 'Your name', sit: 'Sit', free: 'Free', startT: 'Start', waitHost: 'Waiting for the host', invite: 'Invite', leaveT: 'Leave', leaveConfirm: 'Leave the table?', botPlays: 'A bot is playing for you', takeOver: 'Take over', rating: 'Rating', offline: 'Can’t reach the server', reconnecting: 'Reconnecting…', copied: 'Link copied', bots: 'Empty seats are played by bots', create: 'Open table',
     level: 'Opponents', partner: 'Partner', stats: 'Stats', lvShort: { novice: 'Nov.', average: 'Avg.', pro: 'Pro', cardshark: 'Shark' }, lv: { novice: 'Novice', average: 'Average', pro: 'Pro', cardshark: 'Cardshark' },
-    speed: 'Speed', normal: 'Normal', fast: 'Fast', tap: 'Playing a card', tap1: 'One tap', tap2: 'Two taps',
+    speed: 'Speed', slow: 'Slow', normal: 'Normal', fast: 'Fast', tap: 'Playing a card', tap1: 'One tap', tap2: 'Two taps',
     rules: 'Rules', rulesB: 'Briscola rules', rulesH: 'Belote rules',
     settings: 'Settings', language: 'Language',
     sumT: () => `${S.tMode === 2 ? '2 players' : '4 players · pairs'} · to ${S.tTarget}`, tModeN: n => n === 2 ? '2 · head to head' : '4 · pairs',
@@ -4852,7 +4851,6 @@ const STR = {
     playersN: n => `${n} players`, modeN: n => ({ p4: '4 · pairs', s4: '4 · each for themselves', s3: '3 players', d2: '2 · double hand' })[n],
     handWonBy: n => `${n} wins the hand.`, handTie: 'Tie.', pairNote: 'Double: 4 cards, everyone plays twice per trick.', cardsN: n => n === 4 ? '4 cards · double' : '3 cards',
     sumB: () => `${({ p4: '4 players · pairs', s4: '4 players · solo', s3: '3 players', d2: '2 players · double' })[S.bMode]} · first to ${S.bTarget}`, sumH: () => `4 players · to ${S.hTarget}`, deckB: 'Briscola & Tressette cards', deckF: 'French cards', deckH: 'Belote cards', lowRes: 'lower resolution',
-    credit: 'Card images are photographs of real decks (Modiano, Masenghini, Dal Negro, Fournier, Piatnik).',
     foot: 'You play against the computer. Settings are kept on this device.',
     names: { 0: 'You', 1: 'Ante', 2: 'Mare', 3: 'Jure' }, names2: { 0: 'You', 2: 'Ante' },
     we: 'Us', they: 'Them', mine: 'Me',
@@ -5137,7 +5135,7 @@ function showGameSheet(game) {
   const partnerOn = () => game === 'h' || (game === 'b' ? S.bMode === 'p4' : S.tMode === 4);
   const lvl = lsel(game + 'Partner', t.partner, 'lvP') + lsel(game + 'Level', t.level, 'lvO');
   const body = game === 'b'
-    ? `<div class="glab">${t.players}</div><div class="seg dark modes" role="group">${['s3', 's4', 'd2', 'p4'].map(m => `<button data-k="bMode" data-v="${m}" aria-pressed="${S.bMode === m}">${t.modeN(m)}</button>`).join('')}</div>${lvl}<div class="gsep"></div><div class="glab">${t.matchTo}</div>` + seg('bTarget', [[2, t.target(2)], [3, t.target(3)], [4, t.target(4)]])
+    ? `<div class="glab">${t.players}</div><div class="seg dark modes" role="group">${['s3', 's4', 'd2', 'p4'].map(m => `<button data-k="bMode" data-v="${m}" aria-pressed="${S.bMode === m}">${t.modeN(m)}</button>`).join('')}</div>${lvl}<div class="gsep"></div><div class="glab">${t.matchTo}</div>` + seg('bTarget', [[2, t.target(2)], [3, t.target(3)], [4, t.target(4)]]) + `<div class="gsep"></div><div class="rules-list"><label class="tog"><span><b>${t.reveal}</b></span><input type="checkbox" data-opt="bReveal" ${S.bReveal ? 'checked' : ''}></label></div>`
     : game === 't' ? `<div class="glab">${t.players}</div>` + seg('tMode', [[4, t.tModeN(4)], [2, t.tModeN(2)]]) + lvl + `<div class="gsep"></div><div class="glab">${t.hTo}</div>` + seg('tTarget', [[21, '21'], [31, '31'], [41, '41']])
       + `<div class="gsep"></div><div class="glab">${t.localRules}</div><div class="rules-list">${[['tAkuze', t.rAkuze], ['tLongNap', t.rLongNap], ['tThirdsLast', t.rThirds], ['tSignals', t.rSignals], ['tClockwise', t.rClockwise]].map(([k, [lab, sub]]) => `<label class="tog"><span><b>${lab}</b><small>${sub}</small></span><input type="checkbox" data-opt="${k}" ${S[k] ? 'checked' : ''}></label>`).join('')}</div>`
     : lvl.replace('<div class="gsep"></div>', '') + `<div class="gsep"></div><div class="glab">${t.hTo}</div>` + seg('hTarget', [[501, '501'], [701, '701'], [1001, '1001']]);
@@ -5368,22 +5366,20 @@ function showSettings() {
     const d = Cards.DECKS[k];
     return `<button class="deck" data-g="${game}" data-d="${k}" aria-pressed="${S[key] === k}">
       <span class="dk-cards">${picks.map(c => `<span class="svgc">${Cards.face(game, c, k)}</span>`).join('')}</span>
-      <span class="dk-name"><b>${d.name[S.lang]}</b><small>${d.maker}${d.low ? ' · ' + t.lowRes : ''}</small></span></button>`;
+      <span class="dk-name"><b>${d.name[S.lang]}</b>${d.low ? `<small>${t.lowRes}</small>` : ''}</span></button>`;
   }).join('');
   const seg = (key, opts) => `<div class="seg dark">${opts.map(([v, lab]) => `<button data-k="${key}" data-v="${v}" aria-pressed="${S[key] === v}">${lab}</button>`).join('')}</div>`;
   openSheet(`<h3>${t.settings}</h3>
     <h4>${t.language}</h4>${seg('lang', [['hr', 'Hrvatski'], ['en', 'English']])}
-    <h4>${gameName('b')}</h4><label class="check dark"><input type="checkbox" id="sReveal" ${S.bReveal ? 'checked' : ''}><span>${t.reveal}</span></label>
+    <h4>${t.speed}</h4>${seg('speed', [['slow', t.slow], ['normal', t.normal], ['fast', t.fast]])}
     <h4>${t.deckB}</h4><div class="decks">${deckRow('b', pickB, 'bDeck')}</div>
     <h4>${t.deckH}</h4><div class="decks">${deckRow('h', pickH, 'hDeck')}</div>
-    <h4>${t.deckF}</h4><div class="decks">${Object.keys(Cards.FR).map(k => `<button class="deck" data-fd="${k}" aria-pressed="${Cards.frDeck(S.fDeck) === k}"><span class="dk-cards">${['Hk', 'Sq', 'Dj'].map(c => `<span class="svgc">${Cards.frFace(c, k)}</span>`).join('')}</span><span class="dk-name"><b>${Cards.FR[k].name[S.lang]}</b><small>${Cards.FR[k].maker}</small></span></button>`).join('')}</div>
+    <h4>${t.deckF}</h4><div class="decks">${Object.keys(Cards.FR).map(k => `<button class="deck" data-fd="${k}" aria-pressed="${Cards.frDeck(S.fDeck) === k}"><span class="dk-cards">${['Hk', 'Sq', 'Dj'].map(c => `<span class="svgc">${Cards.frFace(c, k)}</span>`).join('')}</span><span class="dk-name"><b>${Cards.FR[k].name[S.lang]}</b></span></button>`).join('')}</div>
     ${Cards.FR[Cards.frDeck(S.fDeck)].backs.length > 1 ? `<div class="fbacks">${Cards.FR[Cards.frDeck(S.fDeck)].backs.map(c => `<button class="fback" data-fb="${c}" aria-pressed="${S.fBack === c}" aria-label="${c}">${Cards.frBack(S.fDeck, c)}</button>`).join('')}</div>` : ''}
-    <h4>${t.speed}</h4>${seg('speed', [['normal', t.normal], ['fast', t.fast]])}
-    <p class="muted credit">${t.credit} · v64</p>
+    <p class="muted credit">v65</p>
     <div class="btns"><button class="pri" id="sx">${t.close}</button></div>`, v => {
     v.querySelector('#sx').onclick = () => { closeSheet(); if (G) renderAll(); else renderHome(); };
     v.onclick = e => { if (e.target === v) { closeSheet(); if (G) renderAll(); else renderHome(); } };
-    v.querySelector('#sReveal').onchange = e => { S.bReveal = e.target.checked; save(); };
     v.querySelectorAll('[data-fd]').forEach(b => b.onclick = () => { S.fDeck = b.dataset.fd; save(); showSettings(); });
     v.querySelectorAll('[data-fb]').forEach(b => b.onclick = () => { S.fBack = b.dataset.fb; save(); v.querySelectorAll('[data-fb]').forEach(x => x.setAttribute('aria-pressed', x === b)); });
     v.querySelectorAll('.deck[data-g]').forEach(b => b.onclick = () => {
