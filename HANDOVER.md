@@ -1,4 +1,4 @@
-# Cardshark — handover (25 Oct 2026, live: v62)
+# Cardshark — handover (25 Oct 2026, live: v63)
 
 Live: GitHub Pages from `marx1980/Cardshark` `main` (the repo was renamed from `cardshark`; GitHub redirects, but push to `https://github.com/marx1980/Cardshark.git`).
 
@@ -28,8 +28,9 @@ Shipped since v50:
 - **v60**: moved home-tile launch arrows above game names with space from card art; tuned the Trešeta close-hint margin to 0.2 points (matching the displayed tenths); and verified the Briškula face-up hint with a targeted state check.
 - **v61**: matched Remi’s opponents and visible card backs to Poker’s around-the-table seating layout. Online table creation now offers all offline Briškula formats (including 2-player double hand) and 2-player / 4-player Trešeta; server seats, bot fill, view rotation, and ratings follow those choices.
 - **v62**: added server-authoritative online Poker (Hold’em / five-card draw), Remi, and L’Unico! (Classic / Flip and house rules), including 2–6 player tables, private player views, validated moves, bot turns, ratings, and matching localized lobby/table UI. All Briškula and Trešeta online formats remain available; Solitaire is the only offline-only game.
+- **v63**: branded match-result animations (`matchResultFx` in the main UI script, using `icons/mark.svg` only). Win: six dancing sharks (bottom-centre one 20% bigger with maracas) under fireworks and YOU WON!/POBJEDA!. Loss: the final trick is put back on the felt, a shark swallows the cards and swims off, revealing YOU LOST!/PORAZ!. Tap skips. Wired into Briškula, Trešeta, Bela, Uno, Poker, Remi and online matches; no game logic changes. Strings `youWon`/`youLost` in `STR`. Tested by playing Briškula to a lost match; Trešeta/Bela/Uno/Poker/Remi paths only load-tested.
 
-The service-worker cache version is `cardshark-v62` at `sw.js:2`.
+The service-worker cache version is `cardshark-v63` at `sw.js:2`.
 
 ## How the hint works (index.html, main UI script)
 

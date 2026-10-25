@@ -187,6 +187,26 @@ table.stats td b{display:inline-block;min-width:1.4em;font-size:15px}
 .sbtn svg{width:24px;height:24px}
 .sbtn:disabled{opacity:.35}
 .sbtn[hidden]{display:none}
+/* match result animations (cardshark mark only) */
+#fx{position:fixed;inset:0;z-index:19;overflow:hidden;cursor:pointer;touch-action:manipulation}
+#fx .fxt{position:absolute;left:0;right:0;text-align:center;font-weight:900;letter-spacing:.04em;color:var(--brass,#e8c36a);font-size:clamp(34px,11vw,64px);text-shadow:0 3px 0 rgba(0,0,0,.55),0 0 22px rgba(0,0,0,.6);pointer-events:none}
+#fx .fxwin{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:clamp(8px,2.5vh,22px);pointer-events:none;--s:clamp(62px,21vw,108px)}
+#fx .fxwin .fxt{position:static}
+#fx .fxrow{display:grid;grid-template-columns:repeat(3,var(--s));gap:clamp(4px,2vw,16px);align-items:end;justify-items:center}
+#fx .fxs{width:var(--s);height:var(--s);position:relative;animation:fxdance .56s ease-in-out infinite alternate;transform-origin:50% 90%}
+#fx .fxs img{width:100%;height:100%;display:block;filter:drop-shadow(0 4px 6px rgba(0,0,0,.5))}
+#fx .fxs.big{width:calc(var(--s)*1.2);height:calc(var(--s)*1.2);margin-top:calc(var(--s)*-.1)}
+#fx .fxs.big .mar{position:absolute;width:26%;top:8%;filter:drop-shadow(0 2px 3px rgba(0,0,0,.5));transform-origin:50% 95%}
+#fx .mar.l{left:-14%;animation:fxshl .18s ease-in-out infinite alternate}
+#fx .mar.r{right:-14%;animation:fxshr .18s ease-in-out infinite alternate}
+#fx .spark{position:absolute;width:6px;height:6px;border-radius:50%;pointer-events:none}
+#fx .fxlose{position:absolute;inset:0;pointer-events:none}
+#fx .fxlose .fxt{top:38%}
+#fx .fxshark{position:absolute;pointer-events:none;filter:drop-shadow(0 6px 8px rgba(0,0,0,.5))}
+#fx .fxshark img{width:100%;height:100%;display:block}
+@keyframes fxdance{from{transform:translateY(0) rotate(-9deg)}to{transform:translateY(-12%) rotate(9deg)}}
+@keyframes fxshl{from{transform:rotate(-30deg)}to{transform:rotate(18deg)}}
+@keyframes fxshr{from{transform:rotate(30deg)}to{transform:rotate(-18deg)}}
 .toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:var(--sheet);color:var(--sheet-ink);padding:10px 16px;border-radius:12px;font-weight:700;z-index:50;box-shadow:0 6px 18px rgba(0,0,0,.4)}
 .poster.ph{background:radial-gradient(90% 90% at 50% 18%,#9a2e2b,#43110f)}
 .poster:active{transform:scale(.99)}
@@ -3189,7 +3209,7 @@ const UnoUI = (() => {
     if (over) record(st.scores.indexOf(Math.max(...st.scores)) === 0);
     const order = [...rows].sort((a, b) => st.scores[b.i] - st.scores[a.i]);
     const champ = over ? st.scores.indexOf(Math.max(...st.scores)) : w;
-    return new Promise(res => api.openSheet(`<h3>${over ? t.matchWon(esc(nm(champ))) : t.roundWon(esc(nm(w)))}</h3>
+    return (over ? api.fx(champ === 0, { cards: champ === 0 ? [] : [$('#uDisc')] }) : Promise.resolve()).then(() => new Promise(res => api.openSheet(`<h3>${over ? t.matchWon(esc(nm(champ))) : t.roundWon(esc(nm(w)))}</h3>
       <table class="pis utab"><thead><tr><th></th><th>${t.left}</th>${st.opts.target ? `<th>${t.total}</th>` : ''}</tr></thead><tbody>
       ${order.map(r => `<tr${r.i === w ? ' class="w"' : ''}><td>${esc(nm(r.i))}</td><td>${r.i === w ? `+${total}` : `${r.left} · ${r.pts}`}</td>${st.opts.target ? `<td><b>${st.scores[r.i]}</b></td>` : ''}</tr>`).join('')}
       </tbody></table>
@@ -3197,7 +3217,7 @@ const UnoUI = (() => {
       const n = v.querySelector('#uNext'); if (n) n.onclick = () => { api.closeSheet(); res(true); };
       const m = v.querySelector('#uMenu'); if (m) m.onclick = () => { res(false); leave(); };
       const a = v.querySelector('#uNew'); if (a) a.onclick = () => { res(false); start(); };
-    }));
+    })));
   }
   function record(won) {
     const S = api.S; S.unoStats = S.unoStats || {};
@@ -3936,6 +3956,7 @@ const PokerUI = (() => {
     // my place: everybody still in when I went out finishes ahead of me
     const place = won ? 1 : 1 + st.seats.filter((s, i) => i !== 0 && (!s.out || s.outAt > st.seats[0].outAt)).length;
     record(won);
+    await api.fx(won, { cards: won ? [] : [...root.querySelectorAll('#pBoard > *')] }); check(my);
     await new Promise(res => api.openSheet(`<h3>${won ? t.youWin : t.place(place)}</h3>
       <div class="btns"><button class="sec" id="pMenu">${api.L().sol.home}</button><button class="pri" id="pNew">${t.again}</button></div>`, v => {
       v.querySelector('#pMenu').onclick = () => { res(); leave(); };
@@ -4666,7 +4687,7 @@ const RemiUI = (() => {
     if (over) { clearSave(); record(R.champion(st) === 0); } else ckpt();
     const order = Array.from({ length: st.n }, (_, i) => i).sort((a, b) => st.scores[a] - st.scores[b]);
     const champ = R.champion(st);
-    return new Promise(res => api.openSheet(`<h3>${over ? t.matchWon(esc(nm(champ))) : w < 0 ? t.noWinner : t.roundWon(esc(nm(w)))}${r.remi ? ' · ' + t.remi : ''}</h3>
+    return (over ? api.fx(champ === 0, { cards: champ === 0 ? [] : [$('#rDisc')] }) : Promise.resolve()).then(() => new Promise(res => api.openSheet(`<h3>${over ? t.matchWon(esc(nm(champ))) : w < 0 ? t.noWinner : t.roundWon(esc(nm(w)))}${r.remi ? ' · ' + t.remi : ''}</h3>
       <table class="pis utab"><thead><tr><th></th><th>${t.left}</th><th>${t.pts}</th>${st.opts.target ? `<th>${t.total}</th>` : ''}</tr></thead><tbody>
       ${order.map(i => `<tr${i === w ? ' class="w"' : ''}><td>${esc(nm(i))}</td><td>${i === w ? '—' : st.opened[i] ? st.hands[i].length : t.closed}</td><td>${r.pts[i] > 0 ? '+' : ''}${r.pts[i]}</td>${st.opts.target ? `<td><b>${st.scores[i]}</b></td>` : ''}</tr>`).join('')}
       </tbody></table>
@@ -4674,7 +4695,7 @@ const RemiUI = (() => {
       const n = v.querySelector('#rNext'); if (n) n.onclick = () => { api.closeSheet(); res(true); };
       const m = v.querySelector('#rMenu'); if (m) m.onclick = () => { res(false); leave(); };
       const a = v.querySelector('#rNew'); if (a) a.onclick = () => { res(false); start(); };
-    }));
+    })));
   }
   function record(won) {
     const S = api.S; S.remiStats = S.remiStats || {};
@@ -4778,7 +4799,7 @@ const STR = {
     },
     lastTrick: 'Zadnji štih', noLast: 'Još nije odigran nijedan štih.', took: n => `Nosi: ${n}`, pts: 'bodova',
     handWon: 'Dobili ste ruku!', handLost: 'Izgubili ste ruku.', handDraw: 'Neriješeno, 60 : 60.',
-    matchWon: 'Partija je vaša!', matchLost: 'Partija je izgubljena.',
+    matchWon: 'Partija je vaša!', matchLost: 'Partija je izgubljena.', youWon: 'POBJEDA!', youLost: 'PORAZ!',
     next: 'Sljedeća ruka', again: 'Nova partija', home: 'Izbornik',
     pass_r: 'prolaz', fall_r: 'pad', hang_r: 'visi', stiglja: 'štiglja', callerShort: 'zvali',
     pisanka: 'Rezultat', handNo: '#',
@@ -4857,7 +4878,7 @@ const STR = {
     },
     lastTrick: 'Last trick', noLast: 'No trick has been played yet.', took: n => `Taken by: ${n}`, pts: 'points',
     handWon: 'You won the hand!', handLost: 'You lost the hand.', handDraw: 'Draw, 60 : 60.',
-    matchWon: 'The match is yours!', matchLost: 'Match lost.',
+    matchWon: 'The match is yours!', matchLost: 'Match lost.', youWon: 'YOU WON!', youLost: 'YOU LOST!',
     next: 'Next hand', again: 'New match', home: 'Menu',
     pass_r: 'made it', fall_r: 'fell', hang_r: 'hangs', stiglja: 'all tricks', callerShort: 'called',
     pisanka: 'Score sheet', handNo: '#',
@@ -5238,6 +5259,93 @@ function toast(text) {
   document.body.appendChild(el); setTimeout(() => el.remove(), 1800);
 }
 
+// ================= MATCH RESULT ANIMATIONS =================
+// WON: six cardshark sharks dance (the bottom centre one, 20% bigger, shakes maracas) under fireworks.
+// LOST: a cardshark shark swims in, swallows the cards on the table and swims off, leaving the result behind.
+const MARK = 'icons/mark.svg';
+const MARACA = '<svg class="mar %S" viewBox="0 0 30 60" aria-hidden="true"><rect x="12.5" y="30" width="5" height="28" rx="2.5" fill="#e8d7a8" stroke="#0e241c" stroke-width="1.5"/><ellipse cx="15" cy="17" rx="12" ry="16" fill="#8e2a24" stroke="#0e241c" stroke-width="2"/><circle cx="15" cy="17" r="5" fill="#e8d7a8"/></svg>';
+function matchResultFx(won, o = {}) {
+  const old = document.getElementById('fx'); if (old) old.remove();
+  const t = L(), reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const fx = document.createElement('div'); fx.id = 'fx'; fx.setAttribute('aria-hidden', 'true');
+  document.body.appendChild(fx);
+  const timers = []; let done = false, finish;
+  const sleepT = ms => new Promise(r => timers.push(setTimeout(r, reduce ? Math.min(ms, 120) : ms)));
+  const p = new Promise(r => { finish = () => { if (done) return; done = true; timers.forEach(clearTimeout); fx.remove(); r(); }; });
+  fx.onclick = () => finish();
+  const run = won ? winFx(fx, t, sleepT, reduce) : loseFx(fx, t, sleepT, reduce, o);
+  run.then(finish, e => { console.error("fxerr", e); finish(); });
+  return p;
+}
+async function winFx(fx, t, sleepT, reduce) {
+  const w = document.createElement('div'); w.className = 'fxwin';
+  const shark = (big, i) => `<div class="fxs${big ? ' big' : ''}" style="animation-delay:${(i % 3) * -.19}s"><img src="${MARK}" alt="">${big ? MARACA.replace('%S', 'l') + MARACA.replace('%S', 'r') : ''}</div>`;
+  w.innerHTML = `<div class="fxt">${t.youWon}</div><div class="fxrow">${[0, 1, 2, 3, 4, 5].map(i => shark(i === 4, i)).join('')}</div>`;
+  fx.appendChild(w);
+  if (reduce) { await sleepT(1800); return; }
+  w.firstChild.animate([{ transform: 'scale(.3)', opacity: 0 }, { transform: 'scale(1.12)', opacity: 1, offset: .6 }, { transform: 'scale(1)', opacity: 1 }], { duration: 600, easing: 'ease-out' });
+  const cols = ['#e8c36a', '#e23a34', '#fbf6ea', '#7fb0d6', '#8fd6a0'];
+  const burst = (x, y) => {
+    const c = cols[Math.random() * cols.length | 0];
+    for (let i = 0; i < 16; i++) {
+      const sp = document.createElement('i'); sp.className = 'spark'; sp.style.cssText = `left:${x}px;top:${y}px;background:${c};box-shadow:0 0 6px ${c}`;
+      fx.appendChild(sp);
+      const a = i / 16 * Math.PI * 2, d = 50 + Math.random() * 50;
+      sp.animate([{ transform: 'translate(0,0) scale(1)', opacity: 1 }, { transform: `translate(${Math.cos(a) * d}px,${Math.sin(a) * d + 18}px) scale(.2)`, opacity: 0 }], { duration: 900 + Math.random() * 300, easing: 'cubic-bezier(.1,.7,.3,1)', fill: 'forwards' }).finished.then(() => sp.remove());
+    }
+  };
+  const W = innerWidth, H = innerHeight;
+  for (let i = 0; i < 9 && fx.isConnected; i++) {
+    burst(W * (.12 + Math.random() * .76), H * (.1 + Math.random() * .3));
+    await sleepT(380);
+  }
+  await sleepT(700);
+}
+async function loseFx(fx, t, sleepT, reduce, o) {
+  const W = innerWidth, H = innerHeight;
+  const c = ($('#center') || document.body).getBoundingClientRect();
+  const cx = c.width > 20 ? c.left + c.width / 2 : W / 2, cy = c.height > 20 ? c.top + c.height / 2 : H * .45;
+  const sw = Math.min(W * .62, 230), sh = sw;
+  const cards = (o.cards || []).filter(e => e && e.isConnected);
+  const wrap = document.createElement('div'); wrap.className = 'fxlose';
+  const sk = document.createElement('div'); sk.className = 'fxshark';
+  sk.style.cssText = `width:${sw}px;height:${sh}px;top:${cy - sh * .55}px;left:0`;
+  sk.innerHTML = `<img src="${MARK}" alt="">`;
+  const txt = document.createElement('div'); txt.className = 'fxt'; txt.textContent = t.youLost; txt.style.opacity = 0;
+  wrap.append(txt, sk); fx.appendChild(wrap);
+  if (reduce) { txt.style.opacity = 1; await sleepT(1800); return; }
+  // the shark's mouth (right side of the mark) lines up with the middle of the cards
+  const mouthX = sw * .86, mouthY = sh * .55;
+  const stop = cx - mouthX, bob = [{ transform: 'rotate(-3deg)' }, { transform: 'rotate(3deg)' }];
+  const swim = sk.animate([{ transform: `translateX(${-sw * 1.1}px) rotate(-3deg)` }, { transform: `translateX(${stop}px) rotate(3deg)` }], { duration: 1100, easing: 'ease-out', fill: 'forwards' });
+  await swim.finished.catch(() => {});
+  if (!fx.isConnected) return;
+  const mouthAbs = [stop + mouthX, cy - sh * .55 + mouthY];
+  cards.forEach((el, i) => {
+    const r = el.getBoundingClientRect(), base = getComputedStyle(el).transform, b = base === 'none' ? '' : base;
+    const dx = mouthAbs[0] - (r.left + r.width / 2), dy = mouthAbs[1] - (r.top + r.height / 2);
+    el.animate([{ transform: b, opacity: 1 }, { transform: `translate(${dx}px,${dy}px) scale(.12) ${b}`, opacity: 0 }], { duration: 380, delay: i * 140, easing: 'ease-in', fill: 'forwards' });
+  });
+  sk.animate([{ transform: `translateX(${stop}px) scale(1)` }, { transform: `translateX(${stop}px) scale(1.07)`, offset: .5 }, { transform: `translateX(${stop}px) scale(1)` }], { duration: 380 + cards.length * 140, fill: 'forwards' });
+  await sleepT(450 + cards.length * 140);
+  if (!fx.isConnected) return;
+  // gone: the result is revealed where the shark was
+  txt.style.opacity = 1;
+  txt.animate([{ clipPath: 'inset(0 100% 0 0)' }, { clipPath: 'inset(0 0 0 0)' }], { duration: 1100, easing: 'linear' });
+  await sk.animate([{ transform: `translateX(${stop}px)` }, { transform: `translateX(${W + sw * .3}px) rotate(-4deg)` }], { duration: 1100, easing: 'ease-in', fill: 'forwards' }).finished.catch(() => {});
+  cards.forEach(el => { el.style.visibility = 'hidden'; });
+  await sleepT(1500);
+}
+// puts the cards of the match's last trick back on the felt (they were already collected)
+function finalTrickCards() {
+  const lt = G && G.lastTrick; if (!lt || !lt.trick || !lt.trick.length || !$('#center')) return [];
+  const saved = G.trick; G.trick = [];
+  $('#center').innerHTML = '';
+  for (const x of lt.trick) { G.trick.push(x); placeTrickCard(x.seat, x.card); }
+  G.trick = saved;
+  return [...$('#center').children];
+}
+
 // ================= SHEETS =================
 let sheetResolve = null;
 function openSheet(html, onBind) {
@@ -5267,7 +5375,7 @@ function showSettings() {
     <h4>${t.deckF}</h4><div class="decks">${Object.keys(Cards.FR).map(k => `<button class="deck" data-fd="${k}" aria-pressed="${Cards.frDeck(S.fDeck) === k}"><span class="dk-cards">${['Hk', 'Sq', 'Dj'].map(c => `<span class="svgc">${Cards.frFace(c, k)}</span>`).join('')}</span><span class="dk-name"><b>${Cards.FR[k].name[S.lang]}</b><small>${Cards.FR[k].maker}</small></span></button>`).join('')}</div>
     ${Cards.FR[Cards.frDeck(S.fDeck)].backs.length > 1 ? `<div class="fbacks">${Cards.FR[Cards.frDeck(S.fDeck)].backs.map(c => `<button class="fback" data-fb="${c}" aria-pressed="${S.fBack === c}" aria-label="${c}">${Cards.frBack(S.fDeck, c)}</button>`).join('')}</div>` : ''}
     <h4>${t.speed}</h4>${seg('speed', [['normal', t.normal], ['fast', t.fast]])}
-    <p class="muted credit">${t.credit} · v62</p>
+    <p class="muted credit">${t.credit} · v63</p>
     <div class="btns"><button class="pri" id="sx">${t.close}</button></div>`, v => {
     v.querySelector('#sx').onclick = () => { closeSheet(); if (G) renderAll(); else renderHome(); };
     v.onclick = e => { if (e.target === v) { closeSheet(); if (G) renderAll(); else renderHome(); } };
@@ -6025,7 +6133,7 @@ async function briskulaMatch(my, cont) {
     if (over) clearSave(); else ckpt('handEnd');
     const marks = w => '|'.repeat(w) || '–';
     const head = over ? (G.wins[0] === Math.max(...G.wins) ? t().matchWon : t().matchLost) : verdict;
-    if (over) recordMatch(G.wins[0] === Math.max(...G.wins));
+    if (over) { const won = G.wins[0] === Math.max(...G.wins); recordMatch(won); await matchResultFx(won, { cards: won ? [] : finalTrickCards() }); check(my); }
     const go = await waitSheet(`<h3>${head}</h3>
       <div class="big">${pts.map((p, i) => `<div>${p}<small>${esc(labels[i])}</small></div>`).join('<span class="sep">:</span>')}</div>
       ${over ? `<p class="verdict">${verdict}</p>` : ''}
@@ -6078,6 +6186,7 @@ async function belaMatch(my, cont) {
       renderBar();
       await sleep(1400);
       recordMatch(w === 0); clearSave();
+      await matchResultFx(w === 0); check(my);
       const go = await waitSheet(`<h3>${w === 0 ? t().matchWon : t().matchLost}</h3><p>${t().belotWin(esc(name(D.belotSeat)))}</p>
         <div class="btns"><button class="sec" data-go="home">${t().home}</button><button class="pri" data-go="again">${t().again}</button></div>`);
       if (go === 'home') return showHome(); return startGame('h');
@@ -6269,6 +6378,7 @@ async function tresetaMatch(my, cont) {
     renderBar();
     const mw = E.tMatchWinner(G);
     if (mw >= 0) { recordMatch(mw === 0); clearSave(); } else ckpt('handEnd');
+    if (mw >= 0) { await matchResultFx(mw === 0, { cards: mw === 0 ? [] : finalTrickCards() }); check(my); }
     const head = mw >= 0 ? (mw === 0 ? t().matchWon : t().matchLost) : t().handTitle(G.rows.length);
     const go = await waitSheet(`<h3>${head}</h3>
       <div class="decl"><div><span>${t().cardsPts}</span><b>${r.cardPts[0]} : ${r.cardPts[1]}</b></div>
@@ -6592,7 +6702,7 @@ async function handleNet(m) {
       } else {
         const won = ev.team === 0, last = NET.lastHand ? NET.lastHand.replace(/<h3>/g, '<h4>').replace(/<\/h3>/g, '</h4>') : '';
         NET.lastHand = null;
-        onlineSheet(`<h3>${won ? t.matchWon : t.matchLost}</h3><p class="muted" id="ratingLine">${NET.rating ? `${t.rating} ${NET.rating.r} (${NET.rating.d >= 0 ? '+' : ''}${NET.rating.d})` : ''}</p>${last}`, true);
+        matchResultFx(won, { cards: won ? [] : finalTrickCards() }).then(() => { if (G && NET) onlineSheet(`<h3>${won ? t.matchWon : t.matchLost}</h3><p class="muted" id="ratingLine">${NET.rating ? `${t.rating} ${NET.rating.r} (${NET.rating.d >= 0 ? '+' : ''}${NET.rating.d})` : ''}</p>${last}`, true); });
       }
       break;
     }
@@ -6665,10 +6775,10 @@ async function askHuman(req) {
 { const q = new URLSearchParams(location.search).get('t'); if (q && SERVER && /^[a-z0-9]{4}$/.test(q)) setTimeout(() => joinTable(q, true), 300); }
 
 // ================= WIRING =================
-Solitaire.init({ S, save: () => save(), L: () => L(), openSheet, closeSheet, showHome, toast, showOpts });
-RemiUI.init({ S, save: () => save(), L: () => L(), openSheet, closeSheet, showHome, toast, botName: n => botName(n), pickBotNames, showRules, showOpts });
-PokerUI.init({ S, save: () => save(), L: () => L(), openSheet, closeSheet, showHome, toast, botName: n => botName(n), pickBotNames, showRules, showOpts });
-UnoUI.init({ S, save: () => save(), L: () => L(), openSheet, closeSheet, showHome, toast, botName: n => botName(n), pickBotNames, showRules, showOpts });
+Solitaire.init({ S, save: () => save(), L: () => L(), fx: matchResultFx, openSheet, closeSheet, showHome, toast, showOpts });
+RemiUI.init({ S, save: () => save(), L: () => L(), fx: matchResultFx, openSheet, closeSheet, showHome, toast, botName: n => botName(n), pickBotNames, showRules, showOpts });
+PokerUI.init({ S, save: () => save(), L: () => L(), fx: matchResultFx, openSheet, closeSheet, showHome, toast, botName: n => botName(n), pickBotNames, showRules, showOpts });
+UnoUI.init({ S, save: () => save(), L: () => L(), fx: matchResultFx, openSheet, closeSheet, showHome, toast, botName: n => botName(n), pickBotNames, showRules, showOpts });
 $('#defs').innerHTML = Cards.DEFS;
 $('#bHome').onclick = askQuit;
 $('#bLast').onclick = showLastTrick;
