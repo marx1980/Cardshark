@@ -4728,7 +4728,7 @@ const STR = {
   en: {
     gameNames: { b: 'Briscola', t: 'Tressette', h: 'Belote' },
     tagline: 'Briscola and Belote at the café table — you against three computer players.',
-    bSub: 'Triestine cards · 40 cards · trump is the briškula', hSub: 'Mađarice · 32 cards · declarations, bela, 1001',
+    bSub: 'Triestine cards · 40 cards · trump suit (briscola)', hSub: 'German-suited cards · 32 cards · declarations, belote, 1001',
     players: 'Players', p2: '2 · head to head', p4: '4 · partners',
     mode: 'Mode', classic: 'Classic · 3 cards', double: 'Double · 4 cards',
     doubleNote: 'Double: everyone holds 4 cards and plays twice to the same trick, then draws two.',
@@ -4772,10 +4772,10 @@ const STR = {
     pass: 'Pass', mustCall: 'Dealer must call', callPrompt: 'Your turn: call trump or pass',
     calls: (n, s) => `${n} calls ${s}`, called: s => `${s}!`,
     bidWait: n => `${n} is deciding…`,
-    belaCall: 'Bela!', belot: 'BELOT!', declWord: 'Declares',
+    belaCall: 'Belote!', belot: 'BELOT!', declWord: 'Declares',
     declWin: (t, v) => `Declarations count for: ${t} +${v}`, declNone: 'No declarations',
-    belaToggle: 'Call bela', belaHint: 'Switch off to keep quiet about bela with this card',
-    zvTitle: 'Declarations', zvShort: 'Decl.', zvNotYet: 'Declarations are shown once trump is called.', zvMyBela: 'You hold bela – it is called when you play the trump king or ober',
+    belaToggle: 'Call belote', belaHint: 'Switch off to keep quiet about belote with this card',
+    zvTitle: 'Declarations', zvShort: 'Decl.', zvNotYet: 'Declarations are shown once trump is called.', zvMyBela: 'You hold belote – it is called when you play the trump king or ober',
    
     why: {
       only: 'Your only legal card.', last: 'Your last card.',
@@ -4889,12 +4889,12 @@ const RULES = {
 <li>Igra se do 1001 (ili 501 / 701).</li></ul>`
   },
   en: {
-    r: `<h3>Remi</h3>
+    r: `<h3>Rummy</h3>
 <h4>Cards and deal</h4><ul><li>Two decks and four jokers, 2–6 players. Everyone gets 14 cards; the first player gets 15 and starts by discarding one.</li></ul>
 <h4>A turn</h4><ul><li>Draw from the stock or take the top discard – which must be used in the same turn. End the turn by discarding a card.</li></ul>
 <h4>Melds</h4><ul><li>Three or four of a rank in different suits, or three or more in a row in one suit (ace low or high, no K-A-2). At most one joker per meld.</li></ul>
 <h4>Opening</h4><ul><li>Your first lay-down must be worth at least 51: 2–10 as numbered, J, Q, K 10, ace 1 at the bottom of a run and 10 otherwise, a joker as the card it stands for.</li><li>Once open you may add cards to any meld on the table, and swap a joker for the card it stands for – that joker must be used in the same turn.</li></ul>
-<h4>End of a round and scoring</h4><ul><li>The round ends when someone discards their last card: they score −40. Everyone else scores the cards left in hand (ace and pictures 10, joker 25), or 100 if they never opened.</li><li>Remi – going out all at once without having opened before: −100 for the winner, and everyone else's points are doubled.</li><li>When the stock runs out, the discards are shuffled once; when it runs out again, the round ends without a winner.</li><li>Play continues until someone reaches the target; the lowest score wins.</li></ul>`,
+<h4>End of a round and scoring</h4><ul><li>The round ends when someone discards their last card: they score −40. Everyone else scores the cards left in hand (ace and pictures 10, joker 25), or 100 if they never opened.</li><li>Going out in one turn without having opened before: −100 for the winner, and everyone else's points are doubled.</li><li>When the stock runs out, the discards are shuffled once; when it runs out again, the round ends without a winner.</li><li>Play continues until someone reaches the target; the lowest score wins.</li></ul>`,
     p: `<h3>Poker</h3>
 <h4>Tournament</h4><ul><li>Everyone starts with 1,000 chips. Blinds go up every 10 (or 5) hands. A player out of chips is out; the last player with chips wins.</li><li>The first player left of the dealer posts the small blind, the next the big blind.</li><li>On your turn: fold, call (or check when there is nothing to call), or raise (by at least the last raise). No limit.</li></ul>
 <h4>Texas Hold'em</h4><ul><li>Everyone gets 2 cards. Three shared cards are dealt (the flop), then one (the turn) and one more (the river), with a betting round before each and after the last.</li><li>The best five-card hand from your 2 and the 5 shared cards wins the pot.</li></ul>
@@ -4914,29 +4914,29 @@ const RULES = {
 <h4>Stock</h4><ul><li>Draw 1 or 3 cards; with 3, only the top one is playable.</li><li>When the stock runs out, the waste turns back over as many times as the setting allows.</li></ul>
 <h4>Scoring</h4><ul><li>Standard: waste → pile 5, to a foundation 10, turning a card 5, foundation back to a pile −15, recycling the stock −100 (draw 1). Timed: −2 every 10 s and a bonus of 700,000 ÷ seconds at the end.</li><li>Vegas: $52 stake, $5 for every card on a foundation.</li></ul>
 <h4>Controls</h4><ul><li>Tap a card to send it to the best place, or drag a card or run.</li><li>Undo takes moves back, Hint shows a move, Finish plays everything out once all cards are face up.</li></ul>`,
-    b: `<h3>Briškula</h3>
+    b: `<h3>Briscola</h3>
 <p class="muted">Triestine 40-card deck: cups, coins, swords and clubs. The court cards are the fante (11), cavallo/knight (12) and king (13).</p>
 <h4>Rank and points</h4>
 <div class="rank"><div><span>Ace (1)</span><b>11</b></div><div><span>Three (3)</span><b>10</b></div><div><span>King (13)</span><b>4</b></div><div><span>Knight (12)</span><b>3</b></div><div><span>Fante (11)</span><b>2</b></div><div><span>7, 6, 5, 4, 2</span><b>0</b></div></div>
 <p>The deck holds 120 points. You need 61 to win a hand; 60 : 60 is a draw.</p>
 <h4>Play</h4>
-<ul><li>Everyone gets 3 cards. The next card goes face up under the deck; its suit is the <b>briškula</b> (trump) and that card is drawn last.</li>
+<ul><li>Everyone gets 3 cards. The next card goes face up under the deck; its suit is the <b>briscola</b> (trump) and that card is drawn last.</li>
 <li>The player to the dealer's right leads; play goes counter-clockwise.</li>
 <li>You never have to follow suit or trump. The highest trump wins the trick; with no trump, the highest card of the suit led wins.</li>
 <li>After each trick everyone draws one card, starting with the trick winner. Once the deck is gone, play out the remaining cards.</li>
 <li>With four players, partners sit opposite: you and your partner against two opponents.</li></ul>
-<h4>Double briškula</h4>
+<h4>Double Briscola</h4>
 <p>Four cards each. Everyone plays twice to the same trick (one round, then another), the best card takes all of them, then everyone draws two.</p>`,
-    t: `<h3>Trešeta</h3>
-<p class="muted">The same 40-card deck as briškula. No trumps. Played in two pairs (you and your partner against two opponents) or head to head.</p>
+    t: `<h3>Tressette</h3>
+<p class="muted">The same 40-card deck as Briscola. No trumps. Played in two pairs (you and your partner against two opponents) or head to head.</p>
 <h4>Rank and points</h4>
 <div class="rank"><div><span>Three</span><b>⅓</b></div><div><span>Two</span><b>⅓</b></div><div><span>Ace</span><b>1</b></div><div><span>King, knight, fante</span><b>⅓</b></div><div><span>7, 6, 5, 4</span><b>0</b></div><div><span>Last trick</span><b>+1</b></div></div>
-<p>Each suit ranks 3, 2, ace, king, knight, fante, 7, 6, 5, 4. Threes, twos and court cards ("bele") are worth a third of a point. Each pair adds up its thirds and drops the remainder, so a hand is worth 10 or 11 points.</p>
+<p>Each suit ranks 3, 2, ace, king, knight, jack, 7, 6, 5, 4. Threes, twos and court cards are worth a third of a point. Each pair adds up its thirds and drops the remainder, so a hand is worth 10 or 11 points.</p>
 <h4>Play</h4>
 <ul><li>Everyone gets 10 cards. With two players the rest is a stock: after each trick the winner draws first, and every drawn card is shown to the opponent.</li>
 <li>You must follow suit. If you can't, play anything, but that card can't win.</li>
 <li>The highest card of the suit led wins the trick.</li></ul>
-<h4>Declarations (akuže)</h4>
+<h4>Declarations</h4>
 <div class="rank"><div><span>Three 3s, 2s or aces</span><b>3</b></div><div><span>Four 3s, 2s or aces</span><b>4</b></div><div><span>Napolitana (ace, 2, 3 of a suit)</span><b>3</b></div></div>
 <p>Declarations are made before the first card and score straight away.</p>
 <h4>Winning</h4>
@@ -4946,8 +4946,8 @@ const RULES = {
 <li><b>Slide (strišo)</b> – I still have many cards of this suit.</li>
 <li><b>Last one (volo)</b> – this is my last card of the suit.</li></ul>
 <p class="muted">Declarations, long napolitana, leftover thirds, signals and direction of play can be switched on or off under "Local rules" before a match.</p>`,
-    h: `<h3>Bela</h3>
-<p class="muted">German-suited mađarice, 32 cards: hearts, bells, leaves and acorns. Two pairs play: you and your partner against two opponents. Everything goes counter-clockwise.</p>
+    h: `<h3>Belote</h3>
+<p class="muted">German-suited cards, 32 cards: hearts, bells, leaves and acorns. Two pairs play: you and your partner against two opponents. Everything goes counter-clockwise.</p>
 <h4>Rank and points</h4>
 <div class="rank"><div><span>Trump unter (jack)</span><b>20</b></div><div><span>Trump nine</span><b>14</b></div><div><span>Ace</span><b>11</b></div><div><span>Ten</span><b>10</b></div><div><span>King</span><b>4</b></div><div><span>Ober (queen)</span><b>3</b></div><div><span>Non-trump unter</span><b>2</b></div><div><span>Last trick</span><b>+10</b></div></div>
 <p>Trump order: unter, 9, ace, 10, king, ober, 8, 7. Other suits: ace, 10, king, ober, unter, 9, 8, 7. 162 points in total.</p>
@@ -4955,8 +4955,8 @@ const RULES = {
 <ul><li>Everyone gets 6 cards plus 2 face-down talon cards. Looking only at the 6, players in turn call a trump suit or pass. The dealer speaks last and must call.</li>
 <li>Once trump is called, everyone picks up the talon and holds 8 cards.</li></ul>
 <h4>Declarations (zvanja)</h4>
-<div class="rank"><div><span>3 in a row</span><b>20</b></div><div><span>4 in a row</span><b>50</b></div><div><span>5–7 in a row</span><b>100</b></div><div><span>Four unters</span><b>200</b></div><div><span>Four nines</span><b>150</b></div><div><span>Four aces, 10s, kings, obers</span><b>100</b></div><div><span>Bela (trump king + ober)</span><b>20</b></div><div><span>Belot (8 in a row)</span><b>wins</b></div></div>
-<p>Sequences run 7, 8, 9, 10, unter, ober, king, ace. Only the pair holding the best declaration scores (higher value, then higher top card, then whoever is earlier in turn), but then all of that pair's declarations count. Bela always counts for its holder and is announced when the first of the two cards is played. Declarations only count if the pair wins at least one trick.</p>
+<div class="rank"><div><span>3 in a row</span><b>20</b></div><div><span>4 in a row</span><b>50</b></div><div><span>5–7 in a row</span><b>100</b></div><div><span>Four jacks</span><b>200</b></div><div><span>Four nines</span><b>150</b></div><div><span>Four aces, 10s, kings, queens</span><b>100</b></div><div><span>Belote (trump king + queen)</span><b>20</b></div><div><span>Belot (8 in a row)</span><b>wins</b></div></div>
+<p>Sequences run 7, 8, 9, 10, jack, queen, king, ace. Only the pair holding the best declaration scores (higher value, then higher top card, then whoever is earlier in turn), but then all of that pair's declarations count. Belote always counts for its holder and is announced when the first of the two cards is played. Declarations only count if the pair wins at least one trick.</p>
 <h4>Playing</h4>
 <ul><li>You must follow suit and, if you can, beat every card already in the trick.</li>
 <li>If someone has already trumped, follow suit with any card of that suit.</li>
