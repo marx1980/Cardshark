@@ -66,6 +66,7 @@ button{font:inherit;color:inherit}
 .w13{display:flex;gap:8px;width:100%;justify-content:space-between;align-items:center}.w13 .wseat{width:36%;min-width:0}
 .wfelt{flex:1;align-self:stretch;min-height:58px;border-radius:50%/45%;background:radial-gradient(100% 90% at 50% 40%,#2a7a5c,#14432f);border:4px solid #5a3a22;box-shadow:inset 0 0 0 1px rgba(255,255,255,.1)}
 .wseat{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:46%;padding:10px 8px;border-radius:12px;border:2px dashed #3e9a6c;background:#e3f4ea;color:#17603e;cursor:pointer;transition:transform .1s,box-shadow .15s}
+.wseat.inactive{visibility:hidden;pointer-events:none}
 .wseat:not(.taken):active{transform:scale(.97)}
 .wseat small{font-size:11px;color:inherit;opacity:.75;font-weight:700;text-transform:uppercase;letter-spacing:.06em;min-height:1em}
 .wseat b{font-size:15px;display:flex;align-items:center;gap:5px}
@@ -5919,7 +5920,7 @@ if (!S.pid) { S.pid = Array.from(crypto.getRandomValues(new Uint8Array(12)), b =
 let NET = null;   // { id, ws, info, mySeat, q, busy, closing }
 const wsURL = id => SERVER.replace(/^http/, 'ws') + `/api/table/${id}/ws`;
 const gameName = g => L().gameNames[g];
-const optsLine = (g, o) => g === 'b' ? L().target(+o.target || 3) : `${L().hTo} ${+o.target || (g === 't' ? 41 : 1001)}`;
+const optsLine = (g, o) => g === 'b' ? `${L().modeN(o.mode || 'p4')} · ${L().target(+o.target || 3)}` : `${g === 't' ? L().tModeN(+o.players === 2 ? 2 : 4) + ' · ' : ''}${L().hTo} ${+o.target || (g === 't' ? 41 : 1001)}`;
 async function showLobby() {
   const t = L();
   let alive = true, timer = null;
@@ -5932,21 +5933,37 @@ async function showLobby() {
     } catch (e) { const el = document.querySelector('#tList'); if (el) el.innerHTML = `<p class="muted">${t.offline}</p>`; }
   };
   const seg = (key, opts) => `<div class="seg dark" role="group">${opts.map(([v, lab]) => `<button data-k="${key}" data-v="${v}" aria-pressed="${S[key] === v}">${lab}</button>`).join('')}</div>`;
+  const optionsHTML = g => g === 'b'
+    ? `<div class="glab">${t.mode}</div>${seg('onBMode', ['p4', 's4', 's3', 'd2'].map(m => [m, t.modeN(m)]))}<div class="glab">${t.matchTo}</div>${seg('bTarget', [[2, t.target(2)], [3, t.target(3)], [4, t.target(4)]])}`
+    : g === 't'
+      ? `<div class="glab">${t.players}</div>${seg('onTPlayers', [[4, t.tModeN(4)], [2, t.tModeN(2)]])}<div class="glab">${t.hTo}</div>${seg('tTarget', [[21, '21'], [31, '31'], [41, '41']])}`
+      : `<div class="glab">${t.hTo}</div>${seg('hTarget', [[501, '501'], [701, '701'], [1001, '1001']])}`;
+  const bindOptions = v => v.querySelectorAll('#lobbyOpts .seg button').forEach(b => b.onclick = () => {
+    let val = b.dataset.v; val = isNaN(+val) ? val : +val; S[b.dataset.k] = val; save();
+    b.parentNode.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b));
+  });
   if (!S.onGame) S.onGame = 'h';
+  if (!S.onBMode) S.onBMode = S.bMode || 'p4';
+  if (!S.onTPlayers) S.onTPlayers = S.tMode || 4;
   openSheet(`<h3>${t.tables}</h3>
     <label class="namef"><span>${t.yourName}</span><input id="nm" maxlength="16" value="${esc(S.name || '')}" autocomplete="nickname"></label>
     <div class="tlist" id="tList"><p class="muted">…</p></div>
     <div class="gsep"></div><div class="glab">${t.newTable}</div>
     ${seg('onGame', ['b', 't', 'h'].map(g => [g, gameName(g)]))}
+    <div id="lobbyOpts">${optionsHTML(S.onGame)}</div>
     <div class="btns"><button class="sec" id="lx">${t.close}</button><button class="pri" id="lnew">${t.create}</button></div>`, v => {
     const nm = v.querySelector('#nm');
     nm.oninput = () => { S.name = nm.value.trim().slice(0, 16); save(); };
-    v.querySelectorAll('.seg button').forEach(b => b.onclick = () => { S.onGame = b.dataset.v; save(); b.parentNode.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b)); });
+    v.querySelectorAll('.seg button[data-k="onGame"]').forEach(b => b.onclick = () => {
+      S.onGame = b.dataset.v; save(); b.parentNode.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b));
+      v.querySelector('#lobbyOpts').innerHTML = optionsHTML(S.onGame); bindOptions(v);
+    });
+    bindOptions(v);
     v.querySelector('#lx').onclick = () => { alive = false; clearInterval(timer); closeSheet(); };
     v.querySelector('#lnew').onclick = async () => {
       if (!S.name) { nm.focus(); return; }
       const g = S.onGame;
-      const opts = g === 'b' ? { target: S.bTarget } : g === 't' ? { target: S.tTarget, akuze: S.tAkuze, longNap: S.tLongNap, thirdsToLast: S.tThirdsLast, signals: S.tSignals, clockwise: S.tClockwise } : { target: S.hTarget };
+      const opts = g === 'b' ? { mode: S.onBMode || S.bMode || 'p4', target: S.bTarget } : g === 't' ? { players: +(S.onTPlayers || S.tMode || 4), target: S.tTarget, akuze: S.tAkuze, longNap: S.tLongNap, thirdsToLast: S.tThirdsLast, signals: S.tSignals, clockwise: S.tClockwise } : { target: S.hTarget };
       try {
         const r = await (await fetch(SERVER + '/api/tables', { method: 'POST', body: JSON.stringify({ game: g, opts, pid: S.pid, name: S.name }) })).json();
         alive = false; clearInterval(timer); joinTable(r.id, true);
@@ -5986,6 +6003,7 @@ function onNet(m) {
 }
 function showWaiting() {
   const t = L(), i = NET.info, me = NET.mySeat;
+  const active = i.activeSeats || [0, 1, 2, 3];
   const rel = s => me < 0 ? s : ((s - me) % 4 + 4) % 4;                  // 0 = me, 2 = partner
   // the seat drawn at the bottom: the host's own seat for the host; for anyone joining, the seat across from the host,
   // so the host sits at the top. It stays put once you sit down, so the table does not turn under you.
@@ -5993,8 +6011,13 @@ function showWaiting() {
   if (me >= 0 && NET.anchor === undefined) NET.anchor = NET.isHost ? me : (hostSeat >= 0 ? (hostSeat + 2) & 3 : me);
   if (me < 0) NET.anchor = undefined;
   const bottom = NET.anchor !== undefined ? NET.anchor : (NET.isHost ? 0 : hostSeat >= 0 ? (hostSeat + 2) & 3 : 0);
-  const lab = s => rel(s) === 0 ? t.names[0] : rel(s) === 2 ? t.partner : t.level;
-  const seatBtn = s => { const x = i.seats[s], role = me < 0 || !x ? '' : rel(s) === 0 ? ' me' : rel(s) === 2 ? ' partner' : ' opponent'; return `<button class="wseat${x ? ' taken' : ' free'}${role}" data-seat="${s}" ${x ? 'disabled' : ''}><small>${me >= 0 && x ? lab(s) : ''}</small><b>${x ? esc(botName(x.name)) : t.free}</b></button>`; };
+  const paired = i.game === 'h' || (i.game === 'b' && i.opts.mode === 'p4') || (i.game === 't' && +i.opts.players === 4);
+  const lab = s => rel(s) === 0 ? t.names[0] : rel(s) === 2 && paired ? t.partner : t.level;
+  const seatBtn = s => {
+    if (!active.includes(s)) return '<span class="wseat inactive" aria-hidden="true"></span>';
+    const x = i.seats[s], role = me < 0 || !x ? '' : rel(s) === 0 ? ' me' : rel(s) === 2 && paired ? ' partner' : ' opponent';
+    return `<button class="wseat${x ? ' taken' : ' free'}${role}" data-seat="${s}" ${x ? 'disabled' : ''}><small>${me >= 0 && x ? lab(s) : ''}</small><b>${x ? esc(botName(x.name)) : t.free}</b></button>`;
+  };
   const host = NET.isHost;
   openSheet(`<div class="gsh"><h3>${gameName(i.game)}</h3><button class="link" id="wInv">${t.invite}</button></div>
     <p class="muted">${esc(optsLine(i.game, i.opts))} · ${i.id.toUpperCase()}</p>

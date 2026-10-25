@@ -2,16 +2,17 @@
 // Humans are asked for their moves (with a time limit); a bot plays for anyone who times out or is away.
 const E = require('./engine.js');
 const AI = require('./ai.js');
-const { makeView, rotSeat, rotTeam } = require('./view.js');
+const { makeView, rotSeat } = require('./view.js');
 
 const PACE = { bot: 800, trick: 1300, deal: 700, decl: 3200, akuza: 1600, called: 1100 };
 
 // events carry seats and teams; every player gets them from their own chair
-function rotEvent(ev, me) {
+function rotEvent(ev, me, st) {
   const r = { ...ev };
   for (const k of ['seat', 'winner']) if (typeof r[k] === 'number') r[k] = rotSeat(r[k], me);
-  if (typeof r.team === 'number') r.team = rotTeam(r.team, me);
-  if (Array.isArray(r.pts) && r.pts.length === 2 && me % 2) r.pts = [r.pts[1], r.pts[0]];
+  const swap = st.seats.length === 2 ? me === 2 : me % 2 === 1;
+  if (typeof r.team === 'number' && swap) r.team = 1 - r.team;
+  if (Array.isArray(r.pts) && r.pts.length === 2 && swap) r.pts = [r.pts[1], r.pts[0]];
   return r;
 }
 
@@ -29,7 +30,7 @@ class Runner {
     for (const s of [0, 1, 2, 3]) {
       const view = makeView(this.st, s);
       view.turn = this.turn === null ? null : rotSeat(this.turn, s);
-      this.io.send(s, { t: 'ev', ev: rotEvent(ev, s), view });
+      this.io.send(s, { t: 'ev', ev: rotEvent(ev, s, this.st), view });
     }
   }
   snapshot(seat) {
@@ -70,12 +71,12 @@ class Runner {
 
   async run() {
     const g = this.game, o = this.opts;
-    if (g === 'b') this.st = E.bNew({ players: 4, target: o.target || 3, reveal: false });
-    else if (g === 't') this.st = E.tNew({ players: 4, target: o.target || 41, akuze: o.akuze !== false, longNap: !!o.longNap, thirdsToLast: !!o.thirdsToLast, signals: o.signals !== false, clockwise: !!o.clockwise });
+    if (g === 'b') this.st = E.bNew({ players: o.players || 4, solo: !!o.solo, double: !!o.double, target: o.target || 3, reveal: false });
+    else if (g === 't') this.st = E.tNew({ players: o.players || 4, target: o.target || 41, akuze: o.akuze !== false, longNap: !!o.longNap, thirdsToLast: !!o.thirdsToLast, signals: o.signals !== false, clockwise: !!o.clockwise });
     else this.st = E.hNew({ target: o.target || 1001 });
     let cont = null;
     if (this.saved) { this.st = deser(this.saved.st); cont = this.saved.at; this.saved = null; }
-    else this.st.dealer = this.st.seats[Math.floor(Math.random() * 4)];
+    else this.st.dealer = this.st.seats[Math.floor(Math.random() * this.st.seats.length)];
     const st = this.st;
     while (true) {
       const mid = cont === 'turn' || cont === 'bid';

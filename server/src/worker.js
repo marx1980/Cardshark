@@ -24,12 +24,16 @@ const clean = s => String(s || '').replace(/[<>&"'`]/g, '').replace(/^[@\s]+/, '
 // table options: only the known settings, with values from the allowed set (anything else is dropped)
 const TARGETS = { b: [2, 3, 4], t: [21, 31, 41], h: [501, 701, 1001] };
 const DEF_TARGET = { b: 3, t: 41, h: 1001 };
+const B_MODES = { p4: { players: 4, activeSeats: [0, 1, 2, 3] }, s4: { players: 4, solo: true, activeSeats: [0, 1, 2, 3] }, s3: { players: 3, activeSeats: [0, 1, 3] }, d2: { players: 2, double: true, activeSeats: [0, 2] } };
 function cleanOpts(game, o) {
   o = o && typeof o === 'object' ? o : {};
   const target = TARGETS[game].includes(+o.target) ? +o.target : DEF_TARGET[game];
-  if (game !== 't') return { target };
+  if (game === 'b') return { ...(B_MODES[o.mode] || B_MODES.p4), mode: B_MODES[o.mode] ? o.mode : 'p4', target };
+  if (game === 'h') return { players: 4, activeSeats: [0, 1, 2, 3], target };
+  const players = +o.players === 2 ? 2 : 4;
+  const activeSeats = players === 2 ? [0, 2] : [0, 1, 2, 3];
   const flag = (k, d) => typeof o[k] === 'boolean' ? o[k] : d;
-  return { target, akuze: flag('akuze', true), longNap: flag('longNap', false), thirdsToLast: flag('thirdsToLast', false), signals: flag('signals', true), clockwise: flag('clockwise', false) };
+  return { players, activeSeats, target, akuze: flag('akuze', true), longNap: flag('longNap', false), thirdsToLast: flag('thirdsToLast', false), signals: flag('signals', true), clockwise: flag('clockwise', false) };
 }
 const nearestLevel = (g, r) => LEVELS.reduce((a, b) => Math.abs(TIER[g][b] - r) < Math.abs(TIER[g][a] - r) ? b : a);
 
@@ -126,7 +130,7 @@ export class Table {
   registry() { return this.env.REGISTRY.get(this.env.REGISTRY.idFromName('registry')); }
   async load() { if (!this.info) this.info = (await this.state.storage.get('info')) || null; }
   async save() { await this.state.storage.put('info', this.info); }
-  publicInfo() { const i = this.info; return { id: i.id, game: i.game, opts: i.opts, hostName: i.hostName, status: i.status, seats: i.seats.map(s => s ? { name: s.name, bot: !!s.bot, level: s.level || null, host: !!s.pid && s.pid === i.host } : null) }; }
+  publicInfo() { const i = this.info; return { id: i.id, game: i.game, opts: i.opts, activeSeats: i.opts.activeSeats || [0, 1, 2, 3], hostName: i.hostName, status: i.status, seats: i.seats.map(s => s ? { name: s.name, bot: !!s.bot, level: s.level || null, host: !!s.pid && s.pid === i.host } : null) }; }
   async announce() {
     await this.save();
     const info = this.publicInfo();
@@ -177,7 +181,7 @@ export class Table {
     // seat changes are cheap to send and costly to broadcast: at most a few per second per socket
     if (m.a === 'sit' || m.a === 'stand') { const now = Date.now(); ws.recent = (ws.recent || []).filter(t => now - t < 2000); if (ws.recent.length >= 6) return; ws.recent.push(now); }
     if (m.a === 'sit' && i.status === 'waiting') {
-      const s = m.seat | 0; if (s < 0 || s > 3 || i.seats[s]) return;
+      const s = m.seat | 0; if (!(i.opts.activeSeats || [0, 1, 2, 3]).includes(s) || i.seats[s]) return;
       if (seat >= 0) i.seats[seat] = null;
       i.seats[s] = { pid, name: clean(m.name) };
       await this.announce(); return;
@@ -212,7 +216,7 @@ export class Table {
     if (!need.length || n < need.length) return;
     this.againVotes = null; this.away.clear(); this.asks.clear(); this.runner = null; this.nextVotes = null;
     // bots are picked afresh; players who left the table give their seat to a bot
-    for (let s = 0; s < 4; s++) { const x = i.seats[s]; if (x && (x.bot || !this.socks.has(x.pid))) i.seats[s] = null; }
+    for (const s of (i.opts.activeSeats || [0, 1, 2, 3])) { const x = i.seats[s]; if (x && (x.bot || !this.socks.has(x.pid))) i.seats[s] = null; }
     await this.start();
   }
   botted() { return this.humanSeats().filter(s => this.away.has(s) || !this.socks.has(this.info.seats[s].pid)); }
@@ -222,12 +226,13 @@ export class Table {
     for (const s of this.humanSeats()) this.sendSeat(s, { t: 'bots', seats: b.map(x => ((x - s) % 4 + 4) % 4) });
   }
   namesFor(me) { const n = {}; for (let s = 0; s < 4; s++) { const x = this.info.seats[s]; n[((s - me) % 4 + 4) % 4] = x ? x.name : ''; } return n; }
-  humanSeats() { return [0, 1, 2, 3].filter(s => this.info.seats[s] && this.info.seats[s].pid); }
+  humanSeats() { return (this.info.opts.activeSeats || [0, 1, 2, 3]).filter(s => this.info.seats[s] && this.info.seats[s].pid); }
 
   // bot level: the level closest to the average rating of the humans it plays against
   levelFor(seat) {
     const g = this.info.game, hum = this.humanSeats();
-    const opp = hum.filter(s => s % 2 !== seat % 2), pool = opp.length ? opp : hum;
+    const individual = (g === 'b' && (this.info.opts.solo || this.info.opts.players === 3)) || ((g === 'b' || g === 't') && this.info.opts.players === 2);
+    const opp = hum.filter(s => individual ? s !== seat : s % 2 !== seat % 2), pool = opp.length ? opp : hum;
     if (!pool.length) return 'average';
     const avg = pool.reduce((x, s) => x + (this.ratings[this.info.seats[s].pid]?.r?.[g] ?? TIER[g].average), 0) / pool.length;
     return nearestLevel(g, avg);
@@ -238,7 +243,7 @@ export class Table {
     const pids = this.humanSeats().map(s => i.seats[s].pid);
     this.ratings = await (await this.registry().fetch('https://do/many', { method: 'POST', body: JSON.stringify({ pids }) })).json();
     const used = new Set();
-    for (let s = 0; s < 4; s++) {
+    for (const s of (i.opts.activeSeats || [0, 1, 2, 3])) {
       this.levels[s] = this.levelFor(s);
       if (i.seats[s]) continue;
       // the app turns '@level:n' into an animal name for that level (herbivores up to apex predators)
@@ -246,7 +251,7 @@ export class Table {
       i.seats[s] = { bot: true, name: '@' + this.levels[s] + ':' + n, level: this.levels[s] };
     }
     await this.announce();
-    for (let s = 0; s < 4; s++) this.sendSeat(s, { t: 'start', names: this.namesFor(s) });
+    for (const s of (i.opts.activeSeats || [0, 1, 2, 3])) this.sendSeat(s, { t: 'start', names: this.namesFor(s) });
     i.levels = { ...this.levels }; await this.save(); await this.state.storage.delete('game');
     this.runner = new Runner(i.game, i.opts, this.makeIo());
     this.runner.run().then(w => this.finish(w)).catch(e => this.crashed(e));
@@ -305,7 +310,14 @@ export class Table {
   doneNext() { if (!this.nextVotes) return; clearTimeout(this.nextTimer); this.nextVotes = null; const r = this.nextResolve; this.nextResolve = null; r(); }
   async finish(winner) {
     const i = this.info, g = i.game;
-    const teams = [[0, 2], [1, 3]].map(t => t.map(s => i.seats[s].pid ? { pid: i.seats[s].pid, name: i.seats[s].name } : { r: TIER[g][this.levels[s]] }));
+    const active = i.opts.activeSeats || [0, 1, 2, 3];
+    let groups;
+    if (i.game === 'b' && (i.opts.solo || i.opts.players === 3)) {
+      const winnerSeat = this.runner.st.seats[winner];
+      groups = [[winnerSeat], active.filter(s => s !== winnerSeat)];
+    } else if ((i.game === 'b' || i.game === 't') && i.opts.players === 2) groups = [[0], [2]];
+    else groups = [[0, 2], [1, 3]];
+    const teams = groups.map(team => team.map(s => i.seats[s].pid ? { pid: i.seats[s].pid, name: i.seats[s].name } : { r: TIER[g][this.levels[s]] }));
     let changes = {};
     if (this.humanSeats().length) changes = await (await this.registry().fetch('https://do/result', { method: 'POST', body: JSON.stringify({ game: g, teams, winner }) })).json();
     for (const s of this.humanSeats()) this.sendSeat(s, { t: 'rating', change: changes[i.seats[s].pid] || null });

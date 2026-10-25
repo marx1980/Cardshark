@@ -3,7 +3,7 @@
 const HIDDEN = { id: 'x', hidden: true };
 function makeView(st, me) {
   const k = me, rot = s => (s === null || s === undefined || s < 0) ? s : ((s - k) % 4 + 4) % 4;
-  const swap = k % 2 === 1;                                // my team becomes team 0
+  const swap = st.seats.length === 2 ? k === 2 : k % 2 === 1; // my team becomes team 0
   const tm = a => (Array.isArray(a) && a.length === 2 && swap) ? [a[1], a[0]] : (Array.isArray(a) ? a.slice() : a);
   const tmIdx = t => (t === 0 || t === 1) && swap ? 1 - t : t;
   const keyed = (o, f = x => x) => { if (!o) return o; const r = {}; for (const s in o) r[rot(+s)] = f(o[s], +s); return r; };
@@ -43,4 +43,4 @@ function makeView(st, me) {
   }
   return v;
 }
-module.exports = { makeView, rotSeat: (s, me) => ((s - me) % 4 + 4) % 4, rotTeam: (t, me) => (me % 2 && (t === 0 || t === 1)) ? 1 - t : t };
+module.exports = { makeView, rotSeat: (s, me) => ((s - me) % 4 + 4) % 4, rotTeam: (t, me, twoPlayer = false) => ((twoPlayer ? me === 2 : me % 2 === 1) && (t === 0 || t === 1)) ? 1 - t : t };
