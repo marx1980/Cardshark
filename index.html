@@ -5333,7 +5333,7 @@ function renderBar() {
     else $('#scoreChip').innerHTML = `<span class="k">${t.we}</span><b>${G.wins[0]}</b>:<b>${G.wins[1]}</b><span class="k">${t.they}</span>`;
   } else if (G.game === 't') {
     $('#trumpChip').style.cursor = 'default';
-    $('#trumpChip').innerHTML = `<b>Trešeta</b>`;
+    $('#trumpChip').innerHTML = `<b>${gameName('t')}</b>`;
     $('#scoreChip').classList.remove('tight');
     $('#scoreChip').innerHTML = `<span class="k">${t.we}</span><b>${G.score[0]}</b>:<b>${G.score[1]}</b><span class="k">${t.they}</span>`;
   } else {
