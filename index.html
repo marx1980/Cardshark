@@ -4647,6 +4647,7 @@ const SPEED = () => S.speed === 'fast' ? { ai: 320, trick: 600, deal: 200 } : { 
 const hrBod = n => n % 10 === 1 && n % 100 !== 11 ? 'bod' : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % 100 > 14) ? 'boda' : 'bodova';
 const STR = {
   hr: {
+    gameNames: { b: 'Briškula', t: 'Trešeta', h: 'Bela' },
     tagline: 'Briškula i bela za kafanskim stolom — ti i tri igrača s druge strane.',
     bSub: 'Tršćanske karte · 40 karata · adut je briškula', hSub: 'Mađarice · 32 karte · zvanja, bela, 1001',
     players: 'Igrači', p2: '2 · jedan na jedan', p4: '4 · u paru',
@@ -4668,7 +4669,7 @@ const STR = {
       cols: { r: 'Crvena', y: 'Žuta', g: 'Zelena', b: 'Plava', p: 'Ružičasta', t: 'Tirkizna', o: 'Narančasta', v: 'Ljubičasta' } },
     sol: { name: 'Pasijans', score: 'Bodovi', time: 'Vrijeme', moves: 'Potezi', newGame: 'Nova igra', restart: 'Ista podjela', hint: 'Savjet', undo: 'Natrag', auto: 'Završi', won: 'Pasijans je složen!', noMoves: 'Nema više poteza', home: 'Izbornik',
       draw: 'Vučenje', draw1: '1 karta', draw3: '3 karte', passes: 'Prolazi kroz špil', inf: 'Bez ograničenja', scoring: 'Bodovanje', standard: 'Standardno', vegas: 'Vegas', none: 'Bez bodova', timed: 'Bodovi ovise o vremenu', tapMove: 'Dodir sam premješta kartu', left: 'Špil na desnoj strani', cont: 'Nastavi', played: 'Odigrano', wonN: 'Riješeno', best: 'Najbolje vrijeme', bestScore: 'Najviše bodova', streak: 'Niz pobjeda' },
-    online: 'Online', rejoin: 'Nastavi online igru', gameGone: 'Ta igra više ne postoji', playAgain: 'Igraj opet', waitOthers: (n, m) => `Čeka se ostale · ${n}/${m}`, tables: 'Otvoreni stolovi', newTable: 'Novi stol', noTables: 'Nema otvorenih stolova', host: 'Domaćin', yourName: 'Tvoje ime', sit: 'Sjedni', free: 'Slobodno', startT: 'Započni', waitHost: 'Čeka se domaćin', invite: 'Pozovi', leaveT: 'Izađi', botPlays: 'Bot igra za tebe', takeOver: 'Preuzmi', rating: 'Rejting', offline: 'Nema veze sa serverom', reconnecting: 'Ponovno spajanje…', copied: 'Poveznica kopirana', bots: 'Prazna mjesta igraju botovi', create: 'Otvori stol',
+    online: 'Online', rejoin: 'Nastavi online igru', gameGone: 'Ta igra više ne postoji', playAgain: 'Igraj opet', waitOthers: (n, m) => `Čeka se ostale · ${n}/${m}`, tables: 'Otvoreni stolovi', newTable: 'Novi stol', noTables: 'Nema otvorenih stolova', host: 'Domaćin', yourName: 'Tvoje ime', sit: 'Sjedni', free: 'Slobodno', startT: 'Započni', waitHost: 'Čeka se domaćin', invite: 'Pozovi', leaveT: 'Izađi', leaveConfirm: 'Izaći sa stola?', botPlays: 'Bot igra za tebe', takeOver: 'Preuzmi', rating: 'Rejting', offline: 'Nema veze sa serverom', reconnecting: 'Ponovno spajanje…', copied: 'Poveznica kopirana', bots: 'Prazna mjesta igraju botovi', create: 'Otvori stol',
     level: 'Protivnici', partner: 'Partner', stats: 'Statistika', lvShort: { novice: 'Poč.', average: 'Pros.', pro: 'Pro', cardshark: 'Shark' }, lv: { novice: 'Početnik', average: 'Prosječan', pro: 'Pro', cardshark: 'Cardshark' },
     speed: 'Brzina', normal: 'Normalno', fast: 'Brzo', tap: 'Igranje karte', tap1: 'Jedan dodir', tap2: 'Dva dodira',
     rules: 'Pravila', rulesB: 'Pravila briškule', rulesH: 'Pravila bele',
@@ -4725,15 +4726,16 @@ const STR = {
     sHacc: ['herc', 'bundevu', 'zeleni', 'žir'], sBacc: ['kupe', 'dinare', 'špade', 'baštone']
   },
   en: {
-    tagline: 'Briškula and Bela at the café table — you against three computer players.',
-    bSub: 'Triestine cards · 40 cards · trump is the briškula', hSub: 'Mađarice · 32 cards · declarations, bela, 1001',
+    gameNames: { b: 'Briscola', t: 'Tressette', h: 'Belote' },
+    tagline: 'Briscola and Belote at the café table — you against three computer players.',
+    bSub: 'Triestine cards · 40 cards · trump suit (briscola)', hSub: 'German-suited cards · 32 cards · declarations, belote, 1001',
     players: 'Players', p2: '2 · head to head', p4: '4 · partners',
     mode: 'Mode', classic: 'Classic · 3 cards', double: 'Double · 4 cards',
     doubleNote: 'Double: everyone holds 4 cards and plays twice to the same trick, then draws two.',
     matchTo: 'Match to', winsN: n => `${n} hands won`,
     reveal: 'Partner shows their cards once the deck runs out',
     hTo: 'Play to', start: 'Play',
-    remi: { name: 'Remi', players: 'Players', target: 'Play to', one: 'One round', you: 'You', round: 'Round', meld: 'Meld', open: 'Open', untake: 'Put back', discard: 'Discard', sort: 'Sort', took: 'takes the discard', opened: 'opens', remi: 'remi!', left: 'Cards', pts: 'Points', total: 'Total', closed: 'not open', next: 'Next round', again: 'New game',
+    remi: { name: 'Rummy', players: 'Players', target: 'Play to', one: 'One round', you: 'You', round: 'Round', meld: 'Meld', open: 'Open', untake: 'Put back', discard: 'Discard', sort: 'Sort', took: 'takes the discard', opened: 'opens', remi: 'remi!', left: 'Cards', pts: 'Points', total: 'Total', closed: 'not open', next: 'Next round', again: 'New game',
       roundWon: n => `${n} · round`, matchWon: n => `${n} · winner`, noWinner: 'The stock ran out',
       err: { 51: '51 needed to open', mustUse: 'Use the card you took', joker: 'Use the joker', keep: 'Keep one card to discard', meld: 'Not a meld', cantUse: 'You can’t use that card now', notOpen: 'Open first', turn: 'Not your turn', swap: 'Not possible', bad: 'Not possible' } },
     poker: { name: 'Poker', holdem: "Texas Hold'em", draw: 'Five-card draw', players: 'Players', blindsUp: 'Blinds go up', slow: 'Every 10 hands', fast: 'Every 5 hands', you: 'You', blinds: 'Blinds',
@@ -4746,10 +4748,10 @@ const STR = {
       cols: { r: 'Red', y: 'Yellow', g: 'Green', b: 'Blue', p: 'Pink', t: 'Teal', o: 'Orange', v: 'Purple' } },
     sol: { name: 'Solitaire', score: 'Score', time: 'Time', moves: 'Moves', newGame: 'New game', restart: 'Same deal', hint: 'Hint', undo: 'Undo', auto: 'Finish', won: 'Solved!', noMoves: 'No more moves', home: 'Menu',
       draw: 'Draw', draw1: '1 card', draw3: '3 cards', passes: 'Passes through the stock', inf: 'Unlimited', scoring: 'Scoring', standard: 'Standard', vegas: 'Vegas', none: 'None', timed: 'Timed scoring', tapMove: 'Tap moves the card for you', left: 'Stock on the right', cont: 'Continue', played: 'Played', wonN: 'Solved', best: 'Best time', bestScore: 'Best score', streak: 'Win streak' },
-    online: 'Online', rejoin: 'Rejoin online game', gameGone: 'That game no longer exists', playAgain: 'Play again', waitOthers: (n, m) => `Waiting for others · ${n}/${m}`, tables: 'Open tables', newTable: 'New table', noTables: 'No open tables', host: 'Host', yourName: 'Your name', sit: 'Sit', free: 'Free', startT: 'Start', waitHost: 'Waiting for the host', invite: 'Invite', leaveT: 'Leave', botPlays: 'A bot is playing for you', takeOver: 'Take over', rating: 'Rating', offline: 'Can’t reach the server', reconnecting: 'Reconnecting…', copied: 'Link copied', bots: 'Empty seats are played by bots', create: 'Open table',
+    online: 'Online', rejoin: 'Rejoin online game', gameGone: 'That game no longer exists', playAgain: 'Play again', waitOthers: (n, m) => `Waiting for others · ${n}/${m}`, tables: 'Open tables', newTable: 'New table', noTables: 'No open tables', host: 'Host', yourName: 'Your name', sit: 'Sit', free: 'Free', startT: 'Start', waitHost: 'Waiting for the host', invite: 'Invite', leaveT: 'Leave', leaveConfirm: 'Leave the table?', botPlays: 'A bot is playing for you', takeOver: 'Take over', rating: 'Rating', offline: 'Can’t reach the server', reconnecting: 'Reconnecting…', copied: 'Link copied', bots: 'Empty seats are played by bots', create: 'Open table',
     level: 'Opponents', partner: 'Partner', stats: 'Stats', lvShort: { novice: 'Nov.', average: 'Avg.', pro: 'Pro', cardshark: 'Shark' }, lv: { novice: 'Novice', average: 'Average', pro: 'Pro', cardshark: 'Cardshark' },
     speed: 'Speed', normal: 'Normal', fast: 'Fast', tap: 'Playing a card', tap1: 'One tap', tap2: 'Two taps',
-    rules: 'Rules', rulesB: 'Briškula rules', rulesH: 'Bela rules',
+    rules: 'Rules', rulesB: 'Briscola rules', rulesH: 'Belote rules',
     settings: 'Settings', language: 'Language',
     sumT: () => `${S.tMode === 2 ? '2 players' : '4 players · pairs'} · to ${S.tTarget}`, tModeN: n => n === 2 ? '2 · head to head' : '4 · pairs',
     akuza: 'Declares', akuzaPts: 'declarations', drew: 'Drew ',
@@ -4760,7 +4762,7 @@ const STR = {
     akuzaName: d => d.type === 'napolitana' ? 'napolitana' : `${d.type === 'four' ? 'four' : 'three'} ${({ '3': 'threes', '2': 'twos', A: 'aces' })[d.r]}`,
     playersN: n => `${n} players`, modeN: n => ({ p4: '4 · pairs', s4: '4 · each for themselves', s3: '3 players', d2: '2 · double hand' })[n],
     handWonBy: n => `${n} wins the hand.`, handTie: 'Tie.', pairNote: 'Double: 4 cards, everyone plays twice per trick.', cardsN: n => n === 4 ? '4 cards · double' : '3 cards',
-    sumB: () => `${({ p4: '4 players · pairs', s4: '4 players · solo', s3: '3 players', d2: '2 players · double' })[S.bMode]} · first to ${S.bTarget}`, sumH: () => `4 players · to ${S.hTarget}`, deckB: 'Briškula & Trešeta cards', deckF: 'French cards', deckH: 'Bela cards', lowRes: 'lower resolution',
+    sumB: () => `${({ p4: '4 players · pairs', s4: '4 players · solo', s3: '3 players', d2: '2 players · double' })[S.bMode]} · first to ${S.bTarget}`, sumH: () => `4 players · to ${S.hTarget}`, deckB: 'Briscola & Tressette cards', deckF: 'French cards', deckH: 'Belote cards', lowRes: 'lower resolution',
     credit: 'Card images are photographs of real decks (Modiano, Masenghini, Dal Negro, Fournier, Piatnik).',
     foot: 'You play against the computer. Settings are kept on this device.',
     names: { 0: 'You', 1: 'Ante', 2: 'Mare', 3: 'Jure' }, names2: { 0: 'You', 2: 'Ante' },
@@ -4770,10 +4772,10 @@ const STR = {
     pass: 'Pass', mustCall: 'Dealer must call', callPrompt: 'Your turn: call trump or pass',
     calls: (n, s) => `${n} calls ${s}`, called: s => `${s}!`,
     bidWait: n => `${n} is deciding…`,
-    belaCall: 'Bela!', belot: 'BELOT!', declWord: 'Declares',
+    belaCall: 'Belote!', belot: 'BELOT!', declWord: 'Declares',
     declWin: (t, v) => `Declarations count for: ${t} +${v}`, declNone: 'No declarations',
-    belaToggle: 'Call bela', belaHint: 'Switch off to keep quiet about bela with this card',
-    zvTitle: 'Declarations', zvShort: 'Decl.', zvNotYet: 'Declarations are shown once trump is called.', zvMyBela: 'You hold bela – it is called when you play the trump king or ober',
+    belaToggle: 'Call belote', belaHint: 'Switch off to keep quiet about belote with this card',
+    zvTitle: 'Declarations', zvShort: 'Decl.', zvNotYet: 'Declarations are shown once trump is called.', zvMyBela: 'You hold belote – it is called when you play the trump king or ober',
    
     why: {
       only: 'Your only legal card.', last: 'Your last card.',
@@ -4808,7 +4810,7 @@ const L = () => STR[S.lang];
 // ---------- rules text ----------
 const RULES = {
   hr: {
-    r: `<h3>Remi</h3>
+    r: `<h3>Rummy</h3>
 <h4>Karte i djeljenje</h4><ul><li>Dva špila i četiri jokera, 2–6 igrača. Svatko dobiva 14 karata, a prvi igrač 15 i počinje bacanjem jedne karte.</li></ul>
 <h4>Potez</h4><ul><li>Vuče se karta sa špila ili gornja karta s hrpe – nju se mora iskoristiti u istom potezu. Potez završava bacanjem karte.</li></ul>
 <h4>Kombinacije</h4><ul><li>Tri ili četiri iste karte različitih boja, ili tri i više karata zaredom u istoj boji (as dolje ili gore, bez prelaska K-A-2). U kombinaciji je najviše jedan joker.</li></ul>
@@ -4833,7 +4835,7 @@ const RULES = {
 <h4>Špil</h4><ul><li>Vuče se po 1 ili po 3 karte; od tri je igriva samo gornja.</li><li>Kad se špil potroši, otpad se okreće natrag, onoliko puta koliko dopušta postavka.</li></ul>
 <h4>Bodovanje</h4><ul><li>Standardno: otpad → stupac 5, na temelj 10, okrenuta karta 5, s temelja natrag −15, okretanje špila −100 (vučenje po 1). Na vrijeme: −2 svakih 10 s i bonus 700 000 ÷ sekunde na kraju.</li><li>Vegas: ulog 52 $, svaka karta na temelju 5 $.</li></ul>
 <h4>Upravljanje</h4><ul><li>Dodir karte je seli na najbolje mjesto; kartu ili niz možeš i povući.</li><li>Natrag poništava poteze, Savjet pokazuje potez, Završi slaže sve kad su sve karte otvorene.</li></ul>`,
-    b: `<h3>Briškula</h3>
+    b: `<h3>Briscola</h3>
 <p class="muted">Tršćanski špil od 40 karata: kupe, dinari, špade i baštoni. Figure su fanat (11), konj (12) i kralj (13).</p>
 <h4>Jačina i bodovi</h4>
 <div class="rank"><div><span>As (1)</span><b>11</b></div><div><span>Trica (3)</span><b>10</b></div><div><span>Kralj (13)</span><b>4</b></div><div><span>Konj (12)</span><b>3</b></div><div><span>Fanat (11)</span><b>2</b></div><div><span>7, 6, 5, 4, 2</span><b>0</b></div></div>
@@ -4846,7 +4848,7 @@ const RULES = {
 <li>U četvero igraju parovi jedan nasuprot drugome: ti i partner protiv dva protivnika.</li></ul>
 <h4>Dupla briškula</h4>
 <p>Dijele se 4 karte. Svatko igra dvaput u istom štihu (krug pa još jedan krug), najjača karta nosi sve, a zatim svi vuku po dvije karte.</p>`,
-    t: `<h3>Trešeta</h3>
+    t: `<h3>Tressette</h3>
 <p class="muted">Isti špil od 40 karata kao za briškulu. Nema aduta. Igra se u dva para (ti i partner protiv dva protivnika) ili jedan na jedan.</p>
 <h4>Jačina i bodovi</h4>
 <div class="rank"><div><span>Trica</span><b>⅓</b></div><div><span>Dvica</span><b>⅓</b></div><div><span>As</span><b>1</b></div><div><span>Kralj, konj, fanat</span><b>⅓</b></div><div><span>7, 6, 5, 4</span><b>0</b></div><div><span>Zadnji štih</span><b>+1</b></div></div>
@@ -4865,7 +4867,7 @@ const RULES = {
 <li><b>Strišo</b> – imam još puno karata te boje.</li>
 <li><b>Volo</b> – ovo mi je zadnja karta te boje.</li></ul>
 <p class="muted">Akuže, dugu napolitanu, ostatak trećina, znakove i smjer igre možeš uključiti ili isključiti pod „Lokalna pravila“ prije početka partije.</p>`,
-    h: `<h3>Bela</h3>
+    h: `<h3>Belote</h3>
 <p class="muted">Mađarice, 32 karte: herc, bundeva, zeleni i žir. Igraju se dva para: ti i partner protiv dva protivnika. Sve ide suprotno od kazaljke.</p>
 <h4>Jačina i bodovi</h4>
 <div class="rank"><div><span>Adut: dečko (unter)</span><b>20</b></div><div><span>Adut: devetka</span><b>14</b></div><div><span>As</span><b>11</b></div><div><span>Desetka</span><b>10</b></div><div><span>Kralj</span><b>4</b></div><div><span>Baba (ober)</span><b>3</b></div><div><span>Dečko izvan aduta</span><b>2</b></div><div><span>Zadnji štih</span><b>+10</b></div></div>
@@ -4887,12 +4889,12 @@ const RULES = {
 <li>Igra se do 1001 (ili 501 / 701).</li></ul>`
   },
   en: {
-    r: `<h3>Remi</h3>
+    r: `<h3>Rummy</h3>
 <h4>Cards and deal</h4><ul><li>Two decks and four jokers, 2–6 players. Everyone gets 14 cards; the first player gets 15 and starts by discarding one.</li></ul>
 <h4>A turn</h4><ul><li>Draw from the stock or take the top discard – which must be used in the same turn. End the turn by discarding a card.</li></ul>
 <h4>Melds</h4><ul><li>Three or four of a rank in different suits, or three or more in a row in one suit (ace low or high, no K-A-2). At most one joker per meld.</li></ul>
 <h4>Opening</h4><ul><li>Your first lay-down must be worth at least 51: 2–10 as numbered, J, Q, K 10, ace 1 at the bottom of a run and 10 otherwise, a joker as the card it stands for.</li><li>Once open you may add cards to any meld on the table, and swap a joker for the card it stands for – that joker must be used in the same turn.</li></ul>
-<h4>End of a round and scoring</h4><ul><li>The round ends when someone discards their last card: they score −40. Everyone else scores the cards left in hand (ace and pictures 10, joker 25), or 100 if they never opened.</li><li>Remi – going out all at once without having opened before: −100 for the winner, and everyone else's points are doubled.</li><li>When the stock runs out, the discards are shuffled once; when it runs out again, the round ends without a winner.</li><li>Play continues until someone reaches the target; the lowest score wins.</li></ul>`,
+<h4>End of a round and scoring</h4><ul><li>The round ends when someone discards their last card: they score −40. Everyone else scores the cards left in hand (ace and pictures 10, joker 25), or 100 if they never opened.</li><li>Going out in one turn without having opened before: −100 for the winner, and everyone else's points are doubled.</li><li>When the stock runs out, the discards are shuffled once; when it runs out again, the round ends without a winner.</li><li>Play continues until someone reaches the target; the lowest score wins.</li></ul>`,
     p: `<h3>Poker</h3>
 <h4>Tournament</h4><ul><li>Everyone starts with 1,000 chips. Blinds go up every 10 (or 5) hands. A player out of chips is out; the last player with chips wins.</li><li>The first player left of the dealer posts the small blind, the next the big blind.</li><li>On your turn: fold, call (or check when there is nothing to call), or raise (by at least the last raise). No limit.</li></ul>
 <h4>Texas Hold'em</h4><ul><li>Everyone gets 2 cards. Three shared cards are dealt (the flop), then one (the turn) and one more (the river), with a betting round before each and after the last.</li><li>The best five-card hand from your 2 and the 5 shared cards wins the pot.</li></ul>
@@ -4912,29 +4914,29 @@ const RULES = {
 <h4>Stock</h4><ul><li>Draw 1 or 3 cards; with 3, only the top one is playable.</li><li>When the stock runs out, the waste turns back over as many times as the setting allows.</li></ul>
 <h4>Scoring</h4><ul><li>Standard: waste → pile 5, to a foundation 10, turning a card 5, foundation back to a pile −15, recycling the stock −100 (draw 1). Timed: −2 every 10 s and a bonus of 700,000 ÷ seconds at the end.</li><li>Vegas: $52 stake, $5 for every card on a foundation.</li></ul>
 <h4>Controls</h4><ul><li>Tap a card to send it to the best place, or drag a card or run.</li><li>Undo takes moves back, Hint shows a move, Finish plays everything out once all cards are face up.</li></ul>`,
-    b: `<h3>Briškula</h3>
+    b: `<h3>Briscola</h3>
 <p class="muted">Triestine 40-card deck: cups, coins, swords and clubs. The court cards are the fante (11), cavallo/knight (12) and king (13).</p>
 <h4>Rank and points</h4>
 <div class="rank"><div><span>Ace (1)</span><b>11</b></div><div><span>Three (3)</span><b>10</b></div><div><span>King (13)</span><b>4</b></div><div><span>Knight (12)</span><b>3</b></div><div><span>Fante (11)</span><b>2</b></div><div><span>7, 6, 5, 4, 2</span><b>0</b></div></div>
 <p>The deck holds 120 points. You need 61 to win a hand; 60 : 60 is a draw.</p>
 <h4>Play</h4>
-<ul><li>Everyone gets 3 cards. The next card goes face up under the deck; its suit is the <b>briškula</b> (trump) and that card is drawn last.</li>
+<ul><li>Everyone gets 3 cards. The next card goes face up under the deck; its suit is the <b>briscola</b> (trump) and that card is drawn last.</li>
 <li>The player to the dealer's right leads; play goes counter-clockwise.</li>
 <li>You never have to follow suit or trump. The highest trump wins the trick; with no trump, the highest card of the suit led wins.</li>
 <li>After each trick everyone draws one card, starting with the trick winner. Once the deck is gone, play out the remaining cards.</li>
 <li>With four players, partners sit opposite: you and your partner against two opponents.</li></ul>
-<h4>Double briškula</h4>
+<h4>Double Briscola</h4>
 <p>Four cards each. Everyone plays twice to the same trick (one round, then another), the best card takes all of them, then everyone draws two.</p>`,
-    t: `<h3>Trešeta</h3>
-<p class="muted">The same 40-card deck as briškula. No trumps. Played in two pairs (you and your partner against two opponents) or head to head.</p>
+    t: `<h3>Tressette</h3>
+<p class="muted">The same 40-card deck as Briscola. No trumps. Played in two pairs (you and your partner against two opponents) or head to head.</p>
 <h4>Rank and points</h4>
 <div class="rank"><div><span>Three</span><b>⅓</b></div><div><span>Two</span><b>⅓</b></div><div><span>Ace</span><b>1</b></div><div><span>King, knight, fante</span><b>⅓</b></div><div><span>7, 6, 5, 4</span><b>0</b></div><div><span>Last trick</span><b>+1</b></div></div>
-<p>Each suit ranks 3, 2, ace, king, knight, fante, 7, 6, 5, 4. Threes, twos and court cards ("bele") are worth a third of a point. Each pair adds up its thirds and drops the remainder, so a hand is worth 10 or 11 points.</p>
+<p>Each suit ranks 3, 2, ace, king, knight, jack, 7, 6, 5, 4. Threes, twos and court cards are worth a third of a point. Each pair adds up its thirds and drops the remainder, so a hand is worth 10 or 11 points.</p>
 <h4>Play</h4>
 <ul><li>Everyone gets 10 cards. With two players the rest is a stock: after each trick the winner draws first, and every drawn card is shown to the opponent.</li>
 <li>You must follow suit. If you can't, play anything, but that card can't win.</li>
 <li>The highest card of the suit led wins the trick.</li></ul>
-<h4>Declarations (akuže)</h4>
+<h4>Declarations</h4>
 <div class="rank"><div><span>Three 3s, 2s or aces</span><b>3</b></div><div><span>Four 3s, 2s or aces</span><b>4</b></div><div><span>Napolitana (ace, 2, 3 of a suit)</span><b>3</b></div></div>
 <p>Declarations are made before the first card and score straight away.</p>
 <h4>Winning</h4>
@@ -4944,8 +4946,8 @@ const RULES = {
 <li><b>Slide (strišo)</b> – I still have many cards of this suit.</li>
 <li><b>Last one (volo)</b> – this is my last card of the suit.</li></ul>
 <p class="muted">Declarations, long napolitana, leftover thirds, signals and direction of play can be switched on or off under "Local rules" before a match.</p>`,
-    h: `<h3>Bela</h3>
-<p class="muted">German-suited mađarice, 32 cards: hearts, bells, leaves and acorns. Two pairs play: you and your partner against two opponents. Everything goes counter-clockwise.</p>
+    h: `<h3>Belote</h3>
+<p class="muted">German-suited cards, 32 cards: hearts, bells, leaves and acorns. Two pairs play: you and your partner against two opponents. Everything goes counter-clockwise.</p>
 <h4>Rank and points</h4>
 <div class="rank"><div><span>Trump unter (jack)</span><b>20</b></div><div><span>Trump nine</span><b>14</b></div><div><span>Ace</span><b>11</b></div><div><span>Ten</span><b>10</b></div><div><span>King</span><b>4</b></div><div><span>Ober (queen)</span><b>3</b></div><div><span>Non-trump unter</span><b>2</b></div><div><span>Last trick</span><b>+10</b></div></div>
 <p>Trump order: unter, 9, ace, 10, king, ober, 8, 7. Other suits: ace, 10, king, ober, unter, 9, 8, 7. 162 points in total.</p>
@@ -4953,8 +4955,8 @@ const RULES = {
 <ul><li>Everyone gets 6 cards plus 2 face-down talon cards. Looking only at the 6, players in turn call a trump suit or pass. The dealer speaks last and must call.</li>
 <li>Once trump is called, everyone picks up the talon and holds 8 cards.</li></ul>
 <h4>Declarations (zvanja)</h4>
-<div class="rank"><div><span>3 in a row</span><b>20</b></div><div><span>4 in a row</span><b>50</b></div><div><span>5–7 in a row</span><b>100</b></div><div><span>Four unters</span><b>200</b></div><div><span>Four nines</span><b>150</b></div><div><span>Four aces, 10s, kings, obers</span><b>100</b></div><div><span>Bela (trump king + ober)</span><b>20</b></div><div><span>Belot (8 in a row)</span><b>wins</b></div></div>
-<p>Sequences run 7, 8, 9, 10, unter, ober, king, ace. Only the pair holding the best declaration scores (higher value, then higher top card, then whoever is earlier in turn), but then all of that pair's declarations count. Bela always counts for its holder and is announced when the first of the two cards is played. Declarations only count if the pair wins at least one trick.</p>
+<div class="rank"><div><span>3 in a row</span><b>20</b></div><div><span>4 in a row</span><b>50</b></div><div><span>5–7 in a row</span><b>100</b></div><div><span>Four jacks</span><b>200</b></div><div><span>Four nines</span><b>150</b></div><div><span>Four aces, 10s, kings, queens</span><b>100</b></div><div><span>Belote (trump king + queen)</span><b>20</b></div><div><span>Belot (8 in a row)</span><b>wins</b></div></div>
+<p>Sequences run 7, 8, 9, 10, jack, queen, king, ace. Only the pair holding the best declaration scores (higher value, then higher top card, then whoever is earlier in turn), but then all of that pair's declarations count. Belote always counts for its holder and is announced when the first of the two cards is played. Declarations only count if the pair wins at least one trick.</p>
 <h4>Playing</h4>
 <ul><li>You must follow suit and, if you can, beat every card already in the trick.</li>
 <li>If someone has already trumped, follow suit with any card of that suit.</li>
@@ -5015,11 +5017,11 @@ function renderHome() {
       ${SERVER ? `<button class="ib" id="goOnline" aria-label="${t.online}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z"/></svg></button>` : ''}
       <button class="ib" id="goStats" aria-label="${t.stats}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M5 20V11M12 20V5M19 20v-6"/></svg></button>
       <button class="ib" id="goSet" aria-label="${t.settings}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button></header>
-    ${SERVER && S.netTable && Date.now() - S.netTable.at < 6 * 3600e3 ? `<button class="rejoin" id="goRejoin"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.7"/><path d="M20 4v5h-5"/></svg>${t.rejoin} · ${({ b: 'Briškula', t: 'Trešeta', h: 'Bela' })[S.netTable.game] || ''}</button>` : ''}
-    <button class="poster pb" id="goB">${fan('b', fanB)}<span class="pcap"><span><b>Briškula</b></span><span class="go">${arrow}</span></span></button>
-    <button class="poster pt" id="goT">${fan('b', fanT)}<span class="pcap"><span><b>Trešeta</b></span><span class="go">${arrow}</span></span></button>
+    ${SERVER && S.netTable && Date.now() - S.netTable.at < 6 * 3600e3 ? `<button class="rejoin" id="goRejoin"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.7"/><path d="M20 4v5h-5"/></svg>${t.rejoin} · ${gameName(S.netTable.game) || ''}</button>` : ''}
+    <button class="poster pb" id="goB">${fan('b', fanB)}<span class="pcap"><span><b>${gameName('b')}</b></span><span class="go">${arrow}</span></span></button>
+    <button class="poster pt" id="goT">${fan('b', fanT)}<span class="pcap"><span><b>${gameName('t')}</b></span><span class="go">${arrow}</span></span></button>
     <button class="poster ps" id="goS"><div class="pfan">${[['H', 1], ['S', 13], ['D', 12]].map(([s_, r], i) => `<div class="svgc" style="--i:${i - 1}">${Solitaire.FACE({ s: s_, r })}</div>`).join('')}</div><span class="pcap"><span><b>${t.sol.name}</b></span><span class="go">${arrow}</span></span></button>
-    <button class="poster ph" id="goH">${fan('h', fanH)}<span class="pcap"><span><b>Bela</b></span><span class="go">${arrow}</span></span></button>
+    <button class="poster ph" id="goH">${fan('h', fanH)}<span class="pcap"><span><b>${gameName('h')}</b></span><span class="go">${arrow}</span></span></button>
     <button class="poster pk" id="goP"><div class="pfan">${['Sa', 'Ha', 'Ck'].map((k, i) => `<div class="svgc" style="--i:${i - 1}">${Cards.frFace(k, S.fDeck)}</div>`).join('')}</div><span class="pcap"><span><b>${t.poker.name}</b></span><span class="go">${arrow}</span></span></button>
     <button class="poster pu" id="goU"><div class="pfan">${(S.uVar === 'flip' ? [[{ c: 'p', k: 'n', n: 7 }, 'D'], [{ c: null, k: 'wdc' }, 'D'], [{ c: 't', k: 'skipall' }, 'D']] : [[{ c: 'r', k: 'n', n: 7 }, 'L'], [{ c: null, k: 'wild' }, 'L'], [{ c: 'b', k: 'rev' }, 'L']]).map(([f, sd], i) => `<div class="svgc" style="--i:${i - 1}">${UnoUI.faceSVG(f, sd)}</div>`).join('')}</div><span class="pcap"><span><b>${t.uno.name}</b></span><span class="go">${arrow}</span></span></button>
     <button class="poster pr" id="goR"><div class="pfan">${[['S', 7], ['S', 8], null].map((c, i) => `<div class="svgc" style="--i:${i - 1}">${c ? Cards.frFace(c[0] + c[1], S.fDeck) : Cards.frJoker(S.fDeck, 'R')}</div>`).join('')}</div><span class="pcap"><span><b>${t.remi.name}</b></span><span class="go">${arrow}</span></span></button>
@@ -5049,7 +5051,7 @@ function showGameSheet(game) {
     : game === 't' ? `<div class="glab">${t.players}</div>` + seg('tMode', [[4, t.tModeN(4)], [2, t.tModeN(2)]]) + lvl + `<div class="gsep"></div><div class="glab">${t.hTo}</div>` + seg('tTarget', [[21, '21'], [31, '31'], [41, '41']])
       + `<div class="gsep"></div><div class="glab">${t.localRules}</div><div class="rules-list">${[['tAkuze', t.rAkuze], ['tLongNap', t.rLongNap], ['tThirdsLast', t.rThirds], ['tSignals', t.rSignals], ['tClockwise', t.rClockwise]].map(([k, [lab, sub]]) => `<label class="tog"><span><b>${lab}</b><small>${sub}</small></span><input type="checkbox" data-opt="${k}" ${S[k] ? 'checked' : ''}></label>`).join('')}</div>`
     : lvl.replace('<div class="gsep"></div>', '') + `<div class="gsep"></div><div class="glab">${t.hTo}</div>` + seg('hTarget', [[501, '501'], [701, '701'], [1001, '1001']]);
-  openSheet(`<div class="gsh"><h3>${({ b: 'Briškula', t: 'Trešeta', h: 'Bela' })[game]}</h3><button class="link" id="gRules">${t.rules}</button></div>
+  openSheet(`<div class="gsh"><h3>${gameName(game)}</h3><button class="link" id="gRules">${t.rules}</button></div>
     <div class="gsegs">${body}</div>
     <div class="btns"><button class="sec" id="gClose">${L().close}</button><button class="play wide" id="gPlay">${L().sol.newGame}</button></div>`, v => {
     v.onclick = e => { if (e.target === v) closeSheet(); };
@@ -5194,13 +5196,13 @@ function showSettings() {
   const seg = (key, opts) => `<div class="seg dark">${opts.map(([v, lab]) => `<button data-k="${key}" data-v="${v}" aria-pressed="${S[key] === v}">${lab}</button>`).join('')}</div>`;
   openSheet(`<h3>${t.settings}</h3>
     <h4>${t.language}</h4>${seg('lang', [['hr', 'Hrvatski'], ['en', 'English']])}
-    <h4>Briškula</h4><label class="check dark"><input type="checkbox" id="sReveal" ${S.bReveal ? 'checked' : ''}><span>${t.reveal}</span></label>
+    <h4>${gameName('b')}</h4><label class="check dark"><input type="checkbox" id="sReveal" ${S.bReveal ? 'checked' : ''}><span>${t.reveal}</span></label>
     <h4>${t.deckB}</h4><div class="decks">${deckRow('b', pickB, 'bDeck')}</div>
     <h4>${t.deckH}</h4><div class="decks">${deckRow('h', pickH, 'hDeck')}</div>
     <h4>${t.deckF}</h4><div class="decks">${Object.keys(Cards.FR).map(k => `<button class="deck" data-fd="${k}" aria-pressed="${Cards.frDeck(S.fDeck) === k}"><span class="dk-cards">${['Hk', 'Sq', 'Dj'].map(c => `<span class="svgc">${Cards.frFace(c, k)}</span>`).join('')}</span><span class="dk-name"><b>${Cards.FR[k].name[S.lang]}</b><small>${Cards.FR[k].maker}</small></span></button>`).join('')}</div>
     ${Cards.FR[Cards.frDeck(S.fDeck)].backs.length > 1 ? `<div class="fbacks">${Cards.FR[Cards.frDeck(S.fDeck)].backs.map(c => `<button class="fback" data-fb="${c}" aria-pressed="${S.fBack === c}" aria-label="${c}">${Cards.frBack(S.fDeck, c)}</button>`).join('')}</div>` : ''}
     <h4>${t.speed}</h4>${seg('speed', [['normal', t.normal], ['fast', t.fast]])}
-    <p class="muted credit">${t.credit} · v58</p>
+    <p class="muted credit">${t.credit} · v59</p>
     <div class="btns"><button class="pri" id="sx">${t.close}</button></div>`, v => {
     v.querySelector('#sx').onclick = () => { closeSheet(); if (G) renderAll(); else renderHome(); };
     v.onclick = e => { if (e.target === v) { closeSheet(); if (G) renderAll(); else renderHome(); } };
@@ -5239,7 +5241,7 @@ function showStats() {
     <tbody>${LV.map(l => { const r = rs[l]; return `<tr><th>${t.lvShort[l]}</th>${r ? `<td><b class="sw">${r[0]}</b><b class="sl">${r[1]}</b></td>` : '<td class="se">·</td>'}</tr>`; }).join('')}</tbody></table>`;
   const pokerStats = `<h4>${t.poker.name}</h4><table class="stats"><thead><tr><th class="corner"><span>${t.level}</span></th>${['holdem', 'draw'].map(v => `<th>${t.poker[v]}</th>`).join('')}</tr></thead>
     <tbody>${LV.map(l => `<tr><th>${t.lvShort[l]}</th>${['holdem', 'draw'].map(v => { const r = (ps[v] || {})[l]; return r ? `<td><b class="sw">${r[0]}</b><b class="sl">${r[1]}</b></td>` : '<td class="se">·</td>'; }).join('')}</tr>`).join('')}</tbody></table>`;
-  openSheet(`<h3>${t.stats}</h3>${[['b', 'Briškula'], ['t', 'Trešeta'], ['h', 'Bela']].map(([g, n]) => `<h4>${n}</h4>${table(g)}`).join('')}${solStats}${unoStats}${pokerStats}${remiStats}
+  openSheet(`<h3>${t.stats}</h3>${['b', 't', 'h'].map(g => `<h4>${gameName(g)}</h4>${table(g)}`).join('')}${solStats}${unoStats}${pokerStats}${remiStats}
     <div class="btns"><button class="pri" id="sx">${t.close}</button></div>`, v => {
     v.querySelector('#sx').onclick = closeSheet; v.onclick = e => { if (e.target === v) closeSheet(); };
   });
@@ -5331,7 +5333,7 @@ function renderBar() {
     else $('#scoreChip').innerHTML = `<span class="k">${t.we}</span><b>${G.wins[0]}</b>:<b>${G.wins[1]}</b><span class="k">${t.they}</span>`;
   } else if (G.game === 't') {
     $('#trumpChip').style.cursor = 'default';
-    $('#trumpChip').innerHTML = `<b>Trešeta</b>`;
+    $('#trumpChip').innerHTML = `<b>${gameName('t')}</b>`;
     $('#scoreChip').classList.remove('tight');
     $('#scoreChip').innerHTML = `<span class="k">${t.we}</span><b>${G.score[0]}</b>:<b>${G.score[1]}</b><span class="k">${t.they}</span>`;
   } else {
@@ -5503,15 +5505,30 @@ function showHint() {
   setTimeout(() => {
     const g = G.game, legal = g === 'h' ? E.hLegal(G, 0) : g === 't' ? E.tLegal(G, 0) : G.hands[0].slice();
     let card = null, res = {};
-    try {
-      // the same steps as the Cardshark player: Marko's Bela rules first, then the simulated deals
-      const r = g === 'h' && legal.length > 1 ? AI.hRules(G, 0, legal) : null;
-      if (r && r.pick) { card = r.pick; res = { rule: r.rule }; }
-      else {
-        const s = AI.cardshark(g, G, 0, { timeMs: 1200, withValues: true });
-        if (s && s.means) { res = s; card = s.legal[s.means.indexOf(Math.max(...s.means))]; } else card = s;
-      }
-    } catch (e) { console.error(e); }
+    if (p.hint) ({ card, res } = p.hint);
+    else {
+      try {
+        // the same steps as the Cardshark player: Marko's Bela rules first, then the simulated deals
+        const r = g === 'h' && legal.length > 1 ? AI.hRules(G, 0, legal) : null;
+        if (r && r.pick) { card = r.pick; res = { rule: r.rule }; }
+        else {
+          const s = AI.cardshark(g, G, 0, { timeMs: 1200, withValues: true });
+          if (s && s.means) {
+            res = s;
+            const best = Math.max(...s.means), margin = ({ b: 1, h: 2, t: 0.15 })[g];
+            const pts = c => g === 'b' ? c.p : g === 'h' ? E.hPts(c, G.trump) : E.tThirds(c);
+            const rank = c => g === 'b' ? c.st : g === 'h' ? E.hStr(c, G.trump) : E.tStr(c);
+            const cheaper = (a, b) => pts(a) - pts(b)
+              || Number(g !== 't' && a.s === G.trump) - Number(g !== 't' && b.s === G.trump)
+              || rank(a) - rank(b)
+              || a.id.localeCompare(b.id);
+            const close = s.legal.filter((c, i) => best - s.means[i] < margin);
+            card = close.sort(cheaper)[0] || s.legal[s.means.indexOf(best)];
+          } else card = s;
+        }
+      } catch (e) { console.error(e); }
+      if (card) p.hint = { card, res };
+    }
     b.classList.remove('busy');
     if (pending !== p || token !== my || !card || !p.legal.has(card.id)) return;
     hintId = card.id; renderHand();
@@ -5891,7 +5908,7 @@ const SERVER = S.server || "https://cardshark.radenovicm.workers.dev".replace('/
 if (!S.pid) { S.pid = Array.from(crypto.getRandomValues(new Uint8Array(12)), b => b.toString(16).padStart(2, '0')).join(''); save(); }
 let NET = null;   // { id, ws, info, mySeat, q, busy, closing }
 const wsURL = id => SERVER.replace(/^http/, 'ws') + `/api/table/${id}/ws`;
-const gameName = g => ({ b: 'Briškula', t: 'Trešeta', h: 'Bela' })[g];
+const gameName = g => L().gameNames[g];
 const optsLine = (g, o) => g === 'b' ? L().target(+o.target || 3) : `${L().hTo} ${+o.target || (g === 't' ? 41 : 1001)}`;
 async function showLobby() {
   const t = L();
@@ -5910,7 +5927,7 @@ async function showLobby() {
     <label class="namef"><span>${t.yourName}</span><input id="nm" maxlength="16" value="${esc(S.name || '')}" autocomplete="nickname"></label>
     <div class="tlist" id="tList"><p class="muted">…</p></div>
     <div class="gsep"></div><div class="glab">${t.newTable}</div>
-    ${seg('onGame', [['b', 'Briškula'], ['t', 'Trešeta'], ['h', 'Bela']])}
+    ${seg('onGame', ['b', 't', 'h'].map(g => [g, gameName(g)]))}
     <div class="btns"><button class="sec" id="lx">${t.close}</button><button class="pri" id="lnew">${t.create}</button></div>`, v => {
     const nm = v.querySelector('#nm');
     nm.oninput = () => { S.name = nm.value.trim().slice(0, 16); save(); };
@@ -5975,7 +5992,10 @@ function showWaiting() {
     <p class="muted">${host ? t.bots : t.waitHost}</p>
     <div class="btns"><button class="sec" id="wl">${t.leaveT}</button>${host ? `<button class="pri" id="ws" ${me < 0 ? 'disabled' : ''}>${t.startT}</button>` : ''}</div>`, v => {
     v.querySelectorAll('.wseat:not(.taken)').forEach(b => b.onclick = () => netSend({ a: 'sit', seat: +b.dataset.seat, name: S.name }));
-    v.querySelector('#wl').onclick = () => { netSend({ a: 'stand' }); leaveOnline(); };
+    v.querySelector('#wl').onclick = () => openSheet(`<h3>${t.leaveConfirm}</h3><div class="btns"><button class="sec" id="wly">${t.leaveT}</button><button class="pri" id="wln">${t.no}</button></div>`, c => {
+      c.querySelector('#wly').onclick = () => { netSend({ a: 'stand' }); leaveOnline(); };
+      c.querySelector('#wln').onclick = showWaiting;
+    });
     const st = v.querySelector('#ws'); if (st) st.onclick = () => netSend({ a: 'start' });
     v.querySelector('#wInv').onclick = async () => {
       const url = location.origin + location.pathname + '?t=' + i.id;

@@ -1,4 +1,4 @@
-# Cardshark — handover (25 Oct 2026, live: v58)
+# Cardshark — handover (25 Oct 2026, live: v59)
 
 Live: GitHub Pages from `marx1980/Cardshark` `main` (the repo was renamed from `cardshark`; GitHub redirects, but push to `https://github.com/marx1980/Cardshark.git`).
 
@@ -24,8 +24,9 @@ Shipped since v50:
 - **v56**: **security/stability:** allow-listed online table options and constrained values; cleaned player names and prevented names from using the bot-name prefix; tightened bot-name parsing; rate-limited seat changes; and rechecked next-hand readiness when a player leaves. **Mobile/UI:** hid the trump text on narrow phones, changed the home layout for landscape, and enlarged icon buttons. Leaving an offline game now returns home without a confirmation because the game is saved.
 - **v57**: added **Remi**, Croatian rummy, playable against bots at four levels. The game supports 2–6 players, two decks plus four jokers, a 51-point opening, laying off cards, and swapping jokers.
 - **v58**: online-table UI polish: show localized trump suit names on narrow phones, distinguish you/partner/opponents/free seats in the waiting table, and highlight available tables and host names in the lobby. No game logic or networking changes.
+- **v59**: stabilized hints by caching each result and choosing the cheapest card among close simulation results; localized English game names as **Briscola**, **Tressette**, **Belote**, and **Rummy**; added a confirmation sheet before leaving a waiting-room table. No game logic or networking changes.
 
-Next release is **v59**. The service-worker cache version is `cardshark-v58` at `sw.js:2`.
+The service-worker cache version is `cardshark-v59` at `sw.js:2`.
 
 ## How the hint works (index.html, main UI script)
 
