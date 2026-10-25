@@ -5504,12 +5504,25 @@ function showHint() {
     const g = G.game, legal = g === 'h' ? E.hLegal(G, 0) : g === 't' ? E.tLegal(G, 0) : G.hands[0].slice();
     let card = null, res = {};
     try {
-      // the same steps as the Cardshark player: Marko's Bela rules first, then the simulated deals
-      const r = g === 'h' && legal.length > 1 ? AI.hRules(G, 0, legal) : null;
-      if (r && r.pick) { card = r.pick; res = { rule: r.rule }; }
+      if (p.hint) ({ card, res } = p.hint);   // same turn, same position: the simulation is random, so keep the first answer
       else {
-        const s = AI.cardshark(g, G, 0, { timeMs: 1200, withValues: true });
-        if (s && s.means) { res = s; card = s.legal[s.means.indexOf(Math.max(...s.means))]; } else card = s;
+        // the same steps as the Cardshark player: Marko's Bela rules first, then the simulated deals
+        const r = g === 'h' && legal.length > 1 ? AI.hRules(G, 0, legal) : null;
+        if (r && r.pick) { card = r.pick; res = { rule: r.rule }; }
+        else {
+          const s = AI.cardshark(g, G, 0, { timeMs: 1200, withValues: true });
+          if (s && s.means) {
+            res = s;
+            // near-equal cards are noise: among them take the cheapest one (fewest points, no trump, lowest rank)
+            const T = g === 't' ? null : G.trump, tol = ({ b: 1, h: 2, t: 0.15 })[g];
+            const pts = c => g === 'b' ? c.p : g === 'h' ? E.hPts(c, T) : E.tThirds(c);
+            const rank = c => g === 'b' ? c.st : g === 'h' ? E.hStr(c, T) : E.tStr(c);
+            const cost = c => pts(c) * 1000 + (T !== null && c.s === T ? 500 : 0) + rank(c) % 100;
+            const best = Math.max(...s.means);
+            card = s.legal.filter((c, i) => best - s.means[i] < tol).reduce((x, y) => cost(y) < cost(x) ? y : x);
+          } else card = s;
+        }
+        if (card) p.hint = { card, res };
       }
     } catch (e) { console.error(e); }
     b.classList.remove('busy');
