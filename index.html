@@ -4725,7 +4725,7 @@ const STR = {
     sHacc: ['herc', 'bundevu', 'zeleni', 'žir'], sBacc: ['kupe', 'dinare', 'špade', 'baštone']
   },
   en: {
-    tagline: 'Briškula and Bela at the café table — you against three computer players.',
+    tagline: 'Briscola and Bela at the café table — you against three computer players.',
     bSub: 'Triestine cards · 40 cards · trump is the briškula', hSub: 'Mađarice · 32 cards · declarations, bela, 1001',
     players: 'Players', p2: '2 · head to head', p4: '4 · partners',
     mode: 'Mode', classic: 'Classic · 3 cards', double: 'Double · 4 cards',
@@ -4733,7 +4733,7 @@ const STR = {
     matchTo: 'Match to', winsN: n => `${n} hands won`,
     reveal: 'Partner shows their cards once the deck runs out',
     hTo: 'Play to', start: 'Play',
-    remi: { name: 'Remi', players: 'Players', target: 'Play to', one: 'One round', you: 'You', round: 'Round', meld: 'Meld', open: 'Open', untake: 'Put back', discard: 'Discard', sort: 'Sort', took: 'takes the discard', opened: 'opens', remi: 'remi!', left: 'Cards', pts: 'Points', total: 'Total', closed: 'not open', next: 'Next round', again: 'New game',
+    remi: { name: 'Rummy', players: 'Players', target: 'Play to', one: 'One round', you: 'You', round: 'Round', meld: 'Meld', open: 'Open', untake: 'Put back', discard: 'Discard', sort: 'Sort', took: 'takes the discard', opened: 'opens', remi: 'remi!', left: 'Cards', pts: 'Points', total: 'Total', closed: 'not open', next: 'Next round', again: 'New game',
       roundWon: n => `${n} · round`, matchWon: n => `${n} · winner`, noWinner: 'The stock ran out',
       err: { 51: '51 needed to open', mustUse: 'Use the card you took', joker: 'Use the joker', keep: 'Keep one card to discard', meld: 'Not a meld', cantUse: 'You can’t use that card now', notOpen: 'Open first', turn: 'Not your turn', swap: 'Not possible', bad: 'Not possible' } },
     poker: { name: 'Poker', holdem: "Texas Hold'em", draw: 'Five-card draw', players: 'Players', blindsUp: 'Blinds go up', slow: 'Every 10 hands', fast: 'Every 5 hands', you: 'You', blinds: 'Blinds',
@@ -4749,7 +4749,7 @@ const STR = {
     online: 'Online', rejoin: 'Rejoin online game', gameGone: 'That game no longer exists', playAgain: 'Play again', waitOthers: (n, m) => `Waiting for others · ${n}/${m}`, tables: 'Open tables', newTable: 'New table', noTables: 'No open tables', host: 'Host', yourName: 'Your name', sit: 'Sit', free: 'Free', startT: 'Start', waitHost: 'Waiting for the host', invite: 'Invite', leaveT: 'Leave', botPlays: 'A bot is playing for you', takeOver: 'Take over', rating: 'Rating', offline: 'Can’t reach the server', reconnecting: 'Reconnecting…', copied: 'Link copied', bots: 'Empty seats are played by bots', create: 'Open table',
     level: 'Opponents', partner: 'Partner', stats: 'Stats', lvShort: { novice: 'Nov.', average: 'Avg.', pro: 'Pro', cardshark: 'Shark' }, lv: { novice: 'Novice', average: 'Average', pro: 'Pro', cardshark: 'Cardshark' },
     speed: 'Speed', normal: 'Normal', fast: 'Fast', tap: 'Playing a card', tap1: 'One tap', tap2: 'Two taps',
-    rules: 'Rules', rulesB: 'Briškula rules', rulesH: 'Bela rules',
+    rules: 'Rules', rulesB: 'Briscola rules', rulesH: 'Bela rules',
     settings: 'Settings', language: 'Language',
     sumT: () => `${S.tMode === 2 ? '2 players' : '4 players · pairs'} · to ${S.tTarget}`, tModeN: n => n === 2 ? '2 · head to head' : '4 · pairs',
     akuza: 'Declares', akuzaPts: 'declarations', drew: 'Drew ',
@@ -4760,7 +4760,7 @@ const STR = {
     akuzaName: d => d.type === 'napolitana' ? 'napolitana' : `${d.type === 'four' ? 'four' : 'three'} ${({ '3': 'threes', '2': 'twos', A: 'aces' })[d.r]}`,
     playersN: n => `${n} players`, modeN: n => ({ p4: '4 · pairs', s4: '4 · each for themselves', s3: '3 players', d2: '2 · double hand' })[n],
     handWonBy: n => `${n} wins the hand.`, handTie: 'Tie.', pairNote: 'Double: 4 cards, everyone plays twice per trick.', cardsN: n => n === 4 ? '4 cards · double' : '3 cards',
-    sumB: () => `${({ p4: '4 players · pairs', s4: '4 players · solo', s3: '3 players', d2: '2 players · double' })[S.bMode]} · first to ${S.bTarget}`, sumH: () => `4 players · to ${S.hTarget}`, deckB: 'Briškula & Trešeta cards', deckF: 'French cards', deckH: 'Bela cards', lowRes: 'lower resolution',
+    sumB: () => `${({ p4: '4 players · pairs', s4: '4 players · solo', s3: '3 players', d2: '2 players · double' })[S.bMode]} · first to ${S.bTarget}`, sumH: () => `4 players · to ${S.hTarget}`, deckB: 'Briscola & Tressette cards', deckF: 'French cards', deckH: 'Bela cards', lowRes: 'lower resolution',
     credit: 'Card images are photographs of real decks (Modiano, Masenghini, Dal Negro, Fournier, Piatnik).',
     foot: 'You play against the computer. Settings are kept on this device.',
     names: { 0: 'You', 1: 'Ante', 2: 'Mare', 3: 'Jure' }, names2: { 0: 'You', 2: 'Ante' },
@@ -4887,7 +4887,7 @@ const RULES = {
 <li>Igra se do 1001 (ili 501 / 701).</li></ul>`
   },
   en: {
-    r: `<h3>Remi</h3>
+    r: `<h3>Rummy</h3>
 <h4>Cards and deal</h4><ul><li>Two decks and four jokers, 2–6 players. Everyone gets 14 cards; the first player gets 15 and starts by discarding one.</li></ul>
 <h4>A turn</h4><ul><li>Draw from the stock or take the top discard – which must be used in the same turn. End the turn by discarding a card.</li></ul>
 <h4>Melds</h4><ul><li>Three or four of a rank in different suits, or three or more in a row in one suit (ace low or high, no K-A-2). At most one joker per meld.</li></ul>
@@ -4912,7 +4912,7 @@ const RULES = {
 <h4>Stock</h4><ul><li>Draw 1 or 3 cards; with 3, only the top one is playable.</li><li>When the stock runs out, the waste turns back over as many times as the setting allows.</li></ul>
 <h4>Scoring</h4><ul><li>Standard: waste → pile 5, to a foundation 10, turning a card 5, foundation back to a pile −15, recycling the stock −100 (draw 1). Timed: −2 every 10 s and a bonus of 700,000 ÷ seconds at the end.</li><li>Vegas: $52 stake, $5 for every card on a foundation.</li></ul>
 <h4>Controls</h4><ul><li>Tap a card to send it to the best place, or drag a card or run.</li><li>Undo takes moves back, Hint shows a move, Finish plays everything out once all cards are face up.</li></ul>`,
-    b: `<h3>Briškula</h3>
+    b: `<h3>Briscola</h3>
 <p class="muted">Triestine 40-card deck: cups, coins, swords and clubs. The court cards are the fante (11), cavallo/knight (12) and king (13).</p>
 <h4>Rank and points</h4>
 <div class="rank"><div><span>Ace (1)</span><b>11</b></div><div><span>Three (3)</span><b>10</b></div><div><span>King (13)</span><b>4</b></div><div><span>Knight (12)</span><b>3</b></div><div><span>Fante (11)</span><b>2</b></div><div><span>7, 6, 5, 4, 2</span><b>0</b></div></div>
@@ -4925,7 +4925,7 @@ const RULES = {
 <li>With four players, partners sit opposite: you and your partner against two opponents.</li></ul>
 <h4>Double briškula</h4>
 <p>Four cards each. Everyone plays twice to the same trick (one round, then another), the best card takes all of them, then everyone draws two.</p>`,
-    t: `<h3>Trešeta</h3>
+    t: `<h3>Tressette</h3>
 <p class="muted">The same 40-card deck as briškula. No trumps. Played in two pairs (you and your partner against two opponents) or head to head.</p>
 <h4>Rank and points</h4>
 <div class="rank"><div><span>Three</span><b>⅓</b></div><div><span>Two</span><b>⅓</b></div><div><span>Ace</span><b>1</b></div><div><span>King, knight, fante</span><b>⅓</b></div><div><span>7, 6, 5, 4</span><b>0</b></div><div><span>Last trick</span><b>+1</b></div></div>
@@ -5015,9 +5015,9 @@ function renderHome() {
       ${SERVER ? `<button class="ib" id="goOnline" aria-label="${t.online}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z"/></svg></button>` : ''}
       <button class="ib" id="goStats" aria-label="${t.stats}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M5 20V11M12 20V5M19 20v-6"/></svg></button>
       <button class="ib" id="goSet" aria-label="${t.settings}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button></header>
-    ${SERVER && S.netTable && Date.now() - S.netTable.at < 6 * 3600e3 ? `<button class="rejoin" id="goRejoin"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.7"/><path d="M20 4v5h-5"/></svg>${t.rejoin} · ${({ b: 'Briškula', t: 'Trešeta', h: 'Bela' })[S.netTable.game] || ''}</button>` : ''}
-    <button class="poster pb" id="goB">${fan('b', fanB)}<span class="pcap"><span><b>Briškula</b></span><span class="go">${arrow}</span></span></button>
-    <button class="poster pt" id="goT">${fan('b', fanT)}<span class="pcap"><span><b>Trešeta</b></span><span class="go">${arrow}</span></span></button>
+    ${SERVER && S.netTable && Date.now() - S.netTable.at < 6 * 3600e3 ? `<button class="rejoin" id="goRejoin"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.7"/><path d="M20 4v5h-5"/></svg>${t.rejoin} · ${gameName(S.netTable.game) || ''}</button>` : ''}
+    <button class="poster pb" id="goB">${fan('b', fanB)}<span class="pcap"><span><b>${gameName('b')}</b></span><span class="go">${arrow}</span></span></button>
+    <button class="poster pt" id="goT">${fan('b', fanT)}<span class="pcap"><span><b>${gameName('t')}</b></span><span class="go">${arrow}</span></span></button>
     <button class="poster ps" id="goS"><div class="pfan">${[['H', 1], ['S', 13], ['D', 12]].map(([s_, r], i) => `<div class="svgc" style="--i:${i - 1}">${Solitaire.FACE({ s: s_, r })}</div>`).join('')}</div><span class="pcap"><span><b>${t.sol.name}</b></span><span class="go">${arrow}</span></span></button>
     <button class="poster ph" id="goH">${fan('h', fanH)}<span class="pcap"><span><b>Bela</b></span><span class="go">${arrow}</span></span></button>
     <button class="poster pk" id="goP"><div class="pfan">${['Sa', 'Ha', 'Ck'].map((k, i) => `<div class="svgc" style="--i:${i - 1}">${Cards.frFace(k, S.fDeck)}</div>`).join('')}</div><span class="pcap"><span><b>${t.poker.name}</b></span><span class="go">${arrow}</span></span></button>
@@ -5049,7 +5049,7 @@ function showGameSheet(game) {
     : game === 't' ? `<div class="glab">${t.players}</div>` + seg('tMode', [[4, t.tModeN(4)], [2, t.tModeN(2)]]) + lvl + `<div class="gsep"></div><div class="glab">${t.hTo}</div>` + seg('tTarget', [[21, '21'], [31, '31'], [41, '41']])
       + `<div class="gsep"></div><div class="glab">${t.localRules}</div><div class="rules-list">${[['tAkuze', t.rAkuze], ['tLongNap', t.rLongNap], ['tThirdsLast', t.rThirds], ['tSignals', t.rSignals], ['tClockwise', t.rClockwise]].map(([k, [lab, sub]]) => `<label class="tog"><span><b>${lab}</b><small>${sub}</small></span><input type="checkbox" data-opt="${k}" ${S[k] ? 'checked' : ''}></label>`).join('')}</div>`
     : lvl.replace('<div class="gsep"></div>', '') + `<div class="gsep"></div><div class="glab">${t.hTo}</div>` + seg('hTarget', [[501, '501'], [701, '701'], [1001, '1001']]);
-  openSheet(`<div class="gsh"><h3>${({ b: 'Briškula', t: 'Trešeta', h: 'Bela' })[game]}</h3><button class="link" id="gRules">${t.rules}</button></div>
+  openSheet(`<div class="gsh"><h3>${gameName(game)}</h3><button class="link" id="gRules">${t.rules}</button></div>
     <div class="gsegs">${body}</div>
     <div class="btns"><button class="sec" id="gClose">${L().close}</button><button class="play wide" id="gPlay">${L().sol.newGame}</button></div>`, v => {
     v.onclick = e => { if (e.target === v) closeSheet(); };
@@ -5194,7 +5194,7 @@ function showSettings() {
   const seg = (key, opts) => `<div class="seg dark">${opts.map(([v, lab]) => `<button data-k="${key}" data-v="${v}" aria-pressed="${S[key] === v}">${lab}</button>`).join('')}</div>`;
   openSheet(`<h3>${t.settings}</h3>
     <h4>${t.language}</h4>${seg('lang', [['hr', 'Hrvatski'], ['en', 'English']])}
-    <h4>Briškula</h4><label class="check dark"><input type="checkbox" id="sReveal" ${S.bReveal ? 'checked' : ''}><span>${t.reveal}</span></label>
+    <h4>${gameName('b')}</h4><label class="check dark"><input type="checkbox" id="sReveal" ${S.bReveal ? 'checked' : ''}><span>${t.reveal}</span></label>
     <h4>${t.deckB}</h4><div class="decks">${deckRow('b', pickB, 'bDeck')}</div>
     <h4>${t.deckH}</h4><div class="decks">${deckRow('h', pickH, 'hDeck')}</div>
     <h4>${t.deckF}</h4><div class="decks">${Object.keys(Cards.FR).map(k => `<button class="deck" data-fd="${k}" aria-pressed="${Cards.frDeck(S.fDeck) === k}"><span class="dk-cards">${['Hk', 'Sq', 'Dj'].map(c => `<span class="svgc">${Cards.frFace(c, k)}</span>`).join('')}</span><span class="dk-name"><b>${Cards.FR[k].name[S.lang]}</b><small>${Cards.FR[k].maker}</small></span></button>`).join('')}</div>
@@ -5239,7 +5239,7 @@ function showStats() {
     <tbody>${LV.map(l => { const r = rs[l]; return `<tr><th>${t.lvShort[l]}</th>${r ? `<td><b class="sw">${r[0]}</b><b class="sl">${r[1]}</b></td>` : '<td class="se">·</td>'}</tr>`; }).join('')}</tbody></table>`;
   const pokerStats = `<h4>${t.poker.name}</h4><table class="stats"><thead><tr><th class="corner"><span>${t.level}</span></th>${['holdem', 'draw'].map(v => `<th>${t.poker[v]}</th>`).join('')}</tr></thead>
     <tbody>${LV.map(l => `<tr><th>${t.lvShort[l]}</th>${['holdem', 'draw'].map(v => { const r = (ps[v] || {})[l]; return r ? `<td><b class="sw">${r[0]}</b><b class="sl">${r[1]}</b></td>` : '<td class="se">·</td>'; }).join('')}</tr>`).join('')}</tbody></table>`;
-  openSheet(`<h3>${t.stats}</h3>${[['b', 'Briškula'], ['t', 'Trešeta'], ['h', 'Bela']].map(([g, n]) => `<h4>${n}</h4>${table(g)}`).join('')}${solStats}${unoStats}${pokerStats}${remiStats}
+  openSheet(`<h3>${t.stats}</h3>${[['b', gameName('b')], ['t', gameName('t')], ['h', 'Bela']].map(([g, n]) => `<h4>${n}</h4>${table(g)}`).join('')}${solStats}${unoStats}${pokerStats}${remiStats}
     <div class="btns"><button class="pri" id="sx">${t.close}</button></div>`, v => {
     v.querySelector('#sx').onclick = closeSheet; v.onclick = e => { if (e.target === v) closeSheet(); };
   });
@@ -5331,7 +5331,7 @@ function renderBar() {
     else $('#scoreChip').innerHTML = `<span class="k">${t.we}</span><b>${G.wins[0]}</b>:<b>${G.wins[1]}</b><span class="k">${t.they}</span>`;
   } else if (G.game === 't') {
     $('#trumpChip').style.cursor = 'default';
-    $('#trumpChip').innerHTML = `<b>Trešeta</b>`;
+    $('#trumpChip').innerHTML = `<b>${gameName('t')}</b>`;
     $('#scoreChip').classList.remove('tight');
     $('#scoreChip').innerHTML = `<span class="k">${t.we}</span><b>${G.score[0]}</b>:<b>${G.score[1]}</b><span class="k">${t.they}</span>`;
   } else {
@@ -5503,7 +5503,8 @@ function showHint() {
   setTimeout(() => {
     const g = G.game, legal = g === 'h' ? E.hLegal(G, 0) : g === 't' ? E.tLegal(G, 0) : G.hands[0].slice();
     let card = null, res = {};
-    try {
+    if (p.hint) ({ card, res } = p.hint);
+    else try {
       // the same steps as the Cardshark player: Marko's Bela rules first, then the simulated deals
       const r = g === 'h' && legal.length > 1 ? AI.hRules(G, 0, legal) : null;
       if (r && r.pick) { card = r.pick; res = { rule: r.rule }; }
@@ -5511,6 +5512,7 @@ function showHint() {
         const s = AI.cardshark(g, G, 0, { timeMs: 1200, withValues: true });
         if (s && s.means) { res = s; card = s.legal[s.means.indexOf(Math.max(...s.means))]; } else card = s;
       }
+      if (card) p.hint = { card, res };
     } catch (e) { console.error(e); }
     b.classList.remove('busy');
     if (pending !== p || token !== my || !card || !p.legal.has(card.id)) return;
@@ -5891,7 +5893,7 @@ const SERVER = S.server || "https://cardshark.radenovicm.workers.dev".replace('/
 if (!S.pid) { S.pid = Array.from(crypto.getRandomValues(new Uint8Array(12)), b => b.toString(16).padStart(2, '0')).join(''); save(); }
 let NET = null;   // { id, ws, info, mySeat, q, busy, closing }
 const wsURL = id => SERVER.replace(/^http/, 'ws') + `/api/table/${id}/ws`;
-const gameName = g => ({ b: 'Briškula', t: 'Trešeta', h: 'Bela' })[g];
+function gameName(g) { return ({ b: S.lang === 'en' ? 'Briscola' : 'Briškula', t: S.lang === 'en' ? 'Tressette' : 'Trešeta', h: 'Bela' })[g]; }
 const optsLine = (g, o) => g === 'b' ? L().target(+o.target || 3) : `${L().hTo} ${+o.target || (g === 't' ? 41 : 1001)}`;
 async function showLobby() {
   const t = L();
@@ -5910,7 +5912,7 @@ async function showLobby() {
     <label class="namef"><span>${t.yourName}</span><input id="nm" maxlength="16" value="${esc(S.name || '')}" autocomplete="nickname"></label>
     <div class="tlist" id="tList"><p class="muted">…</p></div>
     <div class="gsep"></div><div class="glab">${t.newTable}</div>
-    ${seg('onGame', [['b', 'Briškula'], ['t', 'Trešeta'], ['h', 'Bela']])}
+    ${seg('onGame', [['b', gameName('b')], ['t', gameName('t')], ['h', 'Bela']])}
     <div class="btns"><button class="sec" id="lx">${t.close}</button><button class="pri" id="lnew">${t.create}</button></div>`, v => {
     const nm = v.querySelector('#nm');
     nm.oninput = () => { S.name = nm.value.trim().slice(0, 16); save(); };
@@ -5975,7 +5977,7 @@ function showWaiting() {
     <p class="muted">${host ? t.bots : t.waitHost}</p>
     <div class="btns"><button class="sec" id="wl">${t.leaveT}</button>${host ? `<button class="pri" id="ws" ${me < 0 ? 'disabled' : ''}>${t.startT}</button>` : ''}</div>`, v => {
     v.querySelectorAll('.wseat:not(.taken)').forEach(b => b.onclick = () => netSend({ a: 'sit', seat: +b.dataset.seat, name: S.name }));
-    v.querySelector('#wl').onclick = () => { netSend({ a: 'stand' }); leaveOnline(); };
+    v.querySelector('#wl').onclick = () => openSheet(`<h3>${t.leaveT}?</h3><div class="btns"><button class="sec" id="qy">${t.leaveT}</button><button class="pri" id="qn">${t.no}</button></div>`, q => { q.querySelector('#qy').onclick = () => { netSend({ a: 'stand' }); leaveOnline(); }; q.querySelector('#qn').onclick = () => { closeSheet(); showWaiting(); }; });
     const st = v.querySelector('#ws'); if (st) st.onclick = () => netSend({ a: 'start' });
     v.querySelector('#wInv').onclick = async () => {
       const url = location.origin + location.pathname + '?t=' + i.id;
