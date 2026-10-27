@@ -50,26 +50,11 @@ function mercyCheck(st, cause, fx) {
   if (st.variant !== 'nomercy') return;
   for (let p = 0; p < st.n; p++) {
     if (!st.eliminated[p] && st.hands[p].length >= 25) {
-      st.eliminated[p] = true; st.hands[p] = []; st.knockouts[cause]++; (fx.eliminated || (fx.eliminated = [])).push(p);
+      st.eliminated[p] = true; st.hands[p] = []; if (Number.isInteger(cause) && cause !== p) st.knockouts[cause]++; (fx.eliminated || (fx.eliminated = [])).push(p);
     }
   }
   const left = st.eliminated.map((out, p) => out ? -1 : p).filter(p => p >= 0);
   if (left.length === 1) { st.winner = left[0]; endRound(st); if (fx) fx.out = true; }
-}
-function giveCards(st, p, count, cause, fx) {
-  const cards = [];
-  for (let i = 0; i < count && st.winner === null; i++) {
-    const c = takeCards(st, 1)[0]; if (!c) break;
-    st.hands[p].push(c); cards.push(c);
-    if (st.variant === 'nomercy' && st.hands[p].length >= 25) {
-      st.eliminated[p] = true; st.hands[p] = []; st.knockouts[cause]++; (fx.eliminated || (fx.eliminated = [])).push(p);
-      const left = st.eliminated.map((out, q) => out ? -1 : q).filter(q => q >= 0);
-      if (left.length === 1) { st.winner = left[0]; endRound(st); fx.out = true; }
-      break;
-    }
-  }
-  fx.drew[p] = (fx.drew[p] || 0) + cards.length;
-  return cards;
 }
 function newMatch(opts = {}) {
   const n = Math.max(2, Math.min(6, opts.players | 0 || 4)), variant = ['flip', 'nomercy'].includes(opts.variant) ? opts.variant : 'classic';
@@ -117,7 +102,7 @@ function newRound(st) {
   while (true) { c = st.draw.pop(); const f = c[st.side]; if (['wd4', 'wd2', 'wdc', 'wr4', 'wd6', 'wd10', 'roulette', 'flip'].includes(f.k)) { st.draw.splice(Math.floor(Math.random() * st.draw.length), 0, c); continue; } break; }
   st.discard.push(c); const f = face(st, c); st.color = f.c; st.turn = nextSeat(st, st.dealer); st.start = { k: f.k, p: st.turn, n: DRAWS[f.k] || 0 };
   if (f.k === 'rev') { st.dir = -1; st.turn = st.n === 2 ? nextSeat(st, st.dealer, 1) : st.dealer; }
-  else if (f.k === 'skip' || f.k === 'skipall') st.turn = nextSeat(st, st.turn);
+  else if (f.k === 'skip') st.turn = nextSeat(st, st.turn);
   else if (DRAWS[f.k]) { st.hands[st.turn].push(...takeCards(st, DRAWS[f.k])); st.turn = nextSeat(st, st.turn); }
   else if (f.k === 'wild') st.mustChooseColor = st.turn;
   return st;
@@ -205,7 +190,7 @@ function play(st, p, id, color, sevenTarget) {
   if (st.winner !== null) return fx;
   if (!st.hands[p].length) {
     if (st.pendingChallenge) resolveChallenge(st, false, fx);
-    if (st.pending) { const t = nextSeat(st, p); if (st.variant === 'nomercy') draw(st.pending); else { const cs = takeCards(st, st.pending); st.hands[t].push(...cs); fx.drew[t] = (fx.drew[t] || 0) + cs.length; } st.pending = 0; }
+    if (st.pending) { const t = nextSeat(st, p); if (st.variant === 'nomercy') draw(st.pending); else { const cs = takeCards(st, st.pending); st.hands[t].push(...cs); fx.drew[t] = (fx.drew[t] || 0) + cs.length; } st.pending = 0; if (st.winner !== null) return fx; }
     st.winner = p; fx.out = true; endRound(st); return fx;
   }
   st.turn = st.pendingChallenge ? st.pendingChallenge.to : next;
@@ -239,7 +224,7 @@ function drawTurn(st, p) {
       const alive = st.eliminated.filter(out => !out).length;
       if (alive === 1) { st.winner = st.eliminated.findIndex(out => !out); endRound(st); }
     }
-    st.pending = 0; st.pendingKind = null; st.turn = nextSeat(st, p); return { cards, penalty: true, ended: st.winner !== null };
+    st.pending = 0; st.pendingKind = null; st.pendingFrom = null; st.turn = nextSeat(st, p); return { cards, penalty: true, ended: st.winner !== null };
   }
   st.voids[p][st.color] = true; const cards = [];
   while (true) { const cs = takeCards(st, 1); if (!cs.length) break; cards.push(cs[0]); st.hands[p].push(cs[0]); if (st.variant === 'nomercy' && st.hands[p].length >= 25) { st.eliminated[p] = true; st.hands[p] = []; break; } if (matches(st, cs[0]) || !st.opts.drawUntil) break; }

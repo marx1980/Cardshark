@@ -2433,7 +2433,7 @@ const Solitaire = (() => {
 })();
 if (typeof module !== 'undefined') module.exports = Solitaire;
 </script>
-<script>// ===================== COLOUR-MATCHING GAMES: classic and Flip =====================
+<script>// ===================== COLOUR-MATCHING GAMES: classic, Flip and No Mercy =====================
 // Classic: 108 cards – per colour one 0, two each of 1–9, Skip, Reverse, Draw Two; 4 Wild, 4 Wild Draw Four.
 // Flip: 112 double-sided cards – light side: per colour two each of 1–9, Draw One, Reverse, Skip, Flip; 4 Wild, 4 Wild Draw Two;
 //       dark side: per colour two each of 1–9, Draw Five, Reverse, Skip Everyone, Flip; 4 Wild, 4 Wild Draw Colour.
@@ -2513,7 +2513,7 @@ const Uno = (() => {
     st.turn = nextSeat(st, st.dealer);
     st.start = { k: f.k, p: st.turn, n: DRAWS[f.k] || 0 };   // a draw card turned first hits the first player
     if (f.k === 'rev') { st.dir = -1; st.turn = st.n === 2 ? nextSeat(st, st.dealer, 1) : st.dealer; }
-    else if (f.k === 'skip' || f.k === 'skipall') st.turn = nextSeat(st, st.turn);
+    else if (f.k === 'skip') st.turn = nextSeat(st, st.turn);
     else if (DRAWS[f.k]) { st.hands[st.turn].push(...takeCards(st, DRAWS[f.k])); st.turn = nextSeat(st, st.turn); }
     else if (f.k === 'wild') st.mustChooseColor = st.turn;          // first player names the colour
     return st;
@@ -2614,7 +2614,7 @@ const Uno = (() => {
     if (!st.hands[p].length) {
       // going out: a draw card still hits the next player first
       if (st.pendingChallenge) resolveChallenge(st, false, fx);
-      if (st.pending) { const t = nextSeat(st, p); if (st.variant === 'nomercy') draw(st.pending); else { const cs = takeCards(st, st.pending); st.hands[t].push(...cs); fx.drew[t] = (fx.drew[t] || 0) + cs.length; } st.pending = 0; }
+      if (st.pending) { const t = nextSeat(st, p); if (st.variant === 'nomercy') draw(st.pending); else { const cs = takeCards(st, st.pending); st.hands[t].push(...cs); fx.drew[t] = (fx.drew[t] || 0) + cs.length; } st.pending = 0; if (st.winner !== null) return fx; }
       st.winner = p; fx.out = true; endRound(st, fx); return fx;
     }
     if (!st.pendingChallenge) st.turn = next;
@@ -2681,7 +2681,7 @@ const Uno = (() => {
   function mercyCheck(st, cause, fx) {
     if (st.variant !== 'nomercy') return;
     for (let i = 0; i < st.n; i++) if (!st.eliminated[i] && st.hands[i].length >= 25) {
-      st.eliminated[i] = true; st.hands[i] = []; st.knockouts[cause]++; (fx.eliminated || (fx.eliminated = [])).push(i);
+      st.eliminated[i] = true; st.hands[i] = []; if (Number.isInteger(cause) && cause !== i) st.knockouts[cause]++; (fx.eliminated || (fx.eliminated = [])).push(i);
     }
     const active = st.eliminated.map((out, i) => out ? -1 : i).filter(i => i >= 0);
     if (active.length === 1) { st.winner = active[0]; endRound(st, fx); if (fx) fx.out = true; }
@@ -3078,6 +3078,7 @@ const UnoUI = (() => {
   }
   function renderAct() {
     const t = T(), a = [];
+    if (st.eliminated?.[0]) { $('#uAct').innerHTML = `<span class="muted">${t.eliminated}</span>`; return; }
     if (colorWait) {
       $('#uAct').innerHTML = `<div class="ucolrow">${U.COLORS[st.side].map(c => `<button data-c="${c}" style="--c:${HEX[c]}" aria-label="${t.cols[c]}"><svg viewBox="-6 -6 12 12" fill="#fff">${SYM[c]}</svg></button>`).join('')}</div>`;
       return;
@@ -3310,7 +3311,7 @@ const UnoUI = (() => {
     const champ = over ? st.scores.indexOf(Math.max(...st.scores)) : w;
     return (over ? api.fx(champ === 0, { cards: champ === 0 ? [] : [$('#uDisc')] }) : Promise.resolve()).then(() => new Promise(res => api.openSheet(`<h3>${over ? t.matchWon(esc(nm(champ))) : t.roundWon(esc(nm(w)))}</h3>
       <table class="pis utab"><thead><tr><th></th><th>${t.left}</th>${st.opts.target ? `<th>${t.total}</th>` : ''}</tr></thead><tbody>
-      ${order.map(r => `<tr${r.i === w ? ' class="w"' : ''}><td>${esc(nm(r.i))}</td><td>${r.i === w ? `+${total}` : `${r.left} · ${r.pts}`}</td>${st.opts.target ? `<td><b>${st.scores[r.i]}</b></td>` : ''}</tr>`).join('')}
+      ${order.map(r => `<tr${r.i === w ? ' class="w"' : ''}><td>${esc(nm(r.i))}</td><td>${r.i === w ? `+${total}` : st.eliminated?.[r.i] ? t.eliminated : `${r.left} · ${r.pts}`}</td>${st.opts.target ? `<td><b>${st.scores[r.i]}</b></td>` : ''}</tr>`).join('')}
       </tbody></table>
       <div class="btns">${over ? `<button class="sec" id="uMenu">${api.L().sol.home}</button><button class="pri" id="uNew">${t.again}</button>` : `<button class="pri" id="uNext">${t.next}</button>`}</div>`, v => {
       const n = v.querySelector('#uNext'); if (n) n.onclick = () => { api.closeSheet(); res(true); };
@@ -4848,7 +4849,7 @@ const STR = {
       fold: 'Odustajem', check: 'Dalje', call: 'Pratim', raise: 'Dižem', raiseTo: 'Dižem na', bet: 'Ulažem', allin: 'Sve', sb: 'MB', bb: 'VB', min: 'Min', potQ: 'Pot',
       next: 'Sljedeća ruka', pat: 'Ostajem', drawN: n => `Mijenjam ${n}`, drew: n => `mijenja ${n}`, maxDraw: n => `Najviše ${n}`, youWin: 'Pobjeda!', place: n => `${n}. mjesto`, again: 'Nova igra',
       hands: { high: 'Visoka karta', pair: 'Par', twoPair: 'Dva para', trips: 'Tris', straight: 'Skala', flush: 'Boja', fullHouse: 'Full house', quads: 'Poker', straightFlush: 'Skala u boji' } },
-    uno: { name: 'L’Unico!', pace: 'Brzina protivnika', slow: 'Sporo', normal: 'Normalno', fast: 'Brzo', classic: 'Klasične', flip: 'Flip', nomercy: 'No Mercy', players: 'Igrači', target: 'Igra se do', one: 'Jedna runda', house: 'Kućna pravila', stack: 'Slaganje +2 na +2 i +4 na +4', sevenO: '7 mijenja ruke, 0 ih okreće', jumpIn: 'Upadanje istom kartom', drawUntil: 'Vuci dok ne možeš igrati', eliminated: 'Ispao',
+    uno: { name: 'L’Unico!', pace: 'Brzina protivnika', slow: 'Sporo', normal: 'Normalno', fast: 'Brzo', classic: 'Klasične', flip: 'Flip', nomercy: 'No Mercy', builtin: 'Vrijede posebna pravila', players: 'Igrači', target: 'Igra se do', one: 'Jedna runda', house: 'Kućna pravila', stack: 'Slaganje +2 na +2 i +4 na +4', sevenO: '7 mijenja ruke, 0 ih okreće', jumpIn: 'Upadanje istom kartom', drawUntil: 'Vuci dok ne možeš igrati', eliminated: 'Ispao',
       you: 'Ti', round: 'runda', draw: 'Vuci', pass: 'Dalje', last: 'Zadnja!', catch: 'Uhvati!', color: 'Boja', swap: 'Zamijeni ruke s', take: 'Uzmi', challenge: 'Izazovi', left: 'Karte', total: 'Ukupno', next: 'Sljedeća runda', again: 'Nova partija',
       roundWon: n => `${n} · runda`, matchWon: n => `${n} · pobjeda`, won: 'Pobjede', lost: 'Porazi',
       cols: { r: 'Crvena', y: 'Žuta', g: 'Zelena', b: 'Plava', p: 'Ružičasta', t: 'Tirkizna', o: 'Narančasta', v: 'Ljubičasta' } },
@@ -4926,7 +4927,7 @@ const STR = {
       fold: 'Fold', check: 'Check', call: 'Call', raise: 'Raise', raiseTo: 'Raise to', bet: 'Bet', allin: 'All in', sb: 'SB', bb: 'BB', min: 'Min', potQ: 'Pot',
       next: 'Next hand', pat: 'Stand pat', drawN: n => `Draw ${n}`, drew: n => `draws ${n}`, maxDraw: n => `At most ${n}`, youWin: 'You win!', place: n => `${n}${n === 2 ? 'nd' : n === 3 ? 'rd' : 'th'} place`, again: 'New game',
       hands: { high: 'High card', pair: 'Pair', twoPair: 'Two pair', trips: 'Three of a kind', straight: 'Straight', flush: 'Flush', fullHouse: 'Full house', quads: 'Four of a kind', straightFlush: 'Straight flush' } },
-    uno: { name: 'L’Unico!', pace: 'Opponents’ speed', slow: 'Slow', normal: 'Normal', fast: 'Fast', classic: 'Classic', flip: 'Flip', nomercy: 'No Mercy', players: 'Players', target: 'Play to', one: 'One round', house: 'House rules', stack: 'Stack +2 on +2 and +4 on +4', sevenO: '7 swaps hands, 0 rotates them', jumpIn: 'Jump in with an identical card', drawUntil: 'Draw until you can play', eliminated: 'Eliminated',
+    uno: { name: 'L’Unico!', pace: 'Opponents’ speed', slow: 'Slow', normal: 'Normal', fast: 'Fast', classic: 'Classic', flip: 'Flip', nomercy: 'No Mercy', builtin: 'Variant rules apply', players: 'Players', target: 'Play to', one: 'One round', house: 'House rules', stack: 'Stack +2 on +2 and +4 on +4', sevenO: '7 swaps hands, 0 rotates them', jumpIn: 'Jump in with an identical card', drawUntil: 'Draw until you can play', eliminated: 'Eliminated',
       you: 'You', round: 'Round', draw: 'Draw', pass: 'Pass', last: 'Last card!', catch: 'Catch!', color: 'Colour', swap: 'Swap hands with', take: 'Take', challenge: 'Challenge', left: 'Cards', total: 'Total', next: 'Next round', again: 'New match',
       roundWon: n => `${n} · round`, matchWon: n => `${n} · winner`, won: 'Won', lost: 'Lost',
       cols: { r: 'Red', y: 'Yellow', g: 'Green', b: 'Blue', p: 'Pink', t: 'Teal', o: 'Orange', v: 'Purple' } },
@@ -5331,7 +5332,7 @@ function showUnoSheet() {
   const t = L(), u = t.uno;
   if (!S.uPace) S.uPace = 'normal';
   const seg = (key, opts) => `<div class="seg dark" role="group">${opts.map(([v, lab]) => `<button data-k="${key}" data-v="${v}" aria-pressed="${String(S[key]) === String(v)}">${lab}</button>`).join('')}</div>`;
-  const rules = () => [['uStack', u.stack, S.uVar !== 'nomercy'], ['uSevenO', u.sevenO, S.uVar === 'classic'], ['uJumpIn', u.jumpIn, S.uVar === 'classic'], ['uDrawUntil', u.drawUntil, S.uVar !== 'nomercy']].filter(r => r[2]).map(([k, lab]) => `<label class="tog"><span><b>${lab}</b></span><input type="checkbox" data-opt="${k}" ${S[k] ? 'checked' : ''}></label>`).join('');
+  const rules = () => S.uVar === 'nomercy' ? `<p class="muted">${u.builtin}</p>` : [['uStack', u.stack, true], ['uSevenO', u.sevenO, S.uVar === 'classic'], ['uJumpIn', u.jumpIn, S.uVar === 'classic'], ['uDrawUntil', u.drawUntil, true]].filter(r => r[2]).map(([k, lab]) => `<label class="tog"><span><b>${lab}</b></span><input type="checkbox" data-opt="${k}" ${S[k] ? 'checked' : ''}></label>`).join('');
   openSheet(`<div class="gsh"><h3>${u.name}</h3><button class="link" id="gRules">${t.rules}</button></div>
     <div class="gsegs">${seg('uVar', [['classic', u.classic], ['flip', u.flip], ['nomercy', u.nomercy]])}
     <div class="gsep"></div><div class="glab">${u.players}</div>${seg('uPlayers', [2, 3, 4, 5, 6].map(n => [n, n]))}
@@ -5474,7 +5475,7 @@ function showSettings() {
     <h4>${t.deckH}</h4><div class="decks">${deckRow('h', pickH, 'hDeck')}</div>
     <h4>${t.deckF}</h4><div class="decks">${Object.keys(Cards.FR).map(k => `<button class="deck" data-fd="${k}" aria-pressed="${Cards.frDeck(S.fDeck) === k}"><span class="dk-cards">${['Hk', 'Sq', 'Dj'].map(c => `<span class="svgc">${Cards.frFace(c, k)}</span>`).join('')}</span><span class="dk-name"><b>${Cards.FR[k].name[S.lang]}</b></span></button>`).join('')}</div>
     ${Cards.FR[Cards.frDeck(S.fDeck)].backs.length > 1 ? `<div class="fbacks">${Cards.FR[Cards.frDeck(S.fDeck)].backs.map(c => `<button class="fback" data-fb="${c}" aria-pressed="${S.fBack === c}" aria-label="${c}">${Cards.frBack(S.fDeck, c)}</button>`).join('')}</div>` : ''}
-    <p class="muted credit">v65</p>
+    <p class="muted credit">v66</p>
     <div class="btns"><button class="pri" id="sx">${t.close}</button></div>`, v => {
     v.querySelector('#sx').onclick = () => { closeSheet(); if (G) renderAll(); else renderHome(); };
     v.onclick = e => { if (e.target === v) { closeSheet(); if (G) renderAll(); else renderHome(); } };
@@ -5793,7 +5794,7 @@ function renderNetHand() {
   const el = $('#hand'), cards = netCardsFor(0).slice(), width = el.clientWidth || 360;
   $('#bHint').hidden = true;
   if (G.game === 'l') {
-    const O = { L: ['r', 'y', 'g', 'b', null], D: ['p', 't', 'o', 'v', null] }[G.side] || [], K = ['n', 'd1', 'd2', 'd5', 'skip', 'skipall', 'rev', 'flip', 'wild', 'wd2', 'wd4', 'wdc'];
+    const O = { L: ['r', 'y', 'g', 'b', null], D: ['p', 't', 'o', 'v', null] }[G.side] || [], K = ['n', 'd1', 'd2', 'd4', 'd5', 'skip', 'skipall', 'discardall', 'rev', 'flip', 'wild', 'wd2', 'wd4', 'wr4', 'wd6', 'wd10', 'roulette', 'wdc'];
     cards.sort((a, b) => { const fa = a[G.side], fb = b[G.side]; return O.indexOf(fa.c) - O.indexOf(fb.c) || K.indexOf(fa.k) - K.indexOf(fb.k) || (fa.n || 0) - (fb.n || 0); });
   }
   if (G.game === 'r') {
@@ -6709,7 +6710,7 @@ const optsLine = (g, o) => {
   if (g === 't') return `${t.tModeN(+o.players === 2 ? 2 : 4)} · ${t.hTo} ${+o.target || 41}`;
   if (g === 'p') return `${t.playersN(o.players || 6)} · ${o.variant === 'draw' ? t.poker.draw : t.poker.holdem} · ${o.blinds === 'fast' ? t.poker.fast : t.poker.slow}`;
   if (g === 'r') return `${t.playersN(o.players || 4)} · ${t.remi.target} ${+o.target === 0 ? t.remi.one : (+o.target || 501)}`;
-  if (g === 'l') return `${t.playersN(o.players || 4)} · ${o.variant === 'flip' ? t.uno.flip : t.uno.classic} · ${t.uno.target} ${+o.target === 0 ? t.uno.one : (+o.target || 500)}`;
+  if (g === 'l') return `${t.playersN(o.players || 4)} · ${o.variant === 'flip' ? t.uno.flip : o.variant === 'nomercy' ? t.uno.nomercy : t.uno.classic} · ${t.uno.target} ${+o.target === 0 ? t.uno.one : (+o.target || 500)}`;
   return `${t.hTo} ${+o.target || 1001}`;
 };
 async function showLobby(game) {
@@ -6738,7 +6739,7 @@ async function showLobby(game) {
             ? `<div class="glab">${t.remi.players}</div>${seg('onRPlayers', [2, 3, 4, 5, 6].map(n => [n, n]))}<div class="glab">${t.remi.target}</div>${seg('onRTarget', [[501, '501'], [1001, '1001'], [0, t.remi.one]])}`
             : `<div class="glab">${t.uno.players}</div>${seg('onLPlayers', [2, 3, 4, 5, 6].map(n => [n, n]))}<div class="glab">${t.uno.classic} / ${t.uno.flip} / ${t.uno.nomercy}</div>${seg('onLVariant', [['classic', t.uno.classic], ['flip', t.uno.flip], ['nomercy', t.uno.nomercy]])}<div class="glab">${t.uno.target}</div>${seg('onLTarget', [[500, '500'], [250, '250'], [0, t.uno.one]])}
               <div class="glab">${t.uno.pace}</div>${seg('onLPace', [['slow', t.uno.slow], ['normal', t.uno.normal], ['fast', t.uno.fast]])}<div class="glab">${t.uno.house}</div>
-              ${S.onLVariant !== 'nomercy' ? checkOpt('onLStack', t.uno.stack, S.onLStack) : ''}${S.onLVariant === 'classic' ? `${checkOpt('onLSevenO', t.uno.sevenO, S.onLSevenO)}${checkOpt('onLJumpIn', t.uno.jumpIn, S.onLJumpIn)}` : ''}${S.onLVariant !== 'nomercy' ? checkOpt('onLDrawUntil', t.uno.drawUntil, S.onLDrawUntil) : ''}`;
+              ${S.onLVariant === 'nomercy' ? `<p class="muted">${t.uno.builtin}</p>` : `${checkOpt('onLStack', t.uno.stack, S.onLStack)}${S.onLVariant === 'classic' ? `${checkOpt('onLSevenO', t.uno.sevenO, S.onLSevenO)}${checkOpt('onLJumpIn', t.uno.jumpIn, S.onLJumpIn)}` : ''}${checkOpt('onLDrawUntil', t.uno.drawUntil, S.onLDrawUntil)}`}`;
   const bindOptions = v => v.querySelectorAll('#lobbyOpts .seg button').forEach(b => b.onclick = () => {
     let val = b.dataset.v; val = isNaN(+val) ? val : +val; S[b.dataset.k] = val; save();
     b.parentNode.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b));
