@@ -7,7 +7,7 @@ Briškula, Trešeta, Bela, Poker, Rummy, L’Unico!, and Solitaire on your phone
 - **Bela** — mađarice (William Tell pattern), 4 players in pairs, trump calling, declarations, bela, play to 501/701/1001.
 - **Poker** — Texas Hold’em and five-card draw tournaments, 2–6 players.
 - **Rummy** — Croatian Remi, 2–6 players, 51-point opening, melds, lay-offs, and joker swaps.
-- **L’Unico!** — colour-matching game, classic and Flip decks, 2–6 players.
+- **L’Unico!** — colour-matching game with Classic, Flip, and UNO Show ’em No Mercy decks, 2–6 players.
 - **Solitaire** — Klondike with draw-1/draw-3 and several scoring modes.
 
 Online tables support every multiplayer game: Briškula, Trešeta, Bela, Poker, Remi, and L’Unico!. Poker, Remi, and L’Unico! support 2–6 players; their online settings include the offline variants and applicable house rules. Briškula offers every offline format, including two-player double hand; Trešeta offers its two-player and four-player formats. Solitaire remains offline-only.

@@ -41,11 +41,11 @@ function cleanOpts(game, o) {
   if (game === 'l') {
     const players = Math.max(2, Math.min(6, Math.floor(+o.players) || 4));
     const flag = (k, d) => typeof o[k] === 'boolean' ? o[k] : d;
-    const variant = o.variant === 'flip' ? 'flip' : 'classic';
+    const variant = ['flip', 'nomercy'].includes(o.variant) ? o.variant : 'classic';
     return { players, activeSeats: Array.from({ length: players }, (_, s) => s), variant,
       target: [0, 250, 500].includes(+o.target) ? +o.target : 500,
-      stack: flag('stack', false), sevenO: variant === 'classic' && flag('sevenO', false),
-      jumpIn: variant === 'classic' && flag('jumpIn', false), drawUntil: flag('drawUntil', false),
+      stack: variant === 'nomercy' || flag('stack', false), sevenO: variant === 'classic' && flag('sevenO', false),
+      jumpIn: variant === 'classic' && flag('jumpIn', false), drawUntil: variant !== 'nomercy' && flag('drawUntil', false),
       pace: ['slow', 'normal', 'fast'].includes(o.pace) ? o.pace : 'normal' };
   }
   const target = TARGETS[game].includes(+o.target) ? +o.target : DEF_TARGET[game];
