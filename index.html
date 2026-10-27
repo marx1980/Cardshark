@@ -5594,7 +5594,7 @@ function renderNetPoker() {
   const info = `<div class="${meCls.join(' ')}"><div class="pmeinfo"><span class="pstack">${me.chips}</span>${G.dealer === 0 ? '<i class="pdealer">D</i>' : ''}${myScore !== null ? `<span class="phand">${t.hands[P.catName(myScore)]}</span>` : ''}${myWin ? `<span class="plab w">+${result.won[0]}</span>` : (me.last && G.street !== 'show' ? `<span class="plab">${esc(actText(me.last))}</span>` : '')}</div></div>`;
   const wrap = document.createElement('div'); wrap.className = 'ptable';
   // card markup is generated locally; names are escaped
-  wrap.innerHTML = `<div class="pfelt"></div><div class="pboard">${nb ? Array.from({ length: 5 }, (_, k) => board[k] ? `<div class="pslot">${fr(board[k])}</div>` : '<div class="pslot empty"></div>').join('') : ''}</div><div class="ppot">${pot ? `<span class="pchip"></span>${pot}` : ''}</div><div>${seatHTML}</div><div class="net-pme">${info}</div>`;
+  wrap.innerHTML = `<div class="pfelt"></div><div class="pboard">${nb ? Array.from({ length: 5 }, (_, k) => board[k] ? `<div class="pslot${NET?.snap?.game === 'p' && NET.snap.hand === G.handNo && k >= NET.snap.board ? ' pnew' : ''}">${fr(board[k])}</div>` : '<div class="pslot empty"></div>').join('') : ''}</div><div class="ppot">${pot ? `<span class="pchip"></span>${pot}` : ''}</div><div>${seatHTML}</div><div class="net-pme">${info}</div>`;
   return wrap;
 }
 function renderNetRemi() {
@@ -5607,7 +5607,8 @@ function renderNetRemi() {
     const backs = Array.from({ length: Math.min(count, 6) }, () => `<span class="rback">${netFrHTML({ hidden: true })}</span>`).join('');
     return `<div class="ropp${G.turn === p && G.winner == null ? ' turn' : ''}${G.opened?.[p] ? ' open' : ''}" data-p="${p}" style="--x:${x};--y:${y}"><div class="rcount">${backs}<b>${count}</b></div><div class="rname"><b>${esc(name(p) || '')}</b></div>${G.opts?.target ? `<small>${G.scores?.[p] ?? 0}</small>` : ''}</div>`;
   }).join('');
-  const melds = (G.melds || []).map(m => `<div class="rmeld${m.owner === 0 ? ' mine' : ''}" data-m="${m.id}" style="--k:${m.cards.length}">${m.cards.map(c => fr(c)).join('')}</div>`).join('');
+  const oldMelds = NET?.snap?.game === 'r' ? NET.snap.melds : null;
+  const melds = (G.melds || []).map(m => `<div class="rmeld${m.owner === 0 ? ' mine' : ''}${oldMelds && !oldMelds.includes(m.id) ? ' new' : ''}" data-m="${m.id}" style="--k:${m.cards.length}">${m.cards.map(c => fr(c)).join('')}</div>`).join('');
   const top = G.discard?.[G.discard.length - 1], draw = NET?.req?.phase === 'draw';
   const staged = G.staged?.length ? `${G.staged.map(m => `<div class="rmeld st">${m.map(c => fr(c)).join('')}</div>`).join('')}<b class="rsum${netRummyValue(G.staged) >= 51 ? ' ok' : ''}">${netRummyValue(G.staged)}<small>/51</small></b>` : '';
   // card markup is generated locally; names are escaped
@@ -5751,7 +5752,57 @@ function renderNetHand() {
   });
   el.replaceChildren(...nodes);
 }
+
+// ---- online card flights (as in single player): diff the previous view against the new one
+const netRect = el => { if (!el) return null; const r = el.getBoundingClientRect(); return r.width ? { x: r.left, y: r.top, w: r.width, h: r.height } : null; };
+function netSnap() {
+  const pre = { hand: {}, seats: {}, hands: netRect($('#hand')) };
+  document.querySelectorAll('#hand [data-id]').forEach(b => { pre.hand[b.dataset.id] = netRect(b); });
+  document.querySelectorAll('#center [data-p]').forEach(e => { pre.seats[e.dataset.p] = netRect(e); });
+  pre.draw = netRect($('#center [data-pile="draw"]') || $('#center [data-pile="stock"]')); pre.disc = netRect($('#center .udisc') || $('#center [data-pile="take"]'));
+  return pre;
+}
+function netFly(from, to, html, delay = 0) {
+  if (!from || !to || matchMedia('(prefers-reduced-motion:reduce)').matches) return;
+  const d = document.createElement('div'); d.className = 'ufly'; d.innerHTML = html; d.style.width = to.w + 'px'; d.style.height = to.h + 'px'; d.style.visibility = 'hidden';
+  document.body.appendChild(d);
+  const k = S.speed === 'slow' ? 2 : S.speed === 'fast' ? 0.55 : 1;
+  const anim = d.animate([{ transform: `translate(${from.x}px,${from.y}px) scale(${from.w / to.w})` }, { transform: `translate(${to.x}px,${to.y}px) scale(1)` }], { duration: 300 * k, delay: delay * k, easing: 'cubic-bezier(.2,.8,.3,1)', fill: 'both' });
+  d.style.visibility = ''; anim.finished.then(() => d.remove(), () => d.remove());
+}
+function netAnimate(pre) {
+  const g = G, old = NET.snap, cnt = g.handCounts || [];
+  const snap = { game: g.game };
+  if (g.game === 'p') { snap.hand = g.handNo; snap.board = (g.board || []).length; }
+  if (g.game === 'l' || g.game === 'r') {
+    const top = g.discard?.[g.discard.length - 1];
+    Object.assign(snap, { counts: cnt.slice(), top: top?.id, discLen: g.discard?.length || 0, draw: g.game === 'l' ? g.drawCount || 0 : g.stock?.length || 0, melds: (g.melds || []).map(m => m.id) });
+    if (old && old.game === g.game && old.counts && snap.discLen >= old.discLen - 1 && cnt.length === old.counts.length) {
+      const seatEl = p => p === 0 ? $('#hand') : $(`#center [data-p="${p}"]`);
+      const drawEl = $('#center [data-pile="draw"]') || $('#center [data-pile="stock"]');
+      const discEl = $('#center .udisc') || $('#center [data-pile="take"]');
+      const back = g.game === 'l' ? `<div class="ucard big">${UnoUI.BACK}</div>` : `<div class="rc">${netFrHTML({ hidden: true })}</div>`;
+      const srcOf = (p, id) => p === 0 ? (pre.hand[id] || pre.hands) : pre.seats[p];
+      const delta = cnt.map((c, i) => c - old.counts[i]);
+      const cardHTML = top && (() => { const n = netFaceNode(top); n.classList.add('big'); return g.game === 'r' ? `<div class="rc">${netFrHTML(top)}</div>` : n.outerHTML; })();
+      if (top && snap.top !== old.top && snap.discLen > old.discLen) {
+        const mover = delta.findIndex(d => d < 0);
+        if (mover >= 0) netFly(srcOf(mover, top.id), netRect(discEl), cardHTML);
+      } else if (g.game === 'r' && snap.discLen < old.discLen) {
+        const taker = delta.findIndex(d => d > 0);
+        if (taker >= 0) netFly(pre.disc, netRect(seatEl(taker)), back);
+      }
+      if (snap.draw < old.draw) delta.forEach((d, p) => { for (let i = 0; i < Math.min(d, 6); i++) if (d > 0) netFly(pre.draw, netRect(seatEl(p)), back, i * 70); });
+    }
+  }
+  NET.snap = snap;
+}
 function renderNetAll() {
+  const pre = NET?.snap ? netSnap() : null;
+  renderNetAllNow();
+  if (NET) { if (pre) netAnimate(pre); else netAnimate({ hand: {}, seats: {} }); }
+}
+function renderNetAllNow() {
   $('#table').classList.add('online-new'); $('#table').classList.toggle('net-l', G.game === 'l');
   renderNetBar();
   $('#table').classList.toggle('net-p', G.game === 'p'); $('#table').classList.toggle('net-r', G.game === 'r');
@@ -5791,10 +5842,7 @@ function renderNetAction() {
       const selectedCards = selected.map(id => G.hands[0].find(c => c.id === id)).filter(Boolean);
       const validMeld = selectedCards.length >= 3 && G.hands[0].length - selectedCards.length >= 1 && !!Remi.analyze(selectedCards);
       const blockedDiscard = (G.mustUse && G.hands[0].some(c => c.id === G.mustUse)) || (G.swapped && G.hands[0].some(c => c.id === G.swapped));
-      controls = `${!opened ? `${netBtn('stage', t.remi.meld, !validMeld)}${staged.length ? netBtn('open', t.remi.open, netRummyValue(staged) < 51) : ''}` : `${netBtn('meld', t.remi.meld, !validMeld)}${selected.length === 1 ? (G.melds || []).map(m => {
-        const c = selectedCards[0];
-        return `${netBtn('layoff', `${t.remi.layoff} #${m.id}`, !c || !Remi.canLayOff(G, c, m), `data-card="${esc(selected[0])}" data-meld="${m.id}"`)}${netBtn('swap', `${t.remi.swapJoker} #${m.id}`, !c || !Remi.canSwap(G, c, m), `data-card="${esc(selected[0])}" data-meld="${m.id}"`)}`;
-      }).join('') : ''}`}${selected.length === 1 ? netBtn('discard', t.remi.discard, blockedDiscard) : ''}`;
+      controls = `${!opened ? `${netBtn('stage', t.remi.meld, !validMeld)}${staged.length ? netBtn('open', t.remi.open, netRummyValue(staged) < 51) : ''}` : `${netBtn('meld', t.remi.meld, !validMeld)}''}`}${selected.length === 1 ? netBtn('discard', t.remi.discard, blockedDiscard) : ''}`;
       if (staged.length) controls += `<span class="net-stage">${staged.map((m, i) => netBtn('unstage', `${t.remi.untake} ${i + 1}`, false, `data-index="${i}"`)).join('')}</span>`;
     }
   } else if (req.kind === 'unico') {
@@ -5915,6 +5963,15 @@ function handleNetAction(e) {
   }
 }
 function handleNetCenter(e) {
+  const md = e.target.closest('.rmeld[data-m]');
+  if (md && G.game === 'r' && NET?.req?.kind === 'remi' && NET.req.phase === 'play') {
+    const sel = [...(NET.selected || [])], meld = (G.melds || []).find(m => m.id === +md.dataset.m), c = sel.length === 1 && G.hands[0].find(x => x.id === sel[0]);
+    if (!meld || !c || !G.opened?.[0]) { md.animate([{ transform: 'translateX(0)' }, { transform: 'translateX(-4px)' }, { transform: 'translateX(4px)' }, { transform: 'translateX(0)' }], { duration: 200 }); return; }
+    if (Remi.canSwap(G, c, meld)) netSendMove({ action: 'swap', id: c.id, meld: meld.id });
+    else if (Remi.canLayOff(G, c, meld)) netSendMove({ action: 'layoff', id: c.id, meld: meld.id });
+    else md.animate([{ transform: 'translateX(0)' }, { transform: 'translateX(-4px)' }, { transform: 'translateX(4px)' }, { transform: 'translateX(0)' }], { duration: 200 });
+    return;
+  }
   const c = e.target.closest('.ucatch');
   if (c && NET?.req?.kind === 'unico') { netSendMove({ action: 'catch', target: +c.dataset.target }); return; }
   const b = e.target.closest('[data-pile]'); if (!b || b.disabled || !NET?.req) return;
