@@ -330,12 +330,15 @@ table.stats td b{display:inline-block;min-width:1.4em;font-size:15px}
 .ucard svg{width:100%;height:100%;display:block}
 .hc .ucard,.net-pile .ucard{display:block;width:100%;aspect-ratio:2/3}
 .net-pile .ucard{width:clamp(38px,11vw,66px)}
-#table.net-l{background:radial-gradient(120% 90% at 50% 38%,#2c3652,#111522)}
-.net-l .net-seat{border-color:rgba(255,255,255,.1);background:rgba(0,0,0,.2);border-radius:14px}
-.net-l .net-seat.turn{border-color:var(--brass);box-shadow:0 0 0 2px var(--brass) inset,0 0 16px rgba(214,170,80,.35)}
-.net-l .net-fan .ucard{width:22px;margin-left:-14px;flex:none}
-.net-l .net-fan .ucard:first-child{margin-left:0}
-.net-l .net-fan{height:33px}
+#table.net-l{background:radial-gradient(120% 90% at 50% 38%,#2c3652,#111522);--pw:min(22vw,104px,14vh)}
+.net-l #felt{background:none;box-shadow:none;border:0}
+.net-l #center .ucenter{position:absolute;inset:0}
+.net-l #center .uopps{z-index:2}
+.net-l .hand{--cw:70px}
+.net-l .hc .ucard{width:100%;height:auto}
+.net-l .hand.live .hc.off,.net-l .hc.off{filter:brightness(.55) drop-shadow(0 2px 3px rgba(0,0,0,.45))}
+.net-l .hand.live .hc:not(.off){transform:translateY(-16px)}
+.net-l .hand.live .hc.sel{transform:translateY(-22px)}
 .net-l .net-board{z-index:2}
 .net-board .net-meta{font-size:13px;font-weight:800;text-align:center;text-shadow:0 1px 3px #000}
 .net-seats{position:absolute;inset:0;z-index:2;pointer-events:none}
@@ -5499,7 +5502,28 @@ function netFaceNode(c) {
 function netCardsFor(seat) {
   return G.game === 'p' ? (G.seats[seat]?.hand || []) : (G.hands[seat] || []);
 }
+const UNO_SEATS = { 1: [[50, 10]], 2: [[12, 76], [88, 76]], 3: [[12, 76], [50, 10], [88, 76]], 4: [[12, 76], [28, 11], [72, 11], [88, 76]], 5: [[12, 76], [12, 27], [50, 10], [88, 27], [88, 76]] };
+function renderNetSeatsUno() {
+  const n = G.n || G.hands?.length || 2;
+  const seats = document.createElement('div'); seats.className = 'uopps';
+  const pos = UNO_SEATS[Math.min(Math.max(n - 1, 1), 5)];
+  for (let s = 1; s < n; s++) {
+    const count = (G.handCounts || [])[s] ?? (G.hands[s] || []).length, k = Math.min(count, 12);
+    const [x, y] = pos[s - 1] || [50, 10];
+    const o = document.createElement('div'); o.className = `uopp${G.turn === s && G.winner == null ? ' turn' : ''}`; o.style.setProperty('--x', x); o.style.setProperty('--y', y);
+    const fan = document.createElement('div'); fan.className = 'ufan';
+    for (let i = 0; i < k; i++) { const m = document.createElement('span'); m.className = 'umini'; m.style.setProperty('--i', i); m.style.setProperty('--k', k); m.innerHTML = UnoUI.BACK; fan.append(m); }
+    const nm = document.createElement('div'); nm.className = 'uname';
+    const b = document.createElement('b'); b.textContent = name(s) || ''; const c = document.createElement('span'); c.className = 'ucount'; c.textContent = String(count); nm.append(b, c);
+    if (G.uno && G.uno[s] && count === 1) { const l = document.createElement('span'); l.className = 'ulast'; l.textContent = '!'; nm.append(l); }
+    o.append(fan, nm);
+    if (G.opts?.target) { const pt = document.createElement('small'); pt.className = 'upts'; pt.textContent = String(G.scores?.[s] ?? 0); o.append(pt); }
+    seats.append(o);
+  }
+  return seats;
+}
 function renderNetSeats() {
+  if (G.game === 'l') return renderNetSeatsUno();
   const n = G.n || G.seats?.length || G.hands?.length || 2;
   const turn = G.game === 'p' ? G.toAct : G.turn;
   const seats = document.createElement('div'); seats.className = 'net-seats';
@@ -5554,20 +5578,26 @@ function renderNetBoard() {
     }
     return board;
   }
-  const top = G.discard?.[G.discard.length - 1];
   const colors = { r:'#d8382e', y:'#f0bd22', g:'#2f9a4c', b:'#2a68c2', p:'#e2408f', t:'#14a39c', o:'#f27a17', v:'#7c45c4' };
-  meta.textContent = `${G.variant === 'flip' ? L().uno.flip : L().uno.classic} · ${G.side === 'D' ? L().uno.flip : ''} · ${G.pending ? `+${G.pending}` : ''}`;
+  const center = document.createElement('div'); center.className = 'ucenter';
+  const ring = G.color && colors[G.color] ? colors[G.color] : 'transparent';
   const dir = document.createElement('div'); dir.className = `udir${G.dir < 0 ? ' ccw' : ''}`; dir.innerHTML = UnoUI.DIR_SVG;
-  dir.style.color = G.color && colors[G.color] ? colors[G.color] : 'rgba(255,255,255,.3)'; board.prepend(dir);
-  const disc = document.createElement('div'); disc.className = 'net-disc';
-  const draw = document.createElement('button'); draw.className = 'net-pile'; draw.dataset.pile = 'draw'; draw.append(netFaceNode({ hidden: true }));
-  const drawCount = document.createElement('small'); drawCount.textContent = String(G.drawCount || 0); draw.append(drawCount); disc.append(draw);
-  if (top) disc.append(netFaceNode(top));
-  if (G.color && colors[G.color]) {
-    const currentColor = document.createElement('span'); currentColor.className = 'net-pile';
-    currentColor.style.borderColor = colors[G.color]; currentColor.textContent = L().uno.cols[G.color] || G.color; disc.append(currentColor);
+  dir.style.color = ring === 'transparent' ? 'rgba(255,255,255,.3)' : ring;
+  const draw = document.createElement('button'); draw.className = 'upile'; draw.dataset.pile = 'draw';
+  if (G.drawCount) {
+    const back = netFaceNode({ hidden: true }); back.classList.add('big'); draw.append(back);
+    const left = document.createElement('span'); left.className = 'uleft'; left.textContent = String(G.drawCount); draw.append(left);
   }
-  board.append(disc); return board;
+  const disc = document.createElement('div'); disc.className = 'upile udisc'; disc.style.setProperty('--ring', ring);
+  const last = (G.discard || []).slice(-Math.min(G.n || 2, 5));
+  last.forEach((c, i) => {
+    const card = netFaceNode(c); card.classList.add('big', i === last.length - 1 ? 'top' : 'old');
+    let h = 0; for (const ch of String(c.id)) h = (h * 31 + ch.charCodeAt(0)) % 997;
+    card.style.setProperty('--r', ((h % 17) - 8) + 'deg'); disc.append(card);
+  });
+  const pend = document.createElement('div'); pend.className = 'upend'; pend.hidden = !G.pending; pend.textContent = G.pending ? `+${G.pending}` : '';
+  center.append(dir, draw, disc, pend);
+  return center;
 }
 function renderNetBar() {
   const t = L();
@@ -5592,11 +5622,15 @@ function renderNetBar() {
 function renderNetHand() {
   const el = $('#hand'), cards = netCardsFor(0).slice(), width = el.clientWidth || 360;
   $('#bHint').hidden = true;
-  const cw = Math.min(G.game === 'l' ? 58 : 72, width / (1 + Math.max(0, cards.length - 1) * 0.58));
-  const step = cards.length > 1 ? Math.min(cw * 1.04, (width - cw) / (cards.length - 1)) : 0;
+  if (G.game === 'l') {
+    const O = { L: ['r', 'y', 'g', 'b', null], D: ['p', 't', 'o', 'v', null] }[G.side] || [], K = ['n', 'd1', 'd2', 'd5', 'skip', 'skipall', 'rev', 'flip', 'wild', 'wd2', 'wd4', 'wdc'];
+    cards.sort((a, b) => { const fa = a[G.side], fb = b[G.side]; return O.indexOf(fa.c) - O.indexOf(fb.c) || K.indexOf(fa.k) - K.indexOf(fb.k) || (fa.n || 0) - (fb.n || 0); });
+  }
+  const cw = G.game === 'l' ? Math.min(78, Math.max(52, width / 5.2)) : Math.min(72, width / (1 + Math.max(0, cards.length - 1) * 0.58));
+  const step = G.game === 'l' ? (cards.length > 1 ? Math.min(cw * 0.78, (width - cw - 8) / (cards.length - 1)) : 0) : cards.length > 1 ? Math.min(cw * 1.04, (width - cw) / (cards.length - 1)) : 0;
   const x0 = (width - (cw + step * (cards.length - 1))) / 2;
   el.style.setProperty('--cw', cw + 'px');
-  el.style.height = `${cw * (G.game === 'l' ? 1.5 : Cards.frRatio(S.fDeck)) + 6}px`;
+  el.style.height = `${cw * (G.game === 'l' ? 1.5 : Cards.frRatio(S.fDeck)) + (G.game === 'l' ? 24 : 6)}px`;
   const req = NET?.req, legal = req?.legal ? new Set(req.legal) : null;
   const selectable = G.game === 'r' ? req?.kind === 'remi' && req.phase === 'play'
     : G.game === 'p' ? req?.kind === 'pokerDraw'
