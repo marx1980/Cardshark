@@ -2488,12 +2488,15 @@ const Uno = (() => {
   };
 
   function newMatch(opts) {
+    opts = opts || {};
+    const n = Math.max(2, Math.min(6, Math.floor(+opts.players) || 4));
     const variant = opts.variant || 'classic';
-    const st = { variant, n: opts.players || 4, opts: { target: 500, stack: variant === 'nomercy' || !!opts.stack, sevenO: false, jumpIn: false, drawUntil: false, ...opts, stack: variant === 'nomercy' || !!opts.stack }, scores: Array(opts.players || 4).fill(0), dealer: Math.floor(Math.random() * (opts.players || 4)), round: 0, log: [] };
+    const st = { variant, n, opts: { target: 500, stack: variant === 'nomercy' || !!opts.stack, sevenO: false, jumpIn: false, drawUntil: false, ...opts, stack: variant === 'nomercy' || !!opts.stack }, scores: Array(n).fill(0), dealer: Math.floor(Math.random() * n), round: 0, log: [] };
     return st;
   }
   // a new round: deal 7 each, turn the first card (classic: action starters take effect; draw-wilds go back)
   function newRound(st, rng = Math.random) {
+    st.n = Math.max(2, Math.min(6, Math.floor(+st.n) || 4));
     st.side = 'L'; st.dir = 1; st.round++;
     st.draw = shuffle(makeDeck(st.variant), rng);
     st.hands = Array.from({ length: st.n }, () => []);
