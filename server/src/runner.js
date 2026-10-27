@@ -16,7 +16,7 @@ function rotEvent(ev, me, st) {
   const r = { ...ev };
   const n = st.n || 4, rotate = s => ((s - me) % n + n) % n;
   const rotateArray = a => Array.isArray(a) ? Array.from({ length: a.length }, (_, k) => a[(me + k) % a.length]) : a;
-  for (const k of ['seat', 'winner', 'by']) if (typeof r[k] === 'number' && r[k] >= 0) r[k] = rotate(r[k]);
+  for (const k of ['seat', 'winner', 'by', 'trumpTo']) if (typeof r[k] === 'number' && r[k] >= 0) r[k] = rotate(r[k]);
   const swap = ['p', 'r', 'l'].includes(st.game) ? false : (st.seats.length === 2 ? me === 2 : me % 2 === 1);
   if (typeof r.team === 'number' && r.team >= 0) {
     if (st.teams > 2) r.team = (r.team - st.seats.indexOf(me) + st.teams) % st.teams;
@@ -403,9 +403,11 @@ class Runner {
       if (done) {
         this.turn = null;
         await this.io.sleep(PACE.trick);
+        const tc = this.game === 'b' ? st.trumpCard : null;
         const r = finish();
-        this.emit({ k: 'collect', winner: r.winner, draws: r.draws ? r.draws.length : 0 });
-        await this.io.sleep(450);
+        const tk = tc && r.draws ? r.draws.find(d => d.card.id === tc.id) : null;
+        this.emit({ k: 'collect', winner: r.winner, draws: r.draws ? r.draws.length : 0, ...(tk ? { trumpTo: tk.seat } : {}) });
+        await this.io.sleep(tk ? 3600 : 450);
       }
     }
     this.turn = null;
