@@ -340,6 +340,22 @@ table.stats td b{display:inline-block;min-width:1.4em;font-size:15px}
 .net-l .hand.live .hc:not(.off){transform:translateY(-16px)}
 .net-l .hand.live .hc.sel{transform:translateY(-22px)}
 .net-l .net-board{z-index:2}
+#table.net-p{background:radial-gradient(120% 90% at 50% 35%,#24302c,#0c1210)}
+#table.net-r{background:radial-gradient(120% 90% at 50% 35%,#2c3416,#10140a)}
+.net-p #felt,.net-r #felt{background:none;box-shadow:none;border:0;border-radius:0}
+.net-p #center .ptable{position:absolute;inset:0;margin:0}
+.net-p .net-pme{position:absolute;left:0;right:0;bottom:2px;display:flex;justify-content:center;z-index:2}
+.net-p .hand,.net-r .hand{--cw:70px}
+.net-p .hc,.net-r .hc{height:calc(var(--cw) * var(--pr))}
+.net-p .hc .pc,.net-r .hc .pc{width:100%;height:100%}
+.net-p .hc.sel{transform:translateY(-14px);filter:brightness(.75)}
+.net-r .hc.sel{transform:translateY(-14px);filter:drop-shadow(0 0 6px rgba(214,171,82,.9))}
+.net-r .hc.must{outline:3px solid #d9e7a8;outline-offset:-1px;border-radius:6px}
+.net-r #center .rboard{position:absolute;inset:0}
+.net-r .rtable{padding-bottom:calc(54px * var(--rr) + 16px)}
+.net-r .net-rpiles{position:absolute;left:0;right:0;bottom:0;z-index:3}
+.net-r .rpile:disabled{opacity:1;cursor:default}
+.net-r .net-board,.net-p .net-board{display:none}
 .net-board .net-meta{font-size:13px;font-weight:800;text-align:center;text-shadow:0 1px 3px #000}
 .net-seats{position:absolute;inset:0;z-index:2;pointer-events:none}
 .net-seat{position:absolute;left:clamp(42px,calc(var(--x)*1%),calc(100% - 42px));top:calc(var(--y)*1%);transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:2px;max-width:34%;min-width:72px;padding:3px 5px;border:1px solid rgba(255,255,255,.12);border-radius:12px;background:rgba(0,0,0,.32);font-size:12px;text-align:center}
@@ -358,6 +374,7 @@ table.stats td b{display:inline-block;min-width:1.4em;font-size:15px}
 .net-controls button:disabled{opacity:.45;cursor:not-allowed}
 .net-controls .color{min-width:42px;border-radius:50%;border:2px solid rgba(255,255,255,.65);color:transparent}
 .hc.net-picked{outline:3px solid var(--brass);outline-offset:1px}
+.net-p .hc.net-picked,.net-r .hc.net-picked{outline:0}
 .hc.net-locked{opacity:.5;cursor:not-allowed}
 .net-bet{width:min(150px,40vw);accent-color:var(--brass)}
 .net-stage{font-size:12px;color:var(--muted);text-align:center}
@@ -5475,6 +5492,11 @@ function slotFor(seat, nth) {
 }
 const netMulti = () => !!(G && G.online && ['p', 'r', 'l'].includes(G.game));
 const frRank = r => ({ 1: 'a', 11: 'j', 12: 'q', 13: 'k', 14: 'a' })[r] || String(r);
+function netFrHTML(c) {
+  if (!c || c.hidden) return Cards.frBack(S.fDeck, S.fBack);
+  if (G.game === 'r' && Remi.isJ(c)) return Cards.frJoker(S.fDeck, c.joker);
+  return Cards.frFace(G.game === 'r' ? Remi.key(c) : Poker.key(c), S.fDeck);
+}
 function netFaceNode(c) {
   if (G.game === 'l') {
     const card = document.createElement('div'); card.className = 'ucard';
@@ -5482,6 +5504,11 @@ function netFaceNode(c) {
     // the card SVGs are generated locally by UnoUI (no user content)
     card.innerHTML = f ? UnoUI.faceSVG(f, G.side) : UnoUI.BACK;
     return card;
+  }
+  if (G.game === 'p' || G.game === 'r') {
+    const pc = document.createElement('div'); pc.className = 'pc';
+    // the card SVGs come from the local Cards module (no user content)
+    pc.innerHTML = netFrHTML(c); return pc;
   }
   const outer = document.createElement('div'); outer.className = 'svgc';
   const deck = Cards.frDeck(S.fDeck), dims = Cards.FR[deck];
@@ -5521,6 +5548,57 @@ function renderNetSeatsUno() {
     seats.append(o);
   }
   return seats;
+}
+const NET_SPOTS = { 1: [[50, 4]], 2: [[17, 14], [83, 14]], 3: [[13, 40], [50, 4], [87, 40]], 4: [[13, 52], [22, 10], [78, 10], [87, 52]], 5: [[12, 56], [14, 18], [50, 3], [86, 18], [88, 56]] };
+const netSpots = n => NET_SPOTS[Math.min(Math.max(n - 1, 1), 5)];
+function renderNetPoker() {
+  const t = L().poker, P = Poker, n = G.seats.length, result = G.street === 'show' ? G.result : null;
+  const actText = l => {
+    if (!l) return '';
+    const lab = ({ fold: t.fold, check: t.check, call: t.call, raise: t.raise, bet: t.bet, allin: t.allin, sb: t.sb, bb: t.bb })[l.a] || '';
+    return lab + (l.amt && l.a !== 'fold' && l.a !== 'check' ? ' ' + l.amt : '');
+  };
+  const fr = c => `<div class="pc">${netFrHTML(c)}</div>`;
+  const pot = G.seats.reduce((a, x) => a + (x.total || 0), 0);
+  const nb = G.variant === 'holdem' ? 5 : 0, board = G.board || [];
+  const spots = netSpots(n);
+  const seatHTML = spots.slice(0, n - 1).map(([x, y], k) => {
+    const p = k + 1, s = G.seats[p], cls = ['pseat'];
+    const shown = s.shown && !s.folded && G.street === 'show';
+    if (s.out) cls.push('out'); else if (s.folded) cls.push('folded');
+    if (G.toAct === p && G.street !== 'show') cls.push('turn');
+    if (result && result.won?.[p] > 0) cls.push('win');
+    if (shown) cls.push('shown');
+    const cards = s.out ? '' : s.hand.map(c => shown ? fr(c) : fr({ hidden: true })).join('');
+    const label = result && shown && result.scores?.[p] !== undefined ? t.hands[P.catName(result.scores[p])] : actText(s.last);
+    const win = result && result.won?.[p] > 0;
+    return `<div class="${cls.join(' ')}" data-p="${p}" style="left:${x}%;top:${y}%"><div class="pcards n${s.hand.length}">${cards}</div><div class="pname"><b>${esc(name(p) || '')}</b>${G.dealer === p ? '<i class="pdealer">D</i>' : ''}</div><div class="pstack">${s.out ? '—' : s.chips}</div>${label ? `<div class="plab${win ? ' w' : ''}">${esc(label)}${win ? ' · +' + result.won[p] : ''}</div>` : ''}</div>`;
+  }).join('');
+  const me = G.seats[0], myWin = result && result.won?.[0] > 0;
+  const myScore = me.hand.length && !me.hand[0].hidden && (G.variant === 'draw' || board.length) ? P.best(G, 0) : null;
+  const meCls = ['pmeseat']; if (G.toAct === 0 && G.street !== 'show') meCls.push('turn'); if (myWin) meCls.push('win');
+  const info = `<div class="${meCls.join(' ')}"><div class="pmeinfo"><span class="pstack">${me.chips}</span>${G.dealer === 0 ? '<i class="pdealer">D</i>' : ''}${myScore !== null ? `<span class="phand">${t.hands[P.catName(myScore)]}</span>` : ''}${myWin ? `<span class="plab w">+${result.won[0]}</span>` : (me.last && G.street !== 'show' ? `<span class="plab">${esc(actText(me.last))}</span>` : '')}</div></div>`;
+  const wrap = document.createElement('div'); wrap.className = 'ptable';
+  // card markup is generated locally; names are escaped
+  wrap.innerHTML = `<div class="pfelt"></div><div class="pboard">${nb ? Array.from({ length: 5 }, (_, k) => board[k] ? `<div class="pslot">${fr(board[k])}</div>` : '<div class="pslot empty"></div>').join('') : ''}</div><div class="ppot">${pot ? `<span class="pchip"></span>${pot}` : ''}</div><div>${seatHTML}</div><div class="net-pme">${info}</div>`;
+  return wrap;
+}
+function renderNetRemi() {
+  const t = L().remi, n = G.n || G.hands.length;
+  const wrap = document.createElement('div'); wrap.className = 'rboard';
+  const fr = (c, cls = '') => `<div class="rc ${cls}">${netFrHTML(c)}</div>`;
+  const spots = netSpots(n);
+  const opps = spots.slice(0, n - 1).map(([x, y], k) => {
+    const p = k + 1, count = (G.handCounts || [])[p] ?? (G.hands[p] || []).length;
+    const backs = Array.from({ length: Math.min(count, 6) }, () => `<span class="rback">${netFrHTML({ hidden: true })}</span>`).join('');
+    return `<div class="ropp${G.turn === p && G.winner == null ? ' turn' : ''}${G.opened?.[p] ? ' open' : ''}" data-p="${p}" style="--x:${x};--y:${y}"><div class="rcount">${backs}<b>${count}</b></div><div class="rname"><b>${esc(name(p) || '')}</b></div>${G.opts?.target ? `<small>${G.scores?.[p] ?? 0}</small>` : ''}</div>`;
+  }).join('');
+  const melds = (G.melds || []).map(m => `<div class="rmeld${m.owner === 0 ? ' mine' : ''}" data-m="${m.id}" style="--k:${m.cards.length}">${m.cards.map(c => fr(c)).join('')}</div>`).join('');
+  const top = G.discard?.[G.discard.length - 1], draw = NET?.req?.phase === 'draw';
+  const staged = G.staged?.length ? `${G.staged.map(m => `<div class="rmeld st">${m.map(c => fr(c)).join('')}</div>`).join('')}<b class="rsum${netRummyValue(G.staged) >= 51 ? ' ok' : ''}">${netRummyValue(G.staged)}<small>/51</small></b>` : '';
+  // card markup is generated locally; names are escaped
+  wrap.innerHTML = `<div class="ropps">${opps}</div><div class="rtable">${melds}</div><div class="rpiles net-rpiles"><button class="rpile${draw ? ' go' : ''}" data-pile="stock">${fr({ hidden: true })}<span class="rleft">${G.stock?.length || 0}</span></button><button class="rpile${draw && top ? ' go' : ''}" data-pile="take" ${!top || !draw ? 'disabled' : ''}>${top ? fr(top) : '<div class="rc empty"></div>'}</button><div class="rstage">${staged}</div></div>`;
+  return wrap;
 }
 function renderNetSeats() {
   if (G.game === 'l') return renderNetSeatsUno();
@@ -5626,11 +5704,20 @@ function renderNetHand() {
     const O = { L: ['r', 'y', 'g', 'b', null], D: ['p', 't', 'o', 'v', null] }[G.side] || [], K = ['n', 'd1', 'd2', 'd5', 'skip', 'skipall', 'rev', 'flip', 'wild', 'wd2', 'wd4', 'wdc'];
     cards.sort((a, b) => { const fa = a[G.side], fb = b[G.side]; return O.indexOf(fa.c) - O.indexOf(fb.c) || K.indexOf(fa.k) - K.indexOf(fb.k) || (fa.n || 0) - (fb.n || 0); });
   }
-  const cw = G.game === 'l' ? Math.min(78, Math.max(52, width / 5.2)) : Math.min(72, width / (1 + Math.max(0, cards.length - 1) * 0.58));
-  const step = G.game === 'l' ? (cards.length > 1 ? Math.min(cw * 0.78, (width - cw - 8) / (cards.length - 1)) : 0) : cards.length > 1 ? Math.min(cw * 1.04, (width - cw) / (cards.length - 1)) : 0;
-  const x0 = (width - (cw + step * (cards.length - 1))) / 2;
+  if (G.game === 'r') {
+    const ORD = { S: 0, H: 1, C: 2, D: 3, X: 4 };
+    cards.sort((a, b) => (Remi.isJ(a) - Remi.isJ(b)) || a.r - b.r || ORD[a.s] - ORD[b.s]);
+  }
+  const rows = G.game === 'r' && cards.length > 11 ? 2 : 1, per = Math.ceil(cards.length / rows) || 1;
+  const cw = G.game === 'l' ? Math.min(78, Math.max(52, width / 5.2))
+    : G.game === 'p' ? Math.min(92, width / 2.4, width / (cards.length * 1.08 || 1))
+      : G.game === 'r' ? Math.min(66, Math.max(44, width / 6.2))
+        : Math.min(72, width / (1 + Math.max(0, cards.length - 1) * 0.58));
+  const step = G.game === 'p' ? cw * 1.07 : G.game === 'r' ? (per > 1 ? Math.min(cw * 0.86, (width - cw - 4) / (per - 1)) : 0) : G.game === 'l' ? (cards.length > 1 ? Math.min(cw * 0.78, (width - cw - 8) / (cards.length - 1)) : 0) : cards.length > 1 ? Math.min(cw * 1.04, (width - cw) / (cards.length - 1)) : 0;
+  const x0 = (width - (cw + step * (Math.min(per, cards.length) - 1))) / 2;
+  const rr = Cards.frRatio(S.fDeck);
   el.style.setProperty('--cw', cw + 'px');
-  el.style.height = `${cw * (G.game === 'l' ? 1.5 : Cards.frRatio(S.fDeck)) + (G.game === 'l' ? 24 : 6)}px`;
+  el.style.height = G.game === 'r' && rows > 1 ? `${cw * rr * 1.62 + 16}px` : `${cw * (G.game === 'l' ? 1.5 : rr) + (G.game === 'l' ? 24 : 6)}px`;
   const req = NET?.req, legal = req?.legal ? new Set(req.legal) : null;
   const selectable = G.game === 'r' ? req?.kind === 'remi' && req.phase === 'play'
     : G.game === 'p' ? req?.kind === 'pokerDraw'
@@ -5642,7 +5729,9 @@ function renderNetHand() {
     const off = !!legal && !legal.has(c.id);
     const button = document.createElement('button');
     button.className = `hc${selected.has(key) ? ' sel net-picked' : ''}${off ? ' off' : ''}`;
-    button.dataset.netId = key; button.dataset.id = String(c.id); button.style.left = `${x0 + i * step}px`;
+    button.dataset.netId = key; button.dataset.id = String(c.id); button.style.left = `${x0 + (rows > 1 ? i % per : i) * step}px`;
+    if (rows > 1) { button.style.top = `${Math.floor(i / per) * cw * rr * 0.62}px`; button.style.bottom = 'auto'; }
+    if (G.game === 'r' && c.id === G.mustUse) button.classList.add('must');
     button.setAttribute('aria-label', String(c.id)); if (off) button.setAttribute('aria-disabled', 'true');
     button.append(netFaceNode(c)); return button;
   });
@@ -5651,7 +5740,11 @@ function renderNetHand() {
 function renderNetAll() {
   $('#table').classList.add('online-new'); $('#table').classList.toggle('net-l', G.game === 'l');
   renderNetBar();
-  $('#center').replaceChildren(renderNetBoard(), renderNetSeats());
+  $('#table').classList.toggle('net-p', G.game === 'p'); $('#table').classList.toggle('net-r', G.game === 'r');
+  $('#table').style.setProperty('--pr', Cards.frRatio(S.fDeck)); $('#table').style.setProperty('--rr', Cards.frRatio(S.fDeck));
+  if (G.game === 'p') $('#center').replaceChildren(renderNetPoker());
+  else if (G.game === 'r') $('#center').replaceChildren(renderNetRemi());
+  else $('#center').replaceChildren(renderNetBoard(), renderNetSeats());
   renderNetHand();
   renderNetAction();
 }
@@ -5890,7 +5983,7 @@ function renderHand() {
   if (showTalon) for (let i = 0; i < 2; i++) html += `<div class="hc talon" style="left:${x0 + (cards.length + i) * step}px">${Cards.back('h')}</div>`;
   el.innerHTML = html;
 }
-function renderAll() { if (netMulti()) { renderNetAll(); return; } $('#table').classList.remove('online-new', 'net-l'); renderBar(); renderSeats(); renderStock(); renderHand(); }
+function renderAll() { if (netMulti()) { renderNetAll(); return; } $('#table').classList.remove('online-new', 'net-l', 'net-p', 'net-r'); renderBar(); renderSeats(); renderStock(); renderHand(); }
 function setAction(html) { $('#action').innerHTML = html; }
 function status(text, muted) { setAction(`<div class="msg">${muted ? `<span class="m">${text}</span>` : text}</div>`); }
 
@@ -6624,7 +6717,7 @@ async function handleNet(m) {
   const t = L();
   if (m.t === 'start') {
     NET.started = true; NET.names = m.names; NET.myPts = 0; NET.rating = null; $('#table').classList.add('online');
-    $('#table').classList.remove('online-new', 'net-l');
+    $('#table').classList.remove('online-new', 'net-l', 'net-p', 'net-r');
     S.netTable = { id: NET.id, game: NET.info && NET.info.game, at: Date.now() }; save();
     closeSheet(); token++; pending = null; sel = null;
     $('#home').hidden = true; $('#table').hidden = false; $('#center').innerHTML = '';
