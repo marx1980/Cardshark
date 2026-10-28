@@ -6211,6 +6211,7 @@ function placeTrickCard(seat, card) {
   el.animate([{ left: o[0] + '%', top: o[1] + '%', opacity: .3 }, { left: p.x + '%', top: p.y + '%', opacity: 1 }], { duration: 260, easing: 'cubic-bezier(.2,.8,.3,1)' });
 }
 // Briškula: the face-up trump goes to whoever draws last – fly it to that seat and name them
+function hideStockPile() { const p = $('#stock .pile'); if (p) p.style.visibility = 'hidden'; }
 async function trumpPickup(seat, card) {
   const t = L(), o = ORIGIN[seat], f = felt();
   const stEl = $('#stock .tr');
@@ -6442,6 +6443,7 @@ async function briskulaMatch(my, cont) {
         const tc = G.trumpCard, { winner, draws } = E.bFinishTrick(G);
         const lastDraw = draws[draws.length - 1];
         const tk = G.stock.length === 0 && lastDraw && lastDraw.card.id === tc.id ? lastDraw : null;
+        if (tk) hideStockPile();
         await collectTrick(winner); check(my);
         if (tk) { await trumpPickup(tk.seat, tc); check(my); }
         renderAll();
@@ -7010,7 +7012,7 @@ async function handleNet(m) {
       break;
     case 'collect':
       if (G.game === 'h' && ev.winner === 0) { NET.myPts += G.lastTrick.pts + (G.trickNo === 8 ? 10 : 0); G.myPts = NET.myPts; }
-      { const keep = G; G = prev; await collectTrick(ev.winner); if (ev.trumpTo !== undefined && ev.trumpTo >= 0 && keep.trumpCard) await trumpPickup(ev.trumpTo, keep.trumpCard); G = keep; }
+      { const keep = G; G = prev; if (ev.trumpTo !== undefined && ev.trumpTo >= 0) hideStockPile(); await collectTrick(ev.winner); if (ev.trumpTo !== undefined && ev.trumpTo >= 0 && keep.trumpCard) await trumpPickup(ev.trumpTo, keep.trumpCard); G = keep; }
       renderAll(); break;
     case 'handEnd': case 'matchEnd': {
       const over = ev.k === 'matchEnd';
