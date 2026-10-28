@@ -6235,7 +6235,7 @@ async function trumpPickup(seat, card) {
   const run = el.animate([{ left: '50%', top: '50%', transform: 'translate(-50%,-50%) scale(1.5)', offset: 0 }, { left: '50%', top: '50%', transform: 'translate(-50%,-50%) scale(1.5)', offset: .45 }, { left: o[0] + '%', top: o[1] + '%', transform: 'translate(-50%,-50%) scale(1)', offset: 1 }], { duration: 1500, easing: 'ease-in-out', fill: 'forwards' });
   bubble(seat, seat === 0 ? t.takesTrumpYou : t.takesTrump(esc(name(seat))), true, 2300);
   await sleep(1550);
-  el.remove(); if (stEl) stEl.style.visibility = '';
+  el.remove(); // stock stays hidden: the next renderAll() removes it for good
   await sleep(500);
 }
 async function collectTrick(winner) {
