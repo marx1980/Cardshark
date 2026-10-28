@@ -5478,7 +5478,7 @@ function showSettings() {
     <h4>${t.deckH}</h4><div class="decks">${deckRow('h', pickH, 'hDeck')}</div>
     <h4>${t.deckF}</h4><div class="decks">${Object.keys(Cards.FR).map(k => `<button class="deck" data-fd="${k}" aria-pressed="${Cards.frDeck(S.fDeck) === k}"><span class="dk-cards">${['Hk', 'Sq', 'Dj'].map(c => `<span class="svgc">${Cards.frFace(c, k)}</span>`).join('')}</span><span class="dk-name"><b>${Cards.FR[k].name[S.lang]}</b></span></button>`).join('')}</div>
     ${Cards.FR[Cards.frDeck(S.fDeck)].backs.length > 1 ? `<div class="fbacks">${Cards.FR[Cards.frDeck(S.fDeck)].backs.map(c => `<button class="fback" data-fb="${c}" aria-pressed="${S.fBack === c}" aria-label="${c}">${Cards.frBack(S.fDeck, c)}</button>`).join('')}</div>` : ''}
-    <p class="muted credit">v66</p>
+    <p class="muted credit">v68</p>
     <div class="btns"><button class="pri" id="sx">${t.close}</button></div>`, v => {
     v.querySelector('#sx').onclick = () => { closeSheet(); if (G) renderAll(); else renderHome(); };
     v.onclick = e => { if (e.target === v) { closeSheet(); if (G) renderAll(); else renderHome(); } };
@@ -6440,7 +6440,8 @@ async function briskulaMatch(my, cont) {
         G.turn = null; renderSeats(); status('');
         await sleep(SPEED().trick); check(my);
         const tc = G.trumpCard, { winner, draws } = E.bFinishTrick(G);
-        const tk = draws.find(d => d.card.id === tc.id);
+        const lastDraw = draws[draws.length - 1];
+        const tk = G.stock.length === 0 && lastDraw && lastDraw.card.id === tc.id ? lastDraw : null;
         await collectTrick(winner); check(my);
         if (tk) { await trumpPickup(tk.seat, tc); check(my); }
         renderAll();

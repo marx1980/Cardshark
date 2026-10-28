@@ -405,7 +405,8 @@ class Runner {
         await this.io.sleep(PACE.trick);
         const tc = this.game === 'b' ? st.trumpCard : null;
         const r = finish();
-        const tk = tc && r.draws ? r.draws.find(d => d.card.id === tc.id) : null;
+        const lastDraw = r.draws && r.draws[r.draws.length - 1];
+        const tk = tc && st.stock.length === 0 && lastDraw && lastDraw.card.id === tc.id ? lastDraw : null;
         this.emit({ k: 'collect', winner: r.winner, draws: r.draws ? r.draws.length : 0, ...(tk ? { trumpTo: tk.seat } : {}) });
         await this.io.sleep(tk ? 3600 : 450);
       }

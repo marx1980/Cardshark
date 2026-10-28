@@ -30,8 +30,9 @@ Shipped since v50:
 - **v62**: added server-authoritative online Poker (Hold’em / five-card draw), Remi, and L’Unico! (Classic / Flip and house rules), including 2–6 player tables, private player views, validated moves, bot turns, ratings, and matching localized lobby/table UI. All Briškula and Trešeta online formats remain available; Solitaire is the only offline-only game.
 - **v63**: branded match-result animations (`matchResultFx` in the main UI script, using `icons/mark.svg` only). Win: six dancing sharks (bottom-centre one 20% bigger with maracas) under fireworks and YOU WON!/POBJEDA!. Loss: the final trick is put back on the felt, a shark swallows the cards and swims off, revealing YOU LOST!/PORAZ!. Tap skips. Wired into Briškula, Trešeta, Bela, Uno, Poker, Remi and online matches; no game logic changes. Strings `youWon`/`youLost` in `STR`. Tested by playing Briškula to a lost match; Trešeta/Bela/Uno/Poker/Remi paths only load-tested.
 - **v67**: Briškula (offline and online): when the last draw gives the face-up trump to a player, the trump flies from the stock to that player with a “takes the trump” bubble and a pause. Online, the server's `collect` event carries `trumpTo` and the runner waits longer before continuing.
+- **v68**: Briškula: explicitly gate the trump pickup animation, announcement, and longer pause on the final card being drawn from an emptying stock; all other trick collections keep their normal timing.
 
-The service-worker cache version is `cardshark-v67` at `sw.js:2`.
+The service-worker cache version is `cardshark-v68` at `sw.js:2`.
 
 ## How the hint works (index.html, main UI script)
 
