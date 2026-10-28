@@ -194,16 +194,24 @@ table.stats td b{display:inline-block;min-width:1.4em;font-size:15px}
 #fx .fxwin .fxt{position:static}
 #fx .fxrow{display:grid;grid-template-columns:repeat(3,var(--s));gap:clamp(4px,2vw,16px);align-items:end;justify-items:center}
 #fx .fxs{width:var(--s);height:var(--s);position:relative;animation:fxdance .56s ease-in-out infinite alternate;transform-origin:50% 90%}
-#fx .fxs img{width:100%;height:100%;display:block;filter:drop-shadow(0 4px 6px rgba(0,0,0,.5))}
+#fx .fxs .fxmark{width:100%;height:100%;display:block;filter:drop-shadow(0 4px 6px rgba(0,0,0,.5))}
 #fx .fxs.big{width:calc(var(--s)*1.2);height:calc(var(--s)*1.2);margin-top:calc(var(--s)*-.1)}
 #fx .fxs.big .mar{position:absolute;width:26%;top:8%;filter:drop-shadow(0 2px 3px rgba(0,0,0,.5));transform-origin:50% 95%}
 #fx .mar.l{left:-14%;animation:fxshl .18s ease-in-out infinite alternate}
 #fx .mar.r{right:-14%;animation:fxshr .18s ease-in-out infinite alternate}
+#fx .fxs.big .fxarm{position:absolute;top:34%;width:35%;height:22%;overflow:visible;z-index:1;fill:#5b7186;stroke:#0e241c;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+#fx .fxs.big .fxarm.l{left:-5%}
+#fx .fxs.big .fxarm.r{right:-5%;transform:scaleX(-1)}
+#fx .fxs.big .mar{z-index:2}
 #fx .spark{position:absolute;width:6px;height:6px;border-radius:50%;pointer-events:none}
 #fx .fxlose{position:absolute;inset:0;pointer-events:none}
 #fx .fxlose .fxt{top:38%}
 #fx .fxshark{position:absolute;pointer-events:none;filter:drop-shadow(0 6px 8px rgba(0,0,0,.5))}
-#fx .fxshark img{width:100%;height:100%;display:block}
+#fx .fxshark .fxmark{width:100%;height:100%;display:block}
+#fx .fxjaw{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+#fx .fxjaw .fxgape{fill:#14291f}
+#fx .fxjaw .fxteeth{fill:none;stroke:#fbf6ea;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+#fx .fxjaw .fxlower{fill:#5b7186;stroke:#0e241c;stroke-width:2;stroke-linejoin:round;transform-box:view-box;transform-origin:84px 70px}
 @keyframes fxdance{from{transform:translateY(0) rotate(-9deg)}to{transform:translateY(-12%) rotate(9deg)}}
 @keyframes fxshl{from{transform:rotate(-30deg)}to{transform:rotate(18deg)}}
 @keyframes fxshr{from{transform:rotate(30deg)}to{transform:rotate(-18deg)}}
@@ -5366,8 +5374,9 @@ function toast(text) {
 // ================= MATCH RESULT ANIMATIONS =================
 // WON: six cardshark sharks dance (the bottom centre one, 20% bigger, shakes maracas) under fireworks.
 // LOST: a cardshark shark swims in, swallows the cards on the table and swims off, leaving the result behind.
-const MARK = 'icons/mark.svg';
+const MARK = '<svg class="fxmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><path d="M16 76C22 46 46 32 70 33C90 34 102 50 106 76Z" fill="#5b7186"/><path d="M42 36C46 22 54 12 68 6C64 18 64 28 66 35Z" fill="#5b7186"/><circle cx="84" cy="55" r="7" fill="#fbf6ea"/><circle cx="81" cy="57" r="3.5" fill="#1f1a14"/><path d="M75 45Q84 41 93 46" fill="none" stroke="#1f1a14" stroke-width="3" stroke-linecap="round"/><g transform="rotate(-22 60 140)"><rect x="38" y="64" width="44" height="64" rx="6" fill="#8e2a24" stroke="#0e241c" stroke-width="2.5"/><rect x="42" y="68" width="36" height="56" rx="4" fill="none" stroke="#e8d7a8" stroke-width="1.2"/><g transform="translate(48 77) scale(.1)" fill="#e8d7a8"><circle r="42"/><circle r="26" fill="#8e2a24"/><circle r="14"/></g></g><g><rect x="38" y="64" width="44" height="64" rx="6" fill="#8e2a24" stroke="#0e241c" stroke-width="2.5"/><rect x="42" y="68" width="36" height="56" rx="4" fill="none" stroke="#e8d7a8" stroke-width="1.2"/><g transform="translate(48 77) scale(.1) rotate(35)" fill="#e8d7a8"><path d="M0,-52L9,-34L9,22L-9,22L-9,-34Z"/><rect x="-28" y="22" width="56" height="12" rx="4"/><rect x="-6" y="34" width="12" height="22" rx="3"/></g></g><g transform="rotate(22 60 140)"><rect x="38" y="64" width="44" height="64" rx="6" fill="#8e2a24" stroke="#0e241c" stroke-width="2.5"/><rect x="42" y="68" width="36" height="56" rx="4" fill="none" stroke="#e8d7a8" stroke-width="1.2"/><path transform="translate(60 92) scale(.26)" d="M0,40C-58,2 -42,-50 0,-22C42,-50 58,2 0,40Z" fill="#e8d7a8"/></g></svg>';
 const MARACA = '<svg class="mar %S" viewBox="0 0 30 60" aria-hidden="true"><rect x="12.5" y="30" width="5" height="28" rx="2.5" fill="#e8d7a8" stroke="#0e241c" stroke-width="1.5"/><ellipse cx="15" cy="17" rx="12" ry="16" fill="#8e2a24" stroke="#0e241c" stroke-width="2"/><circle cx="15" cy="17" r="5" fill="#e8d7a8"/></svg>';
+const FIN = '<svg class="fxarm %S" viewBox="0 0 40 30" aria-hidden="true"><path d="M40 7C32 4 26 7 20 12L11 18C7 20 4 18 2 15L5 11C8 14 10 13 13 10L20 5C26 1 34 1 40 3Z"/></svg>';
 function matchResultFx(won, o = {}) {
   const old = document.getElementById('fx'); if (old) old.remove();
   const t = L(), reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -5383,7 +5392,7 @@ function matchResultFx(won, o = {}) {
 }
 async function winFx(fx, t, sleepT, reduce) {
   const w = document.createElement('div'); w.className = 'fxwin';
-  const shark = (big, i) => `<div class="fxs${big ? ' big' : ''}" style="animation-delay:${(i % 3) * -.19}s"><img src="${MARK}" alt="">${big ? MARACA.replace('%S', 'l') + MARACA.replace('%S', 'r') : ''}</div>`;
+  const shark = (big, i) => `<div class="fxs${big ? ' big' : ''}" style="animation-delay:${(i % 3) * -.19}s">${MARK}${big ? FIN.replace('%S', 'l') + FIN.replace('%S', 'r') + MARACA.replace('%S', 'l') + MARACA.replace('%S', 'r') : ''}</div>`;
   w.innerHTML = `<div class="fxt">${t.youWon}</div><div class="fxrow">${[0, 1, 2, 3, 4, 5].map(i => shark(i === 4, i)).join('')}</div>`;
   fx.appendChild(w);
   if (reduce) { await sleepT(1800); return; }
@@ -5414,7 +5423,7 @@ async function loseFx(fx, t, sleepT, reduce, o) {
   const wrap = document.createElement('div'); wrap.className = 'fxlose';
   const sk = document.createElement('div'); sk.className = 'fxshark';
   sk.style.cssText = `width:${sw}px;height:${sh}px;top:${cy - sh * .55}px;left:0`;
-  sk.innerHTML = `<img src="${MARK}" alt="">`;
+  sk.innerHTML = `${MARK}<svg class="fxjaw" viewBox="0 0 120 120" aria-hidden="true"><path class="fxgape" d="M82 64Q96 63 106 76Q96 76 84 72Z"/><path class="fxteeth" d="M84 65l4 5 2-4 4 5 2-4 4 5"/><path class="fxlower" d="M84 70Q96 72 106 76Q102 84 94 82Q88 79 84 70Z"/><path class="fxteeth" d="M88 77l3-3 2 5 3-3 2 4 3-3"/></svg>`;
   const txt = document.createElement('div'); txt.className = 'fxt'; txt.textContent = t.youLost; txt.style.opacity = 0;
   wrap.append(txt, sk); fx.appendChild(wrap);
   if (reduce) { txt.style.opacity = 1; await sleepT(1800); return; }
@@ -5425,13 +5434,16 @@ async function loseFx(fx, t, sleepT, reduce, o) {
   await swim.finished.catch(() => {});
   if (!fx.isConnected) return;
   const mouthAbs = [stop + mouthX, cy - sh * .55 + mouthY];
+  const biteMs = 380, biteGap = 140;
   cards.forEach((el, i) => {
     const r = el.getBoundingClientRect(), base = getComputedStyle(el).transform, b = base === 'none' ? '' : base;
     const dx = mouthAbs[0] - (r.left + r.width / 2), dy = mouthAbs[1] - (r.top + r.height / 2);
-    el.animate([{ transform: b, opacity: 1 }, { transform: `translate(${dx}px,${dy}px) scale(.12) ${b}`, opacity: 0 }], { duration: 380, delay: i * 140, easing: 'ease-in', fill: 'forwards' });
+    const delay = i * biteGap;
+    el.animate([{ transform: b, opacity: 1 }, { transform: `translate(${dx}px,${dy}px) scale(.12) ${b}`, opacity: 0 }], { duration: biteMs, delay, easing: 'ease-in', fill: 'forwards' });
+    sk.querySelector('.fxlower').animate([{ transform: 'rotate(0deg)' }, { transform: 'rotate(20deg)', offset: .35 }, { transform: 'rotate(20deg)', offset: .6 }, { transform: 'rotate(0deg)' }], { duration: biteMs, delay, easing: 'ease-in-out', fill: 'none' });
   });
-  sk.animate([{ transform: `translateX(${stop}px) scale(1)` }, { transform: `translateX(${stop}px) scale(1.07)`, offset: .5 }, { transform: `translateX(${stop}px) scale(1)` }], { duration: 380 + cards.length * 140, fill: 'forwards' });
-  await sleepT(450 + cards.length * 140);
+  sk.animate([{ transform: `translateX(${stop}px) scale(1)` }, { transform: `translateX(${stop}px) scale(1.07)`, offset: .5 }, { transform: `translateX(${stop}px) scale(1)` }], { duration: biteMs + cards.length * biteGap, fill: 'forwards' });
+  await sleepT(450 + cards.length * biteGap);
   if (!fx.isConnected) return;
   // gone: the result is revealed where the shark was
   txt.style.opacity = 1;
