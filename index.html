@@ -5434,7 +5434,7 @@ async function loseFx(fx, t, sleepT, reduce, o) {
   await swim.finished.catch(() => {});
   if (!fx.isConnected) return;
   const mouthAbs = [stop + mouthX, cy - sh * .55 + mouthY];
-  const biteMs = 360, biteGap = 180, biteCount = Math.max(cards.length, 1);
+  const biteMs = 380, biteGap = 140;
   cards.forEach((el, i) => {
     const r = el.getBoundingClientRect(), base = getComputedStyle(el).transform, b = base === 'none' ? '' : base;
     const dx = mouthAbs[0] - (r.left + r.width / 2), dy = mouthAbs[1] - (r.top + r.height / 2);
@@ -5442,8 +5442,8 @@ async function loseFx(fx, t, sleepT, reduce, o) {
     el.animate([{ transform: b, opacity: 1 }, { transform: `translate(${dx}px,${dy}px) scale(.12) ${b}`, opacity: 0 }], { duration: biteMs, delay, easing: 'ease-in', fill: 'forwards' });
     sk.querySelector('.fxlower').animate([{ transform: 'rotate(0deg)' }, { transform: 'rotate(20deg)', offset: .35 }, { transform: 'rotate(20deg)', offset: .6 }, { transform: 'rotate(0deg)' }], { duration: biteMs, delay, easing: 'ease-in-out', fill: 'none' });
   });
-  sk.animate([{ transform: `translateX(${stop}px) scale(1)` }, { transform: `translateX(${stop}px) scale(1.07)`, offset: .5 }, { transform: `translateX(${stop}px) scale(1)` }], { duration: biteMs + (biteCount - 1) * biteGap, fill: 'forwards' });
-  await sleepT(450 + (biteCount - 1) * biteGap);
+  sk.animate([{ transform: `translateX(${stop}px) scale(1)` }, { transform: `translateX(${stop}px) scale(1.07)`, offset: .5 }, { transform: `translateX(${stop}px) scale(1)` }], { duration: biteMs + cards.length * biteGap, fill: 'forwards' });
+  await sleepT(450 + cards.length * biteGap);
   if (!fx.isConnected) return;
   // gone: the result is revealed where the shark was
   txt.style.opacity = 1;
