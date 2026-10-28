@@ -208,6 +208,10 @@ table.stats td b{display:inline-block;min-width:1.4em;font-size:15px}
 #fx .fxlose .fxt{top:38%}
 #fx .fxshark{position:absolute;pointer-events:none;filter:drop-shadow(0 6px 8px rgba(0,0,0,.5))}
 #fx .fxshark .fxmark{width:100%;height:100%;display:block}
+#fx .fxjaw{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+#fx .fxjaw .fxgape{fill:#14291f}
+#fx .fxjaw .fxteeth{fill:none;stroke:#fbf6ea;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+#fx .fxjaw .fxlower{fill:#5b7186;stroke:#0e241c;stroke-width:2;stroke-linejoin:round;transform-box:view-box;transform-origin:84px 70px}
 @keyframes fxdance{from{transform:translateY(0) rotate(-9deg)}to{transform:translateY(-12%) rotate(9deg)}}
 @keyframes fxshl{from{transform:rotate(-30deg)}to{transform:rotate(18deg)}}
 @keyframes fxshr{from{transform:rotate(30deg)}to{transform:rotate(-18deg)}}
@@ -5419,7 +5423,7 @@ async function loseFx(fx, t, sleepT, reduce, o) {
   const wrap = document.createElement('div'); wrap.className = 'fxlose';
   const sk = document.createElement('div'); sk.className = 'fxshark';
   sk.style.cssText = `width:${sw}px;height:${sh}px;top:${cy - sh * .55}px;left:0`;
-  sk.innerHTML = MARK;
+  sk.innerHTML = `${MARK}<svg class="fxjaw" viewBox="0 0 120 120" aria-hidden="true"><path class="fxgape" d="M82 64Q96 63 106 76Q96 76 84 72Z"/><path class="fxteeth" d="M84 65l4 5 2-4 4 5 2-4 4 5"/><path class="fxlower" d="M84 70Q96 72 106 76Q102 84 94 82Q88 79 84 70Z"/><path class="fxteeth" d="M88 77l3-3 2 5 3-3 2 4 3-3"/></svg>`;
   const txt = document.createElement('div'); txt.className = 'fxt'; txt.textContent = t.youLost; txt.style.opacity = 0;
   wrap.append(txt, sk); fx.appendChild(wrap);
   if (reduce) { txt.style.opacity = 1; await sleepT(1800); return; }
@@ -5430,13 +5434,16 @@ async function loseFx(fx, t, sleepT, reduce, o) {
   await swim.finished.catch(() => {});
   if (!fx.isConnected) return;
   const mouthAbs = [stop + mouthX, cy - sh * .55 + mouthY];
+  const biteMs = 360, biteGap = 180, biteCount = Math.max(cards.length, 1);
   cards.forEach((el, i) => {
     const r = el.getBoundingClientRect(), base = getComputedStyle(el).transform, b = base === 'none' ? '' : base;
     const dx = mouthAbs[0] - (r.left + r.width / 2), dy = mouthAbs[1] - (r.top + r.height / 2);
-    el.animate([{ transform: b, opacity: 1 }, { transform: `translate(${dx}px,${dy}px) scale(.12) ${b}`, opacity: 0 }], { duration: 380, delay: i * 140, easing: 'ease-in', fill: 'forwards' });
+    const delay = i * biteGap;
+    el.animate([{ transform: b, opacity: 1 }, { transform: `translate(${dx}px,${dy}px) scale(.12) ${b}`, opacity: 0 }], { duration: biteMs, delay, easing: 'ease-in', fill: 'forwards' });
+    sk.querySelector('.fxlower').animate([{ transform: 'rotate(0deg)' }, { transform: 'rotate(20deg)', offset: .35 }, { transform: 'rotate(20deg)', offset: .6 }, { transform: 'rotate(0deg)' }], { duration: biteMs, delay, easing: 'ease-in-out', fill: 'none' });
   });
-  sk.animate([{ transform: `translateX(${stop}px) scale(1)` }, { transform: `translateX(${stop}px) scale(1.07)`, offset: .5 }, { transform: `translateX(${stop}px) scale(1)` }], { duration: 380 + cards.length * 140, fill: 'forwards' });
-  await sleepT(450 + cards.length * 140);
+  sk.animate([{ transform: `translateX(${stop}px) scale(1)` }, { transform: `translateX(${stop}px) scale(1.07)`, offset: .5 }, { transform: `translateX(${stop}px) scale(1)` }], { duration: biteMs + (biteCount - 1) * biteGap, fill: 'forwards' });
+  await sleepT(450 + (biteCount - 1) * biteGap);
   if (!fx.isConnected) return;
   // gone: the result is revealed where the shark was
   txt.style.opacity = 1;
