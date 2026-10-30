@@ -2629,7 +2629,7 @@ const Uno = (() => {
     }
     if (!st.pendingChallenge) st.turn = next;
     else st.turn = st.pendingChallenge.to;
-    st.uno[p] = st.uno[p] && st.hands[p].length === 1;
+    sweepUno(st);
     return fx;
   }
   // the player hit by a Wild Draw card accepts it, or challenges (the player is checked for holding the old colour)
@@ -2697,6 +2697,8 @@ const Uno = (() => {
     if (active.length === 1) { st.winner = active[0]; endRound(st, fx); if (fx) fx.out = true; }
   }
   // UNO: a player down to one card who did not call it can be caught for 2 cards
+  // a call only counts while the hand is down to one card: whoever has picked cards up again must call afresh
+  function sweepUno(st) { for (const k in st.uno) if (st.hands[k].length !== 1) st.uno[k] = false; }
   function callUno(st, p) { st.uno[p] = true; }
   function catchUno(st, p) { const cs = takeCards(st, 2); st.hands[p].push(...cs); st.uno[p] = false; return cs; }
   const vulnerable = (st, p) => st.hands[p].length === 1 && !st.uno[p];
@@ -2875,7 +2877,7 @@ const Uno = (() => {
   }
   function botMove(st, p, level) { return level === 'cardshark' ? csHeur(st, p) : botPlay(st, p, level); }
 
-  return { CSW, csHeur, _det: determinize, _roll: rollout, CS, botMove, csPlay, COLORS, newMatch, newRound, face, other, top, legal, matches, play, drawTurn, passAfterDraw, resolveChallenge, callUno, catchUno, vulnerable, jumpInCards, cardPoints, nextSeat, isWild, isDrawWild, botPlay, botPlayDrawn, botChallenge, botCallsUno, botCatches, botJumpIn, bestColor, makeDeck };
+  return { CSW, csHeur, _det: determinize, _roll: rollout, CS, botMove, csPlay, COLORS, newMatch, newRound, face, other, top, legal, matches, play, drawTurn: (st, p) => { const r = drawTurn(st, p); sweepUno(st); return r; }, passAfterDraw, resolveChallenge, callUno, catchUno, vulnerable, jumpInCards, cardPoints, nextSeat, isWild, isDrawWild, botPlay, botPlayDrawn, botChallenge, botCallsUno, botCatches, botJumpIn, bestColor, makeDeck };
 })();
 if (typeof module !== 'undefined') module.exports = Uno;
 
@@ -2984,7 +2986,7 @@ const UnoUI = (() => {
     build(); root.dataset.n = st.n;
     token++; run(token).catch(e => { if (!(e instanceof Abort)) console.error(e); });
   }
-  function leave() { token++; wait = null; jumpWait = null; catchState = null; colorWait = null; st = null; root.hidden = true; api.showHome(); }
+  function leave() { stopVoice(); token++; wait = null; jumpWait = null; catchState = null; colorWait = null; st = null; root.hidden = true; api.showHome(); }
   function build() {
     root.innerHTML = `<header class="ubar">
       <button class="ib" id="uHome" aria-label="${api.L().sol.home}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M15 5l-7 7 7 7"/></svg></button>
@@ -2999,6 +3001,7 @@ const UnoUI = (() => {
       </div></div>
       <div class="uact" id="uAct"></div>
       <div class="uhand" id="uHand"></div>`;
+    startVoice();
     $('#uHome').onclick = leave;
     $('#uRules').onclick = () => api.showOpts('u');
     $('#uDraw').onclick = () => human({ draw: true });
@@ -3006,10 +3009,32 @@ const UnoUI = (() => {
     $('#uOpps').onclick = e => { const el = e.target.closest('.ucatch'); if (el) human({ catch: +el.dataset.p }); };
     $('#uAct').onclick = e => {
       const b = e.target.closest('button'); if (!b) return;
+      if (b.dataset.a === 'last' && voiceLive()) return;     // in voice mode the call is spoken
       if (b.dataset.c) { if (colorWait) { const r = colorWait; colorWait = null; renderAct(); r(b.dataset.c); } return; }
       if (b.dataset.a) human({ [b.dataset.a]: true });
     };
   }
+
+  // ---------------------------------------------------------------- calling "last card" by voice
+  let rec = null, voiceBad = false;
+  const SR = () => window.SpeechRecognition || window.webkitSpeechRecognition;
+  const voiceWanted = () => api.S.uCall === 'voice' && !!SR() && !voiceBad;
+  const voiceLive = () => voiceWanted() && !!rec;
+  const SAID = /un[iíy]c|\buno\b|\bju+no\b|jedn|zadnj|posljednj|last|one/i;
+  function stopVoice() { const r = rec; rec = null; if (r) { r.onend = null; try { r.stop(); } catch (e) { } } }
+  function startVoice() {
+    stopVoice();
+    if (api.S.uCall !== 'voice') return;
+    if (!SR() || voiceBad) { api.toast(T().noVoice); return; }
+    const r = rec = new (SR())();
+    r.lang = api.S.lang === 'hr' ? 'hr-HR' : 'en-US'; r.continuous = true; r.interimResults = true;
+    r.onresult = e => { for (let i = e.resultIndex; i < e.results.length; i++) if (SAID.test(e.results[i][0].transcript)) human({ last: true }); };
+    r.onerror = e => { if (e.error === 'not-allowed' || e.error === 'service-not-allowed') { voiceBad = true; rec = null; api.toast(T().noVoice); if (st) renderAct(); } };
+    r.onend = () => { if (rec === r && st && !root.hidden) setTimeout(() => { if (rec === r) try { r.start(); } catch (e) { } }, 250); };
+    try { r.start(); } catch (e) { }
+    if (st) renderAct();
+  }
+  function refresh() { voiceBad = false; if (st && !root.hidden) startVoice(); }
 
   // ---------------------------------------------------------------- drawing
   // seats around the table in playing order: the next player sits on my left, then across the top, then down the right
@@ -3094,7 +3119,8 @@ const UnoUI = (() => {
       return;
     }
     const lastOk = st.winner === null && ((st.turn === 0 && wait && st.hands[0].length === 2 && U.legal(st, 0).length) || U.vulnerable(st, 0)) && !st.uno[0];
-    a.push(`<button class="ubtn last" data-a="last" ${lastOk ? '' : 'disabled'}>${t.last}</button>`);
+    const vc = voiceLive();
+    a.push(`<button class="ubtn last${vc ? ' voice' : ''}" data-a="last" ${lastOk ? '' : 'disabled'}>${vc ? '🎤 ' : ''}${t.last}</button>`);
     if (wait && wait.drawn) a.push(`<button class="ubtn" data-a="pass">${t.pass}</button>`);
     $('#uAct').innerHTML = a.join('');
   }
@@ -3336,7 +3362,7 @@ const UnoUI = (() => {
     const r = m[lv] = m[lv] || [0, 0]; r[won ? 0 : 1]++; api.save();
   }
   const FACE = (c, side = 'L') => cardFace(c, side);
-  return { init, start, resume, hasSaved, FACE, faceSVG, BACK, HEX, SYM, DIR_SVG };
+  return { init, start, resume, refresh, hasSaved, FACE, faceSVG, BACK, HEX, SYM, DIR_SVG };
 })();
 if (typeof module !== 'undefined') module.exports = UnoUI;
 </script>
@@ -4859,7 +4885,7 @@ const STR = {
       fold: 'Odustajem', check: 'Dalje', call: 'Pratim', raise: 'Dižem', raiseTo: 'Dižem na', bet: 'Ulažem', allin: 'Sve', sb: 'MB', bb: 'VB', min: 'Min', potQ: 'Pot',
       next: 'Sljedeća ruka', pat: 'Ostajem', drawN: n => `Mijenjam ${n}`, drew: n => `mijenja ${n}`, maxDraw: n => `Najviše ${n}`, youWin: 'Pobjeda!', place: n => `${n}. mjesto`, again: 'Nova igra',
       hands: { high: 'Visoka karta', pair: 'Par', twoPair: 'Dva para', trips: 'Tris', straight: 'Skala', flush: 'Boja', fullHouse: 'Full house', quads: 'Poker', straightFlush: 'Skala u boji' } },
-    uno: { name: 'L’Unico!', pace: 'Brzina protivnika', slow: 'Sporo', normal: 'Normalno', fast: 'Brzo', classic: 'Klasične', flip: 'Flip', nomercy: 'No Mercy', builtin: 'Vrijede posebna pravila', players: 'Igrači', target: 'Igra se do', one: 'Jedna runda', house: 'Kućna pravila', stack: 'Slaganje +2 na +2 i +4 na +4', sevenO: '7 mijenja ruke, 0 ih okreće', jumpIn: 'Upadanje istom kartom', drawUntil: 'Vuci dok ne možeš igrati', eliminated: 'Ispao',
+    uno: { name: 'L’Unico!', call: 'Poziv „Zadnja!“', tap: 'Dodir', voice: 'Glas', noVoice: 'Glas nije dostupan', pace: 'Brzina protivnika', slow: 'Sporo', normal: 'Normalno', fast: 'Brzo', classic: 'Klasične', flip: 'Flip', nomercy: 'No Mercy', builtin: 'Vrijede posebna pravila', players: 'Igrači', target: 'Igra se do', one: 'Jedna runda', house: 'Kućna pravila', stack: 'Slaganje +2 na +2 i +4 na +4', sevenO: '7 mijenja ruke, 0 ih okreće', jumpIn: 'Upadanje istom kartom', drawUntil: 'Vuci dok ne možeš igrati', eliminated: 'Ispao',
       you: 'Ti', round: 'runda', draw: 'Vuci', pass: 'Dalje', last: 'Zadnja!', catch: 'Uhvati!', color: 'Boja', swap: 'Zamijeni ruke s', take: 'Uzmi', challenge: 'Izazovi', left: 'Karte', total: 'Ukupno', next: 'Sljedeća runda', again: 'Nova partija',
       roundWon: n => `${n} · runda`, matchWon: n => `${n} · pobjeda`, won: 'Pobjede', lost: 'Porazi',
       cols: { r: 'Crvena', y: 'Žuta', g: 'Zelena', b: 'Plava', p: 'Ružičasta', t: 'Tirkizna', o: 'Narančasta', v: 'Ljubičasta' } },
@@ -4937,7 +4963,7 @@ const STR = {
       fold: 'Fold', check: 'Check', call: 'Call', raise: 'Raise', raiseTo: 'Raise to', bet: 'Bet', allin: 'All in', sb: 'SB', bb: 'BB', min: 'Min', potQ: 'Pot',
       next: 'Next hand', pat: 'Stand pat', drawN: n => `Draw ${n}`, drew: n => `draws ${n}`, maxDraw: n => `At most ${n}`, youWin: 'You win!', place: n => `${n}${n === 2 ? 'nd' : n === 3 ? 'rd' : 'th'} place`, again: 'New game',
       hands: { high: 'High card', pair: 'Pair', twoPair: 'Two pair', trips: 'Three of a kind', straight: 'Straight', flush: 'Flush', fullHouse: 'Full house', quads: 'Four of a kind', straightFlush: 'Straight flush' } },
-    uno: { name: 'L’Unico!', pace: 'Opponents’ speed', slow: 'Slow', normal: 'Normal', fast: 'Fast', classic: 'Classic', flip: 'Flip', nomercy: 'No Mercy', builtin: 'Variant rules apply', players: 'Players', target: 'Play to', one: 'One round', house: 'House rules', stack: 'Stack +2 on +2 and +4 on +4', sevenO: '7 swaps hands, 0 rotates them', jumpIn: 'Jump in with an identical card', drawUntil: 'Draw until you can play', eliminated: 'Eliminated',
+    uno: { name: 'L’Unico!', call: 'Calling “Last card!”', tap: 'Tap', voice: 'Voice', noVoice: 'Voice not available', pace: 'Opponents’ speed', slow: 'Slow', normal: 'Normal', fast: 'Fast', classic: 'Classic', flip: 'Flip', nomercy: 'No Mercy', builtin: 'Variant rules apply', players: 'Players', target: 'Play to', one: 'One round', house: 'House rules', stack: 'Stack +2 on +2 and +4 on +4', sevenO: '7 swaps hands, 0 rotates them', jumpIn: 'Jump in with an identical card', drawUntil: 'Draw until you can play', eliminated: 'Eliminated',
       you: 'You', round: 'Round', draw: 'Draw', pass: 'Pass', last: 'Last card!', catch: 'Catch!', color: 'Colour', swap: 'Swap hands with', take: 'Take', challenge: 'Challenge', left: 'Cards', total: 'Total', next: 'Next round', again: 'New match',
       roundWon: n => `${n} · round`, matchWon: n => `${n} · winner`, won: 'Won', lost: 'Lost',
       cols: { r: 'Red', y: 'Yellow', g: 'Green', b: 'Blue', p: 'Pink', t: 'Teal', o: 'Orange', v: 'Purple' } },
@@ -5341,6 +5367,7 @@ function showPokerSheet() {
 function showUnoSheet() {
   const t = L(), u = t.uno;
   if (!S.uPace) S.uPace = 'normal';
+  if (!S.uCall) S.uCall = 'tap';
   const seg = (key, opts) => `<div class="seg dark" role="group">${opts.map(([v, lab]) => `<button data-k="${key}" data-v="${v}" aria-pressed="${String(S[key]) === String(v)}">${lab}</button>`).join('')}</div>`;
   const rules = () => S.uVar === 'nomercy' ? `<p class="muted">${u.builtin}</p>` : [['uStack', u.stack, true], ['uSevenO', u.sevenO, S.uVar === 'classic'], ['uJumpIn', u.jumpIn, S.uVar === 'classic'], ['uDrawUntil', u.drawUntil, true]].filter(r => r[2]).map(([k, lab]) => `<label class="tog"><span><b>${lab}</b></span><input type="checkbox" data-opt="${k}" ${S[k] ? 'checked' : ''}></label>`).join('');
   openSheet(`<div class="gsh"><h3>${u.name}</h3><button class="link" id="gRules">${t.rules}</button></div>
@@ -5348,6 +5375,7 @@ function showUnoSheet() {
     <div class="gsep"></div><div class="glab">${u.players}</div>${seg('uPlayers', [2, 3, 4, 5, 6].map(n => [n, n]))}
     <div class="gsep"></div><div class="glab">${t.level}</div><div class="seg dark levels" role="group">${AI.LEVELS.map(l => `<button data-k="uLevel" data-v="${l}" aria-pressed="${S.uLevel === l}">${t.lv[l]}</button>`).join('')}</div>
     <div class="gsep"></div><div class="glab">${u.target}</div>${seg('uTarget', [[500, '500'], [250, '250'], [0, u.one]])}
+    <div class="gsep"></div><div class="glab">${u.call}</div>${seg('uCall', [['tap', u.tap], ['voice', u.voice]])}
     <div class="gsep"></div><div class="glab">${u.pace}</div>${seg('uPace', [['slow', u.slow], ['normal', u.normal], ['fast', u.fast]])}
     <div class="gsep"></div><div class="glab">${u.house}</div><div class="rules-list" id="uRulesList">${rules()}</div></div>
     <div class="btns"><button class="sec" id="gClose">${L().close}</button><button class="play wide" id="gPlay">${L().sol.newGame}</button></div>`, v => {
@@ -5358,6 +5386,7 @@ function showUnoSheet() {
       let val = b.dataset.v; val = isNaN(+val) ? val : +val;
       S[b.dataset.k] = val; save(); renderHome();
       b.parentNode.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b));
+      if (b.dataset.k === 'uCall') UnoUI.refresh();
       if (b.dataset.k === 'uVar') { v.querySelector('#uRulesList').innerHTML = rules(); bindT(); }
     });
     bindT();
