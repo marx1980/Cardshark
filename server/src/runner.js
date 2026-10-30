@@ -5,6 +5,7 @@ const AI = require('./ai.js');
 const { makeView, rotSeat } = require('./view.js');
 const Poker = require('./poker.js');
 const Remi = require('./remi.js');
+const RemiAI = require('./remibot.js');
 const Unico = require('./unico.js');
 
 const PACE = { bot: 800, trick: 1800, deal: 700, decl: 3200, akuza: 1600, called: 1100 };
@@ -122,9 +123,10 @@ class Runner {
   }
 
   async getAction(seat, req, bot) {
+      this.fromHuman = false;
       if (this.io.isHuman(seat)) {
         const a = await this.io.ask(seat, req);
-        if (a && typeof a === 'object') return a;
+        if (a && typeof a === 'object') { this.fromHuman = true; return a; }
       }
       const pace = this.game === 'l' ? ({ slow: 1300, normal: PACE.bot, fast: 400 }[this.opts.pace] || PACE.bot) : PACE.bot;
       await this.io.sleep(this.io.isHuman(seat) ? 50 : pace);
@@ -185,7 +187,11 @@ class Runner {
             canTake: st.phase === 'draw' && st.discard.length > 0, melds: st.melds.map(m => ({ id: m.id, owner: relSeat(m.owner, seat, st.n) })) };
           let a = await this.getAction(seat, req, () => this.remiBotAction(st, seat));
           try { this.applyRemiAction(st, seat, a); }
-          catch (_) { a = this.remiBotAction(st, seat); this.applyRemiAction(st, seat, a); }
+          catch (e) {
+            // an illegal move from a player is refused and the turn is asked again; only a bot's (or an absent player's) fallback is replaced
+            if (this.fromHuman) { this.io.send(seat, { t: 'reject', rule: String(e && e.rule || 'bad') }); continue; }
+            this.remiPlan = null; a = this.remiBotAction(st, seat); this.applyRemiAction(st, seat, a);
+          }
           this.emit({ k: 'action', seat, action: a.action || a.a, winner: st.winner });
         }
         this.turn = null; this.emit({ k: 'handEnd', result: st.result, over: st.matchOver });
@@ -211,91 +217,29 @@ class Runner {
       throw Error('action');
     }
 
+    // a bot's turn, one step per call: it draws, then plays out a plan worked out once for the turn (same bots as the app)
     remiBotAction(st, p) {
+      const lv = this.io.level(p) || 'average', RA = RemiAI;
+      this.remiAvoid = this.remiAvoid || {};
       if (st.phase === 'draw') {
+        this.remiPlan = null;
         const top = st.discard[st.discard.length - 1];
-        if (top && this.remiAvoid?.[p] !== top.id && this.remiUseful(st, p, top)) return { action: 'take' };
+        if (top && this.remiAvoid[p] !== top.id && RA.chooseDraw(st, p, lv) === 'discard') return { action: 'take' };
         return { action: 'stock' };
       }
-      const h = st.hands[p], target = st.swapped && h.some(c => c.id === st.swapped) ? st.swapped :
-        st.mustUse && h.some(c => c.id === st.mustUse) ? st.mustUse : null;
-      if (!st.opened[p]) {
-        if (st.staged.length && Remi.stagedValue(st) >= 51) return { action: 'open' };
-        const sets = this.remiMeldCandidates(h), pick = this.remiOpening(sets, h, Math.max(1, 51 - Remi.stagedValue(st)));
-        if (pick && (!target || pick.flat().includes(target))) return { action: 'stage', ids: pick[0] };
-        if (st.staged.length && Remi.stagedValue(st) >= 51) return { action: 'open' };
-      } else {
-        const sets = this.remiMeldCandidates(h).find(ids => ids.length >= 3 && h.length - ids.length >= 1 && (!target || ids.includes(target)));
-        if (sets) return { action: 'meld', ids: sets };
-        for (const c of h) if ((!target || c.id === target) && h.length > 1) {
-          const m = st.melds.find(m => Remi.canLayOff(c, m) || Remi.canSwap(c, m));
-          if (m && Remi.canSwap(c, m)) {
-            const slot = Remi.jokerSlot(m), joker = m.cards.find(x => x.id === slot.id);
-            const rest = h.filter(x => x.id !== c.id).concat(joker);
-            if (this.remiMeldCandidates(rest).some(ids => ids.includes(joker.id) && rest.length - ids.length >= 1))
-              return { action: 'swap', id: c.id, meld: m.id };
-          } else if (m) return { action: 'layoff', id: c.id, meld: m.id };
-        }
+      if (!this.remiPlan || this.remiPlan.p !== p) {
+        let plan = null;
+        try { plan = RA.planTurn(st, p, lv, lv === 'cardshark'); } catch (_) { }
+        if (!plan && st.mustUse && st.hands[p].some(c => c.id === st.mustUse) && !st.staged.length) { this.remiAvoid[p] = st.mustUse; return { action: 'untake' }; }
+        this.remiPlan = { p, acts: plan ? plan.slice() : [] };
       }
-      if (st.staged.length) {
-        if (Remi.stagedValue(st) >= 51) return { action: 'open' };
-        return { action: 'unstage', index: st.staged.length - 1 };
-      }
-      if (target && h.some(c => c.id === target)) { this.remiAvoid = this.remiAvoid || {}; this.remiAvoid[p] = target; return { action: 'untake' }; }
-      const discard = h.slice().sort((a, b) => Remi.handVal(b) - Remi.handVal(a))[0];
-      return { action: 'discard', id: discard.id };
-    }
-
-    remiMeldCandidates(hand) {
-      const out = [], add = cs => { if (Remi.analyze(cs)) out.push(cs.map(c => c.id)); };
-      const nat = hand.filter(c => !Remi.isJ(c)), jok = hand.filter(c => Remi.isJ(c));
-      for (let i = 0; i < nat.length; i++) for (let j = i + 1; j < nat.length; j++) {
-        const a = nat[i], b = nat[j];
-        if (a.r === b.r && a.s !== b.s) {
-          const group = [a, b];
-          for (const c of nat) if (c.r === a.r && c.s !== a.s && c.s !== b.s) add([...group, c]);
-          for (const x of jok) add([...group, x]);
-        }
-        if (a.s === b.s) {
-          for (let lo = Math.max(1, Math.min(a.r, b.r) - 1); lo <= Math.min(11, Math.max(a.r, b.r)); lo++) {
-            const cs = []; for (let r = lo; r < lo + 3; r++) {
-              const c = nat.find(x => x.s === a.s && x.r === r) || (r === 14 ? nat.find(x => x.s === a.s && x.r === 1) : null);
-              if (c) cs.push(c);
-            }
-            if (cs.length === 3) add(cs);
-            else if (cs.length === 2) for (const x of jok) add([...cs, x]);
-          }
-        }
-      }
-      const uniq = new Map(out.map(ids => [ids.slice().sort().join(','), ids]));
-      return [...uniq.values()];
-    }
-
-    remiOpening(groups, hand, needed = 51) {
-      const byId = new Map(hand.map(c => [c.id, c]));
-      const candidates = groups.map(ids => ({ ids, value: Remi.meldValue(ids.map(id => byId.get(id))) })).sort((a, b) => b.value - a.value);
-      const used = new Set(), chosen = []; let value = 0;
-      for (const item of candidates) {
-        if (item.ids.some(id => used.has(id)) || hand.length - used.size - item.ids.length < 1) continue;
-        item.ids.forEach(id => used.add(id)); chosen.push(item.ids); value += item.value;
-        if (value >= needed) return chosen;
-      }
-      return null;
-    }
-
-    remiUseful(st, p, card) {
-      const hand = st.hands[p].concat(card);
-      if (st.opened[p]) {
-        if (st.melds.some(m => Remi.canLayOff(card, m))) return true;
-        for (const m of st.melds) if (Remi.canSwap(card, m)) {
-          const slot = Remi.jokerSlot(m), joker = m.cards.find(x => x.id === slot.id);
-          const rest = st.hands[p].concat(joker);
-          if (this.remiMeldCandidates(rest).some(ids => ids.includes(joker.id) && rest.length - ids.length >= 1)) return true;
-        }
-        return this.remiMeldCandidates(hand).some(ids => ids.includes(card.id) && hand.length - ids.length >= 1);
-      }
-      const plan = this.remiOpening(this.remiMeldCandidates(hand), hand);
-      return !!plan && plan.flat().includes(card.id);
+      const x = this.remiPlan.acts.shift();
+      if (x) return { ...x, action: x.a };
+      this.remiPlan = null;
+      if (st.staged.length) return Remi.stagedValue(st) >= 51 ? { action: 'open' } : { action: 'unstage', index: st.staged.length - 1 };
+      const h = st.hands[p].filter(c => c.id !== st.mustUse && c.id !== st.swapped);
+      const d = (h.length ? h : st.hands[p]).slice().sort((u, v) => Remi.handVal(v) - Remi.handVal(u))[0];
+      return { action: 'discard', id: d.id };
     }
 
     async unicoMatch() {

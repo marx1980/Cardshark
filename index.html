@@ -367,6 +367,7 @@ table.stats td b{display:inline-block;min-width:1.4em;font-size:15px}
 .net-r .rtable{padding-bottom:calc(54px * var(--rr) + 16px)}
 .net-r .net-rpiles{position:absolute;left:0;right:0;bottom:0;z-index:3}
 .net-r .rpile:disabled{opacity:1;cursor:default}
+.net-r .ropp{top:max(calc(var(--y) * 1%),44px)}
 .net-r .net-board,.net-p .net-board{display:none}
 .net-l .action,.net-p .action,.net-r .action{padding:6px 8px 2px;min-height:44px}
 .net-l .action .msg,.net-p .action .msg,.net-r .action .msg{display:none}
@@ -5769,7 +5770,7 @@ function renderNetBoard() {
     const disc = document.createElement('div'); disc.className = 'net-disc';
     const stock = document.createElement('button'); stock.className = 'net-pile'; stock.dataset.pile = 'stock'; stock.textContent = `${L().remi.stock} · ${G.stock?.length || 0}`;
     const discard = document.createElement('button'); discard.className = 'net-pile'; discard.dataset.pile = 'take';
-    discard.disabled = !top || !NET?.req || NET.req.phase !== 'draw';
+    discard.disabled = !top || !NET?.req || (NET.req.phase !== 'draw' && (NET.selected || new Set()).size !== 1);
     if (top) discard.append(netFaceNode(top)); else discard.textContent = '—';
     const discardCount = document.createElement('small'); discardCount.textContent = String(G.discard?.length || 0); discard.append(discardCount);
     disc.append(stock, discard); board.append(disc, melds);
@@ -5977,7 +5978,7 @@ function renderNetAction() {
       const selectedCards = selected.map(id => G.hands[0].find(c => c.id === id)).filter(Boolean);
       const validMeld = selectedCards.length >= 3 && G.hands[0].length - selectedCards.length >= 1 && !!Remi.analyze(selectedCards);
       const blockedDiscard = (G.mustUse && G.hands[0].some(c => c.id === G.mustUse)) || (G.swapped && G.hands[0].some(c => c.id === G.swapped));
-      controls = `${!opened ? `${netBtn('stage', t.remi.meld, !validMeld)}${staged.length ? netBtn('open', t.remi.open, netRummyValue(staged) < 51) : ''}` : `${netBtn('meld', t.remi.meld, !validMeld)}`}${selected.length === 1 ? netBtn('discard', t.remi.discard, blockedDiscard) : ''}`;
+      controls = `${!opened ? `${netBtn('stage', t.remi.meld, !validMeld)}${staged.length ? netBtn('open', t.remi.open, netRummyValue(staged) < 51) : ''}` : `${netBtn('meld', t.remi.meld, !validMeld)}`}${G.mustUse && G.hands[0].some(c => c.id === G.mustUse) && !staged.length ? netBtn('untake', t.remi.untake) : ''}${selected.length === 1 ? netBtn('discard', t.remi.discard, blockedDiscard) : ''}`;
     }
   } else if (req.kind === 'unico') {
     controls = G.hands[0].length === 2 ? netBtn('uno', t.uno.last, false, `class="ubtn last" aria-pressed="${!!NET.callUno}"`) : '';
@@ -5991,7 +5992,7 @@ function renderNetAction() {
     controls = '';
   }
   if (req.kind === 'remi') controls += netBtn('sort', NET.sortBy === 'suit' ? '♠♥♣♦' : 'A·2·3', false, `aria-label="${t.remi.sort || ''}"`);
-  const prompt = req.kind === 'remi' ? (req.phase === 'draw' ? t.remi.players : t.yourTurn) : t.yourTurn;
+  const prompt = t.yourTurn;
   setAction(`<div class="msg">${prompt}</div><div class="net-controls">${controls}</div>`);
   const raiseLbl = $('#netRaise')?.closest('label');
   if (raiseLbl && req.kind === 'pokerAction') {
@@ -6106,6 +6107,15 @@ function handleNetAction(e) {
     else finishNetUnoPlay(NET.playCard, null, +b.dataset.target);
   }
 }
+// the top discard can be used this turn: to open with it (51) or, once open, to meld it or lay it off
+function netRemiUsable(top) {
+  const h = G.hands[0];
+  if (G.opened?.[0]) {
+    if ((G.melds || []).some(m => Remi.canLayOff(G, top, m) || Remi.canSwap(G, top, m))) return true;
+    return RemiAI.bestMelds(h.concat([top]), 'dead', top.id, 4000).melds.some(m => m.ids.includes(top.id));
+  }
+  return RemiAI.bestMelds(h.concat([top]), 'open', top.id, 6000).score >= 51;
+}
 function handleNetCenter(e) {
   const st = e.target.closest('.rmeld.st[data-i]');
   if (st && G.game === 'r' && NET?.req?.kind === 'remi') { netSendMove({ action: 'unstage', index: +st.dataset.i }); return; }
@@ -6121,8 +6131,13 @@ function handleNetCenter(e) {
   const c = e.target.closest('.ucatch');
   if (c && NET?.req?.kind === 'unico') { netSendMove({ action: 'catch', target: +c.dataset.target }); return; }
   const b = e.target.closest('[data-pile]'); if (!b || b.disabled || !NET?.req) return;
-  if (G.game === 'r' && NET.req.kind === 'remi' && NET.req.phase === 'draw')
-    netSendMove({ action: b.dataset.pile === 'take' ? 'take' : 'stock' });
+  if (G.game === 'r' && NET.req.kind === 'remi' && NET.req.phase === 'draw') {
+    if (b.dataset.pile === 'take') {
+      const top = G.discard[G.discard.length - 1];
+      if (top && !netRemiUsable(top)) { b.animate([{ transform: 'translateX(0)' }, { transform: 'translateX(-5px)' }, { transform: 'translateX(5px)' }, { transform: 'translateX(0)' }], { duration: 220 }); toast(L().remi.err.cantUse); return; }
+      netSendMove({ action: 'take' });
+    } else netSendMove({ action: 'stock' });
+  } else if (G.game === 'r' && NET.req.kind === 'remi' && b.dataset.pile === 'take' && (NET.selected || new Set()).size === 1) netSendMove({ action: 'discard', id: [...NET.selected][0] });
   else if (G.game === 'l' && NET.req.kind === 'unico' && b.dataset.pile === 'draw')
     netSendMove({ action: 'draw' });
 }
@@ -6977,6 +6992,7 @@ async function handleNet(m) {
     if (G.trick) G.trick.forEach(x => placeTrickCard(x.seat, x.card));
     return;
   }
+  if (m.t === 'reject') { const e = L().remi?.err || {}; toast(e[m.rule] || e.bad || '…'); return; }
   if (m.t === 'ask') return askHuman(m.req);
   if (m.t === 'away') { pending = null; renderHand(); showAway(true); return; }
   if (m.t === 'bots') { NET.botSeats = m.seats; if (G && G.online) renderSeats(); return; }
@@ -7123,7 +7139,8 @@ async function askHuman(req) {
   showAway(false);
   if (netMulti()) {
     NET.req = req; NET.selected = new Set(); NET.playCard = null; NET.callUno = false; NET.pendingColor = null; NET.pendingTarget = null;
-    G.turn = 0; renderNetAll(); status(t.yourTurn); return;
+    if (G.game === 'r' && req.kind === 'remi' && req.phase === 'play' && G.mustUse && G.hands[0].some(c => c.id === G.mustUse)) NET.selected = new Set([G.mustUse]);
+    G.turn = 0; renderNetAll(); renderNetAction(); return;
   }
   if (req.kind === 'bid') {
     G.turn = 0; renderSeats();
