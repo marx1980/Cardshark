@@ -2977,7 +2977,7 @@ const UnoUI = (() => {
     root = document.querySelector('#uno');
     document.querySelector('#home').hidden = true; document.querySelector('#table').hidden = true; document.querySelector('#sol').hidden = true; root.hidden = false;
     const o = opts();
-    st = U.newMatch(o); st.dealer = st.n - 1;
+    st = U.newMatch(o); st.dealer = Math.floor(Math.random() * st.n);
     levels = [null]; for (let i = 1; i < st.n; i++) levels.push(api.S.uLevel || 'cardshark');
     const pick = {}; for (let i = 1; i < st.n; i++) pick[i] = levels[i];
     const pn = api.pickBotNames(pick); names = [null]; for (let i = 1; i < st.n; i++) names.push(pn[i]);
@@ -3343,11 +3343,12 @@ const UnoUI = (() => {
     if (over) record(st.scores.indexOf(Math.max(...st.scores)) === 0);
     const order = [...rows].sort((a, b) => st.scores[b.i] - st.scores[a.i]);
     const champ = over ? st.scores.indexOf(Math.max(...st.scores)) : w;
-    return (over ? api.fx(champ === 0, { cards: champ === 0 ? [] : [$('#uDisc')] }) : Promise.resolve()).then(() => new Promise(res => api.openSheet(`<h3>${over ? t.matchWon(esc(nm(champ))) : t.roundWon(esc(nm(w)))}</h3>
+    const sheetU = `<h3>${over ? t.matchWon(esc(nm(champ))) : t.roundWon(esc(nm(w)))}</h3>
       <table class="pis utab"><thead><tr><th></th><th>${t.left}</th>${st.opts.target ? `<th>${t.total}</th>` : ''}</tr></thead><tbody>
       ${order.map(r => `<tr${r.i === w ? ' class="w"' : ''}><td>${esc(nm(r.i))}</td><td>${r.i === w ? `+${total}` : st.eliminated?.[r.i] ? t.eliminated : `${r.left} · ${r.pts}`}</td>${st.opts.target ? `<td><b>${st.scores[r.i]}</b></td>` : ''}</tr>`).join('')}
       </tbody></table>
-      <div class="btns">${over ? `<button class="sec" id="uMenu">${api.L().sol.home}</button><button class="pri" id="uNew">${t.again}</button>` : `<button class="pri" id="uNext">${t.next}</button>`}</div>`, v => {
+      <div class="btns">${over ? `<button class="sec" id="uMenu">${api.L().sol.home}</button><button class="pri" id="uNew">${t.again}</button>` : `<button class="pri" id="uNext">${t.next}</button>`}</div>`;
+    return (over ? api.fx(champ === 0, { cards: champ === 0 ? [] : [$('#uDisc')], stats: sheetU }) : Promise.resolve()).then(() => new Promise(res => api.openSheet(sheetU, v => {
       const n = v.querySelector('#uNext'); if (n) n.onclick = () => { api.closeSheet(); res(true); };
       const m = v.querySelector('#uMenu'); if (m) m.onclick = () => { res(false); leave(); };
       const a = v.querySelector('#uNew'); if (a) a.onclick = () => { res(false); start(); };
@@ -4090,9 +4091,10 @@ const PokerUI = (() => {
     // my place: everybody still in when I went out finishes ahead of me
     const place = won ? 1 : 1 + st.seats.filter((s, i) => i !== 0 && (!s.out || s.outAt > st.seats[0].outAt)).length;
     record(won);
-    await api.fx(won, { cards: won ? [] : [...root.querySelectorAll('#pBoard > *')] }); check(my);
-    await new Promise(res => api.openSheet(`<h3>${won ? t.youWin : t.place(place)}</h3>
-      <div class="btns"><button class="sec" id="pMenu">${api.L().sol.home}</button><button class="pri" id="pNew">${t.again}</button></div>`, v => {
+    const sheetP = `<h3>${won ? t.youWin : t.place(place)}</h3>
+      <div class="btns"><button class="sec" id="pMenu">${api.L().sol.home}</button><button class="pri" id="pNew">${t.again}</button></div>`;
+    await api.fx(won, { cards: won ? [] : [...root.querySelectorAll('#pBoard > *')], stats: sheetP }); check(my);
+    await new Promise(res => api.openSheet(sheetP, v => {
       v.querySelector('#pMenu').onclick = () => { res(); leave(); };
       v.querySelector('#pNew').onclick = () => { res(); start(); };
     }));
@@ -4598,7 +4600,7 @@ const RemiUI = (() => {
     api.closeSheet(); clearSave(); show();
     const S = api.S;
     st = R.newMatch({ players: S.rPlayers || 4, target: S.rTarget ?? 501 });
-    st.dealer = st.n - 2;                                   // you start the first round
+    st.dealer = Math.floor(Math.random() * st.n);           // the first dealer is random; newRound moves on to the next player
     levels = [null]; for (let i = 1; i < st.n; i++) levels.push(S.rLevel || 'cardshark');
     const pick = {}; for (let i = 1; i < st.n; i++) pick[i] = levels[i];
     const pn = api.pickBotNames(pick); names = [null]; for (let i = 1; i < st.n; i++) names.push(pn[i]);
@@ -4821,11 +4823,12 @@ const RemiUI = (() => {
     if (over) { clearSave(); record(R.champion(st) === 0); } else ckpt();
     const order = Array.from({ length: st.n }, (_, i) => i).sort((a, b) => st.scores[a] - st.scores[b]);
     const champ = R.champion(st);
-    return (over ? api.fx(champ === 0, { cards: champ === 0 ? [] : [$('#rDisc')] }) : Promise.resolve()).then(() => new Promise(res => api.openSheet(`<h3>${over ? t.matchWon(esc(nm(champ))) : w < 0 ? t.noWinner : t.roundWon(esc(nm(w)))}${r.remi ? ' · ' + t.remi : ''}</h3>
+    const sheetR = `<h3>${over ? t.matchWon(esc(nm(champ))) : w < 0 ? t.noWinner : t.roundWon(esc(nm(w)))}${r.remi ? ' · ' + t.remi : ''}</h3>
       <table class="pis utab"><thead><tr><th></th><th>${t.left}</th><th>${t.pts}</th>${st.opts.target ? `<th>${t.total}</th>` : ''}</tr></thead><tbody>
       ${order.map(i => `<tr${i === w ? ' class="w"' : ''}><td>${esc(nm(i))}</td><td>${i === w ? '—' : st.opened[i] ? st.hands[i].length : t.closed}</td><td>${r.pts[i] > 0 ? '+' : ''}${r.pts[i]}</td>${st.opts.target ? `<td><b>${st.scores[i]}</b></td>` : ''}</tr>`).join('')}
       </tbody></table>
-      <div class="btns">${over ? `<button class="sec" id="rMenu">${api.L().sol.home}</button><button class="pri" id="rNew">${t.again}</button>` : `<button class="pri" id="rNext">${t.next}</button>`}</div>`, v => {
+      <div class="btns">${over ? `<button class="sec" id="rMenu">${api.L().sol.home}</button><button class="pri" id="rNew">${t.again}</button>` : `<button class="pri" id="rNext">${t.next}</button>`}</div>`;
+    return (over ? api.fx(champ === 0, { cards: champ === 0 ? [] : [$('#rDisc')], stats: sheetR }) : Promise.resolve()).then(() => new Promise(res => api.openSheet(sheetR, v => {
       const n = v.querySelector('#rNext'); if (n) n.onclick = () => { api.closeSheet(); res(true); };
       const m = v.querySelector('#rMenu'); if (m) m.onclick = () => { res(false); leave(); };
       const a = v.querySelector('#rNew'); if (a) a.onclick = () => { res(false); start(); };
@@ -5407,6 +5410,7 @@ const LOSEMARK = `<svg class="fxmark" xmlns="http://www.w3.org/2000/svg" viewBox
 const ARMG = `<g fill="#5b7186" stroke="#5b7186" stroke-linecap="round" stroke-linejoin="round"><path d="M30 66L8 79" stroke-width="17"/><path d="M8 79L0 59" stroke-width="13"/><ellipse cx="17" cy="68" rx="12.5" ry="9.5" transform="rotate(-30 17 68)" stroke="none"/><ellipse cx="3.5" cy="71" rx="8.5" ry="10.5" transform="rotate(12 3.5 71)" stroke="none"/><circle cx="-1.2" cy="54" r="8.6" stroke="none"/></g><path d="M27 74C20 80 12 85 6 88M9 84C3 80 -1 74 -2 67" fill="none" stroke="#2f3f4f" stroke-width="2.4" stroke-linecap="round" opacity=".28"/><ellipse cx="17" cy="62.5" rx="6.5" ry="3.2" transform="rotate(-30 17 62.5)" fill="#fff" opacity=".2"/><path d="M-5 51.5Q-1.2 49 2.6 51.5M-5.5 55Q-1.2 52.5 3 55M-5 58.5Q-1.2 56 2.6 58.5" fill="none" stroke="#2f3f4f" stroke-width="1" stroke-linecap="round" opacity=".5"/>`;
 const ARMS = `<svg class="fxarms" viewBox="0 0 120 120" overflow="visible" aria-hidden="true"><g transform="translate(0 -7)">${ARMG}</g><g transform="translate(120 -7) scale(-1 1)">${ARMG}</g></svg>`;
 function matchResultFx(won, o = {}) {
+  if (o.stats) { const { stats, ...rest } = o; return statsThenFx(stats, won, () => rest.cards || []); }
   const old = document.getElementById('fx'); if (old) old.remove();
   const t = L(), reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const fx = document.createElement('div'); fx.id = 'fx'; fx.setAttribute('aria-hidden', 'true');
