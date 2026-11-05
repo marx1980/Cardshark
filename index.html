@@ -199,19 +199,14 @@ table.stats td b{display:inline-block;min-width:1.4em;font-size:15px}
 #fx .fxs.big .mar{position:absolute;width:26%;top:8%;filter:drop-shadow(0 2px 3px rgba(0,0,0,.5));transform-origin:50% 95%}
 #fx .mar.l{left:-14%;animation:fxshl .18s ease-in-out infinite alternate}
 #fx .mar.r{right:-14%;animation:fxshr .18s ease-in-out infinite alternate}
-#fx .fxs.big .fxarm{position:absolute;top:34%;width:35%;height:22%;overflow:visible;z-index:1;fill:#5b7186;stroke:#0e241c;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-#fx .fxs.big .fxarm.l{left:-5%}
-#fx .fxs.big .fxarm.r{right:-5%;transform:scaleX(-1)}
-#fx .fxs.big .mar{z-index:2}
+#fx .fxs.big .mar{z-index:1}
+#fx .fxarms{position:absolute;inset:0;width:100%;height:100%;overflow:visible;z-index:2}
 #fx .spark{position:absolute;width:6px;height:6px;border-radius:50%;pointer-events:none}
 #fx .fxlose{position:absolute;inset:0;pointer-events:none}
 #fx .fxlose .fxt{top:38%}
 #fx .fxshark{position:absolute;pointer-events:none;filter:drop-shadow(0 6px 8px rgba(0,0,0,.5))}
 #fx .fxshark .fxmark{width:100%;height:100%;display:block}
-#fx .fxjaw{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
-#fx .fxjaw .fxgape{fill:#14291f}
-#fx .fxjaw .fxteeth{fill:none;stroke:#fbf6ea;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
-#fx .fxjaw .fxlower{fill:#5b7186;stroke:#0e241c;stroke-width:2;stroke-linejoin:round;transform-box:view-box;transform-origin:84px 70px}
+#fx .fxshark .fxlower{transform-box:view-box;transform-origin:66px 77px}
 @keyframes fxdance{from{transform:translateY(0) rotate(-9deg)}to{transform:translateY(-12%) rotate(9deg)}}
 @keyframes fxshl{from{transform:rotate(-30deg)}to{transform:rotate(18deg)}}
 @keyframes fxshr{from{transform:rotate(30deg)}to{transform:rotate(-18deg)}}
@@ -4906,7 +4901,7 @@ const STR = {
     rThirds: ['Ostatak trećina zadnjem štihu', 'Zadnji štih nosi do 11 bodova umjesto +1'], rSignals: ['Znakovi partneru', 'Kucam, strišo i volo (samo u četvero)'],
     rClockwise: ['U smjeru kazaljke', 'Inače se igra suprotno od kazaljke'],
     akuzaName: d => d.type === 'napolitana' ? 'napolitana' : `${d.type === 'four' ? 'četiri' : 'tri'} ${({ '3': 'trice', '2': 'dvice', A: 'asa' })[d.r]}`,
-    playersN: n => `${n} igrača`, modeN: n => ({ p4: '4 · u paru', s4: '4 · svatko za sebe', s3: '3 igrača', d2: '2 · dupla' })[n],
+    playersN: n => `${n} igrača`, modeN: n => ({ p4: 'u paru', s4: '4 igrača', s3: '3 igrača', d2: 'dupla' })[n],
     handWonBy: n => `${n} dobiva ruku.`, handTie: 'Neriješeno.', pairNote: 'Dupla: 4 karte, svatko igra dvaput u štihu.', cardsN: n => n === 4 ? '4 karte · dupla' : '3 karte',
     sumB: () => `${({ p4: '4 igrača · u paru', s4: '4 igrača · svatko za sebe', s3: '3 igrača', d2: '2 igrača · dupla' })[S.bMode]} · do ${S.bTarget}`, sumH: () => `4 igrača · do ${S.hTarget}`, deckB: 'Karte za briškulu i trešetu', deckF: 'Francuske karte', deckH: 'Karte za belu', lowRes: 'niža rezolucija',
     foot: 'Igra se protiv računala. Postavke se pamte na ovom uređaju.',
@@ -4984,7 +4979,7 @@ const STR = {
     rThirds: ['Leftover thirds to last trick', 'Last trick tops the hand up to 11 instead of +1'], rSignals: ['Signals to partner', 'Knock, slide and last-card (4 players only)'],
     rClockwise: ['Play clockwise', 'Otherwise play goes counter-clockwise'],
     akuzaName: d => d.type === 'napolitana' ? 'napolitana' : `${d.type === 'four' ? 'four' : 'three'} ${({ '3': 'threes', '2': 'twos', A: 'aces' })[d.r]}`,
-    playersN: n => `${n} players`, modeN: n => ({ p4: '4 · pairs', s4: '4 · each for themselves', s3: '3 players', d2: '2 · double hand' })[n],
+    playersN: n => `${n} players`, modeN: n => ({ p4: 'pairs', s4: '4 players', s3: '3 players', d2: 'double-handed' })[n],
     handWonBy: n => `${n} wins the hand.`, handTie: 'Tie.', pairNote: 'Double: 4 cards, everyone plays twice per trick.', cardsN: n => n === 4 ? '4 cards · double' : '3 cards',
     sumB: () => `${({ p4: '4 players · pairs', s4: '4 players · solo', s3: '3 players', d2: '2 players · double' })[S.bMode]} · first to ${S.bTarget}`, sumH: () => `4 players · to ${S.hTarget}`, deckB: 'Briscola & Tressette cards', deckF: 'French cards', deckH: 'Belote cards', lowRes: 'lower resolution',
     foot: 'You play against the computer. Settings are kept on this device.',
@@ -5273,7 +5268,7 @@ function showGameSheet(game) {
   const partnerOn = () => game === 'h' || (game === 'b' ? S.bMode === 'p4' : S.tMode === 4);
   const lvl = lsel(game + 'Partner', t.partner, 'lvP') + lsel(game + 'Level', t.level, 'lvO');
   const body = game === 'b'
-    ? `<div class="glab">${t.players}</div><div class="seg dark modes" role="group">${['s3', 's4', 'd2', 'p4'].map(m => `<button data-k="bMode" data-v="${m}" aria-pressed="${S.bMode === m}">${t.modeN(m)}</button>`).join('')}</div>${lvl}<div class="gsep"></div><div class="glab">${t.matchTo}</div>` + seg('bTarget', [[2, t.target(2)], [3, t.target(3)], [4, t.target(4)]]) + `<div class="gsep"></div><div class="rules-list"><label class="tog"><span><b>${t.reveal}</b></span><input type="checkbox" data-opt="bReveal" ${S.bReveal ? 'checked' : ''}></label></div>`
+    ? `<div class="glab">${t.players}</div><div class="seg dark modes" role="group">${['s3', 's4', 'p4', 'd2'].map(m => `<button data-k="bMode" data-v="${m}" aria-pressed="${S.bMode === m}">${t.modeN(m)}</button>`).join('')}</div>${lvl}<div class="gsep"></div><div class="glab">${t.matchTo}</div>` + seg('bTarget', [[2, t.target(2)], [3, t.target(3)], [4, t.target(4)]]) + `<div class="gsep"></div><div class="rules-list"><label class="tog"><span><b>${t.reveal}</b></span><input type="checkbox" data-opt="bReveal" ${S.bReveal ? 'checked' : ''}></label></div>`
     : game === 't' ? `<div class="glab">${t.players}</div>` + seg('tMode', [[4, t.tModeN(4)], [2, t.tModeN(2)]]) + lvl + `<div class="gsep"></div><div class="glab">${t.hTo}</div>` + seg('tTarget', [[21, '21'], [31, '31'], [41, '41']])
       + `<div class="gsep"></div><div class="glab">${t.localRules}</div><div class="rules-list">${[['tAkuze', t.rAkuze], ['tLongNap', t.rLongNap], ['tThirdsLast', t.rThirds], ['tSignals', t.rSignals], ['tClockwise', t.rClockwise]].map(([k, [lab, sub]]) => `<label class="tog"><span><b>${lab}</b><small>${sub}</small></span><input type="checkbox" data-opt="${k}" ${S[k] ? 'checked' : ''}></label>`).join('')}</div>`
     : lvl.replace('<div class="gsep"></div>', '') + `<div class="gsep"></div><div class="glab">${t.hTo}</div>` + seg('hTarget', [[501, '501'], [701, '701'], [1001, '1001']]);
@@ -5407,7 +5402,10 @@ function toast(text) {
 // LOST: a cardshark shark swims in, swallows the cards on the table and swims off, leaving the result behind.
 const MARK = '<svg class="fxmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><path d="M16 76C22 46 46 32 70 33C90 34 102 50 106 76Z" fill="#5b7186"/><path d="M42 36C46 22 54 12 68 6C64 18 64 28 66 35Z" fill="#5b7186"/><circle cx="84" cy="55" r="7" fill="#fbf6ea"/><circle cx="81" cy="57" r="3.5" fill="#1f1a14"/><path d="M75 45Q84 41 93 46" fill="none" stroke="#1f1a14" stroke-width="3" stroke-linecap="round"/><g transform="rotate(-22 60 140)"><rect x="38" y="64" width="44" height="64" rx="6" fill="#8e2a24" stroke="#0e241c" stroke-width="2.5"/><rect x="42" y="68" width="36" height="56" rx="4" fill="none" stroke="#e8d7a8" stroke-width="1.2"/><g transform="translate(48 77) scale(.1)" fill="#e8d7a8"><circle r="42"/><circle r="26" fill="#8e2a24"/><circle r="14"/></g></g><g><rect x="38" y="64" width="44" height="64" rx="6" fill="#8e2a24" stroke="#0e241c" stroke-width="2.5"/><rect x="42" y="68" width="36" height="56" rx="4" fill="none" stroke="#e8d7a8" stroke-width="1.2"/><g transform="translate(48 77) scale(.1) rotate(35)" fill="#e8d7a8"><path d="M0,-52L9,-34L9,22L-9,22L-9,-34Z"/><rect x="-28" y="22" width="56" height="12" rx="4"/><rect x="-6" y="34" width="12" height="22" rx="3"/></g></g><g transform="rotate(22 60 140)"><rect x="38" y="64" width="44" height="64" rx="6" fill="#8e2a24" stroke="#0e241c" stroke-width="2.5"/><rect x="42" y="68" width="36" height="56" rx="4" fill="none" stroke="#e8d7a8" stroke-width="1.2"/><path transform="translate(60 92) scale(.26)" d="M0,40C-58,2 -42,-50 0,-22C42,-50 58,2 0,40Z" fill="#e8d7a8"/></g></svg>';
 const MARACA = '<svg class="mar %S" viewBox="0 0 30 60" aria-hidden="true"><rect x="12.5" y="30" width="5" height="28" rx="2.5" fill="#e8d7a8" stroke="#0e241c" stroke-width="1.5"/><ellipse cx="15" cy="17" rx="12" ry="16" fill="#8e2a24" stroke="#0e241c" stroke-width="2"/><circle cx="15" cy="17" r="5" fill="#e8d7a8"/></svg>';
-const FIN = '<svg class="fxarm %S" viewBox="0 0 40 30" aria-hidden="true"><path d="M40 7C32 4 26 7 20 12L11 18C7 20 4 18 2 15L5 11C8 14 10 13 13 10L20 5C26 1 34 1 40 3Z"/></svg>';
+const LOSEMARK = `<svg class="fxmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" overflow="visible"><defs><linearGradient id="lsb" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6c8296"/><stop offset=".55" stop-color="#5b7186"/><stop offset="1" stop-color="#4b5f72"/></linearGradient></defs><path d="M42 38C46 22 54 12 68 6C64 18 64 28 66 36Z" fill="#4f6578"/><path d="M10 92C12 54 44 34 70 35C92 36 104 54 110 75C98 81 82 81 66 77C60 86 54 94 46 100C30 102 16 98 10 92Z" fill="url(#lsb)"/><path d="M46 100C54 94 60 86 66 77C65 90 58 98 46 100Z" fill="#9fb2c2" opacity=".55"/><path d="M58 54Q54 62 58 70M64 52Q60 61 64 69M70 51Q66 60 70 68" fill="none" stroke="#3b4d5e" stroke-width="1.6" stroke-linecap="round" opacity=".7"/><ellipse cx="86" cy="55" rx="7.5" ry="7" fill="#fbf6ea"/><circle cx="84.5" cy="56.5" r="3.8" fill="#1f1a14"/><circle cx="83.3" cy="55.2" r="1.2" fill="#fff"/><path d="M77 45Q87 40 96 46" fill="none" stroke="#1f1a14" stroke-width="3" stroke-linecap="round"/><path class="fxgape" d="M66 77C82 81 98 81 108 77L100 89L78 92Z" fill="#3a1216"/><path class="fxtongue" d="M70 86C80 84 92 85 98 87L90 91L76 92Z" fill="#b8504f"/><g class="fxlower"><path d="M66 77C82 81 98 81 108 77C106 90 96 98 78 96C70 92 66 84 66 77Z" fill="url(#lsb)" stroke="#0e241c" stroke-width="1.2" stroke-linejoin="round"/><path d="M72 90C82 96 98 94 105 82C100 92 86 99 72 90Z" fill="#9fb2c2" opacity=".6"/><path d="M70.8 77.5L72.2 72.0L75.2 78.9ZM75.7 78.3L77.0 74.0L80.0 79.5ZM80.5 78.9L81.8 77.2L84.7 79.9ZM85.2 79.3L86.4 74.4L89.2 80.0ZM89.7 79.4L90.8 73.7L93.6 79.9ZM94.0 79.2L95.1 76.9L97.7 79.5ZM98.1 78.8L99.1 74.9L101.6 78.9ZM102.0 78.2L102.8 71.6L105.2 78.0Z" fill="#fbf6ea" stroke="#cfc6b0" stroke-width=".4" stroke-linejoin="round"/></g><path d="M107 75C98 81 82 81 66 77" fill="none" stroke="#0e241c" stroke-width="1.4" stroke-linecap="round"/><path d="M107.0 76.9L104.6 84.8L103.7 77.5ZM103.3 78.2L100.7 84.3L99.7 78.5ZM99.3 79.2L96.7 81.9L95.7 79.2ZM95.2 79.9L92.5 86.2L91.4 79.7ZM91.0 80.3L88.2 87.3L87.1 79.8ZM86.6 80.4L83.8 83.0L82.6 79.6ZM82.2 80.2L79.3 84.6L78.1 79.2ZM77.6 79.8L74.8 87.1L73.5 78.6ZM73.0 79.1L70.1 82.5L68.9 77.7Z" fill="#fbf6ea" stroke="#cfc6b0" stroke-width=".4" stroke-linejoin="round"/></svg>`;
+// arms of the maraca shark: the body colour with no outline at the shoulder, so they grow out of it; the biceps bulge
+const ARMG = `<g fill="#5b7186" stroke="#5b7186" stroke-linecap="round" stroke-linejoin="round"><path d="M30 66L8 79" stroke-width="17"/><path d="M8 79L0 59" stroke-width="13"/><ellipse cx="17" cy="68" rx="12.5" ry="9.5" transform="rotate(-30 17 68)" stroke="none"/><ellipse cx="3.5" cy="71" rx="8.5" ry="10.5" transform="rotate(12 3.5 71)" stroke="none"/><circle cx="-1.2" cy="54" r="8.6" stroke="none"/></g><path d="M27 74C20 80 12 85 6 88M9 84C3 80 -1 74 -2 67" fill="none" stroke="#2f3f4f" stroke-width="2.4" stroke-linecap="round" opacity=".28"/><ellipse cx="17" cy="62.5" rx="6.5" ry="3.2" transform="rotate(-30 17 62.5)" fill="#fff" opacity=".2"/><path d="M-5 51.5Q-1.2 49 2.6 51.5M-5.5 55Q-1.2 52.5 3 55M-5 58.5Q-1.2 56 2.6 58.5" fill="none" stroke="#2f3f4f" stroke-width="1" stroke-linecap="round" opacity=".5"/>`;
+const ARMS = `<svg class="fxarms" viewBox="0 0 120 120" overflow="visible" aria-hidden="true"><g transform="translate(0 -7)">${ARMG}</g><g transform="translate(120 -7) scale(-1 1)">${ARMG}</g></svg>`;
 function matchResultFx(won, o = {}) {
   const old = document.getElementById('fx'); if (old) old.remove();
   const t = L(), reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -5423,7 +5421,7 @@ function matchResultFx(won, o = {}) {
 }
 async function winFx(fx, t, sleepT, reduce) {
   const w = document.createElement('div'); w.className = 'fxwin';
-  const shark = (big, i) => `<div class="fxs${big ? ' big' : ''}" style="animation-delay:${(i % 3) * -.19}s">${MARK}${big ? FIN.replace('%S', 'l') + FIN.replace('%S', 'r') + MARACA.replace('%S', 'l') + MARACA.replace('%S', 'r') : ''}</div>`;
+  const shark = (big, i) => `<div class="fxs${big ? ' big' : ''}" style="animation-delay:${(i % 3) * -.19}s">${MARK}${big ? MARACA.replace('%S', 'l') + MARACA.replace('%S', 'r') + ARMS : ''}</div>`;
   w.innerHTML = `<div class="fxt">${t.youWon}</div><div class="fxrow">${[0, 1, 2, 3, 4, 5].map(i => shark(i === 4, i)).join('')}</div>`;
   fx.appendChild(w);
   if (reduce) { await sleepT(1800); return; }
@@ -5454,27 +5452,29 @@ async function loseFx(fx, t, sleepT, reduce, o) {
   const wrap = document.createElement('div'); wrap.className = 'fxlose';
   const sk = document.createElement('div'); sk.className = 'fxshark';
   sk.style.cssText = `width:${sw}px;height:${sh}px;top:${cy - sh * .55}px;left:0`;
-  sk.innerHTML = `${MARK}<svg class="fxjaw" viewBox="0 0 120 120" aria-hidden="true"><path class="fxgape" d="M82 64Q96 63 106 76Q96 76 84 72Z"/><path class="fxteeth" d="M84 65l4 5 2-4 4 5 2-4 4 5"/><path class="fxlower" d="M84 70Q96 72 106 76Q102 84 94 82Q88 79 84 70Z"/><path class="fxteeth" d="M88 77l3-3 2 5 3-3 2 4 3-3"/></svg>`;
+  sk.innerHTML = LOSEMARK;
   const txt = document.createElement('div'); txt.className = 'fxt'; txt.textContent = t.youLost; txt.style.opacity = 0;
   wrap.append(txt, sk); fx.appendChild(wrap);
   if (reduce) { txt.style.opacity = 1; await sleepT(1800); return; }
   // the shark's mouth (right side of the mark) lines up with the middle of the cards
-  const mouthX = sw * .86, mouthY = sh * .55;
+  const mouthX = sw * .85, mouthY = sh * .68;
   const stop = cx - mouthX, bob = [{ transform: 'rotate(-3deg)' }, { transform: 'rotate(3deg)' }];
   const swim = sk.animate([{ transform: `translateX(${-sw * 1.1}px) rotate(-3deg)` }, { transform: `translateX(${stop}px) rotate(3deg)` }], { duration: 1100, easing: 'ease-out', fill: 'forwards' });
   await swim.finished.catch(() => {});
   if (!fx.isConnected) return;
   const mouthAbs = [stop + mouthX, cy - sh * .55 + mouthY];
-  const biteMs = 380, biteGap = 140;
+  const biteMs = 460, biteGap = 330, jaw = sk.querySelector('.fxlower');
   cards.forEach((el, i) => {
     const r = el.getBoundingClientRect(), base = getComputedStyle(el).transform, b = base === 'none' ? '' : base;
     const dx = mouthAbs[0] - (r.left + r.width / 2), dy = mouthAbs[1] - (r.top + r.height / 2);
     const delay = i * biteGap;
     el.animate([{ transform: b, opacity: 1 }, { transform: `translate(${dx}px,${dy}px) scale(.12) ${b}`, opacity: 0 }], { duration: biteMs, delay, easing: 'ease-in', fill: 'forwards' });
-    sk.querySelector('.fxlower').animate([{ transform: 'rotate(0deg)' }, { transform: 'rotate(20deg)', offset: .35 }, { transform: 'rotate(20deg)', offset: .6 }, { transform: 'rotate(0deg)' }], { duration: biteMs, delay, easing: 'ease-in-out', fill: 'none' });
+    jaw.animate([{ transform: 'rotate(0deg)' }, { transform: 'rotate(30deg)', offset: .3 }, { transform: 'rotate(30deg)', offset: .62 }, { transform: 'rotate(-1deg)', offset: .8 }, { transform: 'rotate(0deg)' }], { duration: biteMs, delay, easing: 'ease-in-out', fill: 'none' });
+    sk.animate([{ transform: `translateX(${stop}px) rotate(3deg)` }, { transform: `translateX(${stop + sw * .05}px) rotate(1deg)`, offset: .72 }, { transform: `translateX(${stop}px) rotate(3deg)` }], { duration: biteMs, delay, easing: 'ease-in-out' });
   });
-  sk.animate([{ transform: `translateX(${stop}px) scale(1)` }, { transform: `translateX(${stop}px) scale(1.07)`, offset: .5 }, { transform: `translateX(${stop}px) scale(1)` }], { duration: biteMs + cards.length * biteGap, fill: 'forwards' });
-  await sleepT(450 + cards.length * biteGap);
+  // then it chews a few times with its mouth shut
+  jaw.animate([0, 1, 2].flatMap(() => [{ transform: 'rotate(0deg)' }, { transform: 'rotate(11deg)' }]).concat([{ transform: 'rotate(0deg)' }]), { duration: 620, delay: biteMs + (cards.length - 1) * biteGap, easing: 'ease-in-out' });
+  await sleepT(biteMs + 700 + Math.max(0, cards.length - 1) * biteGap);
   if (!fx.isConnected) return;
   // gone: the result is revealed where the shark was
   txt.style.opacity = 1;
@@ -5482,6 +5482,12 @@ async function loseFx(fx, t, sleepT, reduce, o) {
   await sk.animate([{ transform: `translateX(${stop}px)` }, { transform: `translateX(${W + sw * .3}px) rotate(-4deg)` }], { duration: 1100, easing: 'ease-in', fill: 'forwards' }).finished.catch(() => {});
   cards.forEach(el => { el.style.visibility = 'hidden'; });
   await sleepT(1500);
+}
+// end of a match: the result sheet first (no buttons); a tap anywhere clears it, then the animation, then the sheet again with its buttons
+async function statsThenFx(html, won, cards) {
+  const preview = html.replace(/<div class="btns">[\s\S]*$/, '');
+  await new Promise(res => openSheet(preview, v => { v.onclick = () => { closeSheet(); res(); }; }));
+  await matchResultFx(won, { cards: cards ? cards() : [] });
 }
 // puts the cards of the match's last trick back on the felt (they were already collected)
 function finalTrickCards() {
@@ -6519,12 +6525,13 @@ async function briskulaMatch(my, cont) {
     if (over) clearSave(); else ckpt('handEnd');
     const marks = w => '|'.repeat(w) || '–';
     const head = over ? (G.wins[0] === Math.max(...G.wins) ? t().matchWon : t().matchLost) : verdict;
-    if (over) { const won = G.wins[0] === Math.max(...G.wins); recordMatch(won); await matchResultFx(won, { cards: won ? [] : finalTrickCards() }); check(my); }
-    const go = await waitSheet(`<h3>${head}</h3>
+    const sheetB = `<h3>${head}</h3>
       <div class="big">${pts.map((p, i) => `<div>${p}<small>${esc(labels[i])}</small></div>`).join('<span class="sep">:</span>')}</div>
       ${over ? `<p class="verdict">${verdict}</p>` : ''}
       <div class="tally">${G.wins.map((w, i) => `<div><span class="muted">${esc(labels[i])}</span><b class="marks">${marks(w)}</b></div>`).join('')}<div><span class="muted">${t().matchTo}</span><b>${+G.opts.target}</b></div></div>
-      <div class="btns">${over ? `<button class="sec" data-go="home">${t().home}</button><button class="pri" data-go="again">${t().again}</button>` : `<button class="pri" data-go="next">${t().next}</button>`}</div>`);
+      <div class="btns">${over ? `<button class="sec" data-go="home">${t().home}</button><button class="pri" data-go="again">${t().again}</button>` : `<button class="pri" data-go="next">${t().next}</button>`}</div>`;
+    if (over) { const won = G.wins[0] === Math.max(...G.wins); recordMatch(won); await statsThenFx(sheetB, won, won ? null : finalTrickCards); check(my); }
+    const go = await waitSheet(sheetB);
     check(my);
     if (go === 'home') return showHome();
     if (go === 'again') return startGame('b');
@@ -6572,9 +6579,10 @@ async function belaMatch(my, cont) {
       renderBar();
       await sleep(1400);
       recordMatch(w === 0); clearSave();
-      await matchResultFx(w === 0); check(my);
-      const go = await waitSheet(`<h3>${w === 0 ? t().matchWon : t().matchLost}</h3><p>${t().belotWin(esc(name(D.belotSeat)))}</p>
-        <div class="btns"><button class="sec" data-go="home">${t().home}</button><button class="pri" data-go="again">${t().again}</button></div>`);
+      const sheetBe = `<h3>${w === 0 ? t().matchWon : t().matchLost}</h3><p>${t().belotWin(esc(name(D.belotSeat)))}</p>
+        <div class="btns"><button class="sec" data-go="home">${t().home}</button><button class="pri" data-go="again">${t().again}</button></div>`;
+      await statsThenFx(sheetBe, w === 0, null); check(my);
+      const go = await waitSheet(sheetBe);
       if (go === 'home') return showHome(); return startGame('h');
     }
     let any = false;
@@ -6616,7 +6624,9 @@ async function belaMatch(my, cont) {
     renderBar();
     const mw = E.hMatchWinner(G);
     if (mw >= 0) { recordMatch(mw === 0); clearSave(); } else ckpt('handEnd');
-    const go = await waitSheet(scoreSheetHTML(row, mw));
+    const sheetH = scoreSheetHTML(row, mw);
+    if (mw >= 0) { await statsThenFx(sheetH, mw === 0, mw === 0 ? null : finalTrickCards); check(my); }
+    const go = await waitSheet(sheetH);
     check(my);
     if (go === 'home') return showHome();
     if (go === 'again') return startGame('h');
@@ -6764,13 +6774,14 @@ async function tresetaMatch(my, cont) {
     renderBar();
     const mw = E.tMatchWinner(G);
     if (mw >= 0) { recordMatch(mw === 0); clearSave(); } else ckpt('handEnd');
-    if (mw >= 0) { await matchResultFx(mw === 0, { cards: mw === 0 ? [] : finalTrickCards() }); check(my); }
     const head = mw >= 0 ? (mw === 0 ? t().matchWon : t().matchLost) : t().handTitle(G.rows.length);
-    const go = await waitSheet(`<h3>${head}</h3>
+    const sheetT = `<h3>${head}</h3>
       <div class="decl"><div><span>${t().cardsPts}</span><b>${r.cardPts[0]} : ${r.cardPts[1]}</b></div>
       <div><span>${t().akuzaPts}</span><b>${r.akuze[0]} : ${r.akuze[1]}</b></div></div>
       ${tTable()}
-      <div class="btns">${mw >= 0 ? `<button class="sec" data-go="home">${t().home}</button><button class="pri" data-go="again">${t().again}</button>` : `<button class="pri" data-go="next">${t().next}</button>`}</div>`);
+      <div class="btns">${mw >= 0 ? `<button class="sec" data-go="home">${t().home}</button><button class="pri" data-go="again">${t().again}</button>` : `<button class="pri" data-go="next">${t().next}</button>`}</div>`;
+    if (mw >= 0) { await statsThenFx(sheetT, mw === 0, mw === 0 ? null : finalTrickCards); check(my); }
+    const go = await waitSheet(sheetT);
     check(my);
     if (go === 'home') return showHome();
     if (go === 'again') return startGame('t');
@@ -6786,7 +6797,7 @@ const wsURL = id => SERVER.replace(/^http/, 'ws') + `/api/table/${id}/ws`;
 const gameName = g => L().gameNames[g];
 const optsLine = (g, o) => {
   const t = L();
-  if (g === 'b') return `${t.modeN(o.mode || 'p4')} · ${t.target(+o.target || 3)}`;
+  if (g === 'b') { const m = o.mode || 'p4'; return `${({ p4: '4 · ', d2: '2 · ' })[m] || ''}${t.modeN(m)} · ${t.target(+o.target || 3)}`; }
   if (g === 't') return `${t.tModeN(+o.players === 2 ? 2 : 4)} · ${t.hTo} ${+o.target || 41}`;
   if (g === 'p') return `${t.playersN(o.players || 6)} · ${o.variant === 'draw' ? t.poker.draw : t.poker.holdem} · ${o.blinds === 'fast' ? t.poker.fast : t.poker.slow}`;
   if (g === 'r') return `${t.playersN(o.players || 4)} · ${t.remi.target} ${+o.target === 0 ? t.remi.one : (+o.target || 501)}`;
@@ -6805,10 +6816,10 @@ async function showLobby(game) {
       el.querySelectorAll('.trow').forEach(b => b.onclick = () => { alive = false; clearInterval(timer); joinTable(b.dataset.id); });
     } catch (e) { const el = document.querySelector('#tList'); if (el) el.innerHTML = `<p class="muted">${t.offline}</p>`; }
   };
-  const seg = (key, opts) => `<div class="seg dark" role="group">${opts.map(([v, lab]) => `<button data-k="${key}" data-v="${v}" aria-pressed="${S[key] === v}">${lab}</button>`).join('')}</div>`;
+  const seg = (key, opts, cls = '') => `<div class="seg dark${cls}" role="group">${opts.map(([v, lab]) => `<button data-k="${key}" data-v="${v}" aria-pressed="${S[key] === v}">${lab}</button>`).join('')}</div>`;
   const checkOpt = (key, label, value) => `<label class="check dark"><input type="checkbox" data-opt="${key}" ${value ? 'checked' : ''}><span>${label}</span></label>`;
   const optionsHTML = g => g === 'b'
-    ? `<div class="glab">${t.mode}</div>${seg('onBMode', ['p4', 's4', 's3', 'd2'].map(m => [m, t.modeN(m)]))}<div class="glab">${t.matchTo}</div>${seg('bTarget', [[2, t.target(2)], [3, t.target(3)], [4, t.target(4)]])}`
+    ? `<div class="glab">${t.players}</div>${seg('onBMode', ['s3', 's4', 'p4', 'd2'].map(m => [m, t.modeN(m)]), ' modes')}<div class="glab">${t.matchTo}</div>${seg('bTarget', [[2, t.target(2)], [3, t.target(3)], [4, t.target(4)]])}`
     : g === 't'
       ? `<div class="glab">${t.players}</div>${seg('onTPlayers', [[4, t.tModeN(4)], [2, t.tModeN(2)]])}<div class="glab">${t.hTo}</div>${seg('tTarget', [[21, '21'], [31, '31'], [41, '41']])}`
       : g === 'h'
@@ -7100,7 +7111,8 @@ async function handleNet(m) {
       } else {
         const won = ev.team === 0, last = NET.lastHand ? NET.lastHand.replace(/<h3>/g, '<h4>').replace(/<\/h3>/g, '</h4>') : '';
         NET.lastHand = null;
-        matchResultFx(won, { cards: won ? [] : finalTrickCards() }).then(() => { if (G && NET) onlineSheet(`<h3>${won ? t.matchWon : t.matchLost}</h3><p class="muted" id="ratingLine">${NET.rating ? `${t.rating} ${NET.rating.r} (${NET.rating.d >= 0 ? '+' : ''}${NET.rating.d})` : ''}</p>${last}`, true); });
+        const endHTML = () => `<h3>${won ? t.matchWon : t.matchLost}</h3><p class="muted" id="ratingLine">${NET.rating ? `${t.rating} ${NET.rating.r} (${NET.rating.d >= 0 ? '+' : ''}${NET.rating.d})` : ''}</p>${last}`;
+        statsThenFx(endHTML(), won, won ? null : finalTrickCards).then(() => { if (G && NET) onlineSheet(endHTML(), true); });
       }
       break;
     }
