@@ -675,7 +675,7 @@ const Engine = (() => {
     // 4 players: two pairs; 3 players: each for themselves (one 2 removed, 39 cards); 2 players: double hand
     const seats = opts.players === 4 ? [0, 1, 2, 3] : opts.players === 3 ? [0, 1, 3] : [0, 2];
     const teams = opts.players === 3 ? 3 : (opts.players === 4 && opts.solo) ? 4 : 2; // solo: four players, each for themselves
-    return { game: 'b', opts, seats, teams, dealer: seats[seats.length - 1], wins: Array(teams).fill(0), history: [] };
+    return { game: 'b', opts, seats, teams, dealer: seats[Math.floor(Math.random() * seats.length)], wins: Array(teams).fill(0), history: [] };
   }
   function bDeal(st) {
     st.removed = st.seats.length === 3 ? 'b02' : null;
@@ -766,7 +766,7 @@ const Engine = (() => {
   const hStr = (c, T) => c.s === T ? 100 + T_STR[c.r] : N_STR[c.r];
   const hPts = (c, T) => (c.s === T ? T_PTS : N_PTS)[c.r] || 0;
 
-  function hNew(opts) { return { game: 'h', opts, seats: [0, 1, 2, 3], dealer: 3, score: [0, 0], hang: 0, rows: [] }; }
+  function hNew(opts) { return { game: 'h', opts, seats: [0, 1, 2, 3], dealer: Math.floor(Math.random() * 4), score: [0, 0], hang: 0, rows: [] }; }
   function hDeal(st) {
     const deck = shuffle(hDeck(), DEAL_RNG);
     st.hands = {}; st.talon = {};
@@ -1038,7 +1038,7 @@ const Engine = (() => {
   function tNew(opts) {
     // local rules (opts): akuze, longNap, thirdsToLast, signals, clockwise
     const seats = opts.players === 2 ? [0, 2] : opts.clockwise ? [0, 3, 2, 1] : [0, 1, 2, 3];
-    return { game: 't', opts, seats, teams: 2, dealer: seats[seats.length - 1], score: [0, 0], rows: [] };
+    return { game: 't', opts, seats, teams: 2, dealer: seats[Math.floor(Math.random() * seats.length)], score: [0, 0], rows: [] };
   }
   const T_SEQ = ['3', '2', 'A', 'K', 'C', 'F', '7', '6', '5', '4'];
   function tFindAkuze(hand, opts = {}) {
@@ -1453,6 +1453,8 @@ const AI = (() => {
   function pro(g, st, seat, opts = {}) {
     let legal = opts.legal || legalOf(g, st, seat);
     if (g === 'h' && !opts.noSane) legal = hSane(st, seat, legal);
+    // Briškula: early in the game don't open with a plain ace or three (a trump takes it); tested neutral-to-better (+2 points of win rate)
+    if (g === 'b' && !st.trick.length && st.stock.length >= 8) { const keep = legal.filter(c => c.s === st.trump || c.p < 10); if (keep.length) legal = keep; }
     if (legal.length === 1) return legal[0];
     const n = opts.samples || SAMPLES[g];
     // optional per-seat models: imagine each other seat playing like its real level
@@ -4893,7 +4895,7 @@ const STR = {
     sol: { name: 'Pasijans', score: 'Bodovi', time: 'Vrijeme', moves: 'Potezi', newGame: 'Nova igra', restart: 'Ista podjela', hint: 'Savjet', undo: 'Natrag', auto: 'Završi', won: 'Pasijans je složen!', noMoves: 'Nema više poteza', home: 'Izbornik',
       draw: 'Vučenje', draw1: '1 karta', draw3: '3 karte', passes: 'Prolazi kroz špil', inf: 'Bez ograničenja', scoring: 'Bodovanje', standard: 'Standardno', vegas: 'Vegas', none: 'Bez bodova', timed: 'Bodovi ovise o vremenu', tapMove: 'Dodir sam premješta kartu', left: 'Špil na desnoj strani', cont: 'Nastavi', played: 'Odigrano', wonN: 'Riješeno', best: 'Najbolje vrijeme', bestScore: 'Najviše bodova', streak: 'Niz pobjeda' },
     online: 'Online', rejoin: 'Nastavi online igru', gameGone: 'Ta igra više ne postoji', playAgain: 'Igraj opet', waitOthers: (n, m) => `Čeka se ostale · ${n}/${m}`, tables: 'Otvoreni stolovi', newTable: 'Novi stol', noTables: 'Nema otvorenih stolova', host: 'Domaćin', yourName: 'Tvoje ime', sit: 'Sjedni', free: 'Slobodno', startT: 'Započni', waitHost: 'Čeka se domaćin', invite: 'Pozovi', leaveT: 'Izađi', leaveConfirm: 'Izaći sa stola?', botPlays: 'Bot igra za tebe', takeOver: 'Preuzmi', rating: 'Rejting', offline: 'Nema veze sa serverom', reconnecting: 'Ponovno spajanje…', copied: 'Poveznica kopirana', bots: 'Prazna mjesta igraju botovi', create: 'Otvori stol',
-    level: 'Protivnici', partner: 'Partner', stats: 'Statistika', lvShort: { novice: 'Poč.', average: 'Pros.', pro: 'Pro', cardshark: 'Shark' }, lv: { novice: 'Početnik', average: 'Prosječan', pro: 'Pro', cardshark: 'Cardshark' },
+    auto: 'Auto', level: 'Protivnici', partner: 'Partner', stats: 'Statistika', lvShort: { novice: 'Poč.', average: 'Pros.', pro: 'Pro', cardshark: 'Shark' }, lv: { novice: 'Početnik', average: 'Prosječan', pro: 'Pro', cardshark: 'Cardshark' },
     speed: 'Brzina', slow: 'Sporo', normal: 'Normalno', fast: 'Brzo', tap: 'Igranje karte', tap1: 'Jedan dodir', tap2: 'Dva dodira',
     rules: 'Pravila', rulesB: 'Pravila briškule', rulesH: 'Pravila bele',
     settings: 'Postavke', language: 'Jezik',
@@ -4971,7 +4973,7 @@ const STR = {
     sol: { name: 'Solitaire', score: 'Score', time: 'Time', moves: 'Moves', newGame: 'New game', restart: 'Same deal', hint: 'Hint', undo: 'Undo', auto: 'Finish', won: 'Solved!', noMoves: 'No more moves', home: 'Menu',
       draw: 'Draw', draw1: '1 card', draw3: '3 cards', passes: 'Passes through the stock', inf: 'Unlimited', scoring: 'Scoring', standard: 'Standard', vegas: 'Vegas', none: 'None', timed: 'Timed scoring', tapMove: 'Tap moves the card for you', left: 'Stock on the right', cont: 'Continue', played: 'Played', wonN: 'Solved', best: 'Best time', bestScore: 'Best score', streak: 'Win streak' },
     online: 'Online', rejoin: 'Rejoin online game', gameGone: 'That game no longer exists', playAgain: 'Play again', waitOthers: (n, m) => `Waiting for others · ${n}/${m}`, tables: 'Open tables', newTable: 'New table', noTables: 'No open tables', host: 'Host', yourName: 'Your name', sit: 'Sit', free: 'Free', startT: 'Start', waitHost: 'Waiting for the host', invite: 'Invite', leaveT: 'Leave', leaveConfirm: 'Leave the table?', botPlays: 'A bot is playing for you', takeOver: 'Take over', rating: 'Rating', offline: 'Can’t reach the server', reconnecting: 'Reconnecting…', copied: 'Link copied', bots: 'Empty seats are played by bots', create: 'Open table',
-    level: 'Opponents', partner: 'Partner', stats: 'Stats', lvShort: { novice: 'Nov.', average: 'Avg.', pro: 'Pro', cardshark: 'Shark' }, lv: { novice: 'Novice', average: 'Average', pro: 'Pro', cardshark: 'Cardshark' },
+    auto: 'Auto', level: 'Opponents', partner: 'Partner', stats: 'Stats', lvShort: { novice: 'Nov.', average: 'Avg.', pro: 'Pro', cardshark: 'Shark' }, lv: { novice: 'Novice', average: 'Average', pro: 'Pro', cardshark: 'Cardshark' },
     speed: 'Speed', slow: 'Slow', normal: 'Normal', fast: 'Fast', tap: 'Playing a card', tap1: 'One tap', tap2: 'Two taps',
     rules: 'Rules', rulesB: 'Briscola rules', rulesH: 'Belote rules',
     settings: 'Settings', language: 'Language',
@@ -6818,16 +6820,22 @@ async function showLobby(game) {
             : `<div class="glab">${t.uno.players}</div>${seg('onLPlayers', [2, 3, 4, 5, 6].map(n => [n, n]))}<div class="glab">${t.uno.classic} / ${t.uno.flip} / ${t.uno.nomercy}</div>${seg('onLVariant', [['classic', t.uno.classic], ['flip', t.uno.flip], ['nomercy', t.uno.nomercy]])}<div class="glab">${t.uno.target}</div>${seg('onLTarget', [[500, '500'], [250, '250'], [0, t.uno.one]])}
               <div class="glab">${t.uno.pace}</div>${seg('onLPace', [['slow', t.uno.slow], ['normal', t.uno.normal], ['fast', t.uno.fast]])}<div class="glab">${t.uno.house}</div>
               ${S.onLVariant === 'nomercy' ? `<p class="muted">${t.uno.builtin}</p>` : `${checkOpt('onLStack', t.uno.stack, S.onLStack)}${S.onLVariant === 'classic' ? `${checkOpt('onLSevenO', t.uno.sevenO, S.onLSevenO)}${checkOpt('onLJumpIn', t.uno.jumpIn, S.onLJumpIn)}` : ''}${checkOpt('onLDrawUntil', t.uno.drawUntil, S.onLDrawUntil)}`}`;
+  // strength of the bots that fill empty seats: 'auto' follows the humans' ratings
+  const teamGame = g => (g === 'b' && (S.onBMode || S.bMode || 'p4') === 'p4') || (g === 't' && +(S.onTPlayers || S.tMode || 4) === 4) || g === 'h';
+  const levelsHTML = g => `<div class="gsep"></div><div class="glab">${t.level}</div>${seg('onOpp', [['auto', t.auto], ...AI.LEVELS.map(l => [l, t.lvShort[l]])])}${teamGame(g) ? `<div class="glab">${t.partner}</div>${seg('onPartner', [['auto', t.auto], ...AI.LEVELS.map(l => [l, t.lvShort[l]])])}` : ''}`;
   const bindOptions = v => v.querySelectorAll('#lobbyOpts .seg button').forEach(b => b.onclick = () => {
     let val = b.dataset.v; val = isNaN(+val) ? val : +val; S[b.dataset.k] = val; save();
     b.parentNode.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b));
+    if (b.dataset.k === 'onBMode' || b.dataset.k === 'onTPlayers') { const lv = v.querySelector('#lobbyLv'); if (lv) lv.innerHTML = levelsHTML(game); bindOptions(v); }
   });
   const bindChecks = v => v.querySelectorAll('#lobbyOpts input[data-opt]').forEach(b => b.onchange = () => { S[b.dataset.opt] = b.checked; save(); });
   const bindVariant = v => v.querySelectorAll('#lobbyOpts .seg button[data-k="onLVariant"]').forEach(b => b.onclick = () => {
     S.onLVariant = b.dataset.v; save(); b.parentNode.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b));
-    v.querySelector('#lobbyOpts').innerHTML = optionsHTML(game); bindLobbyOptions(v);
+    v.querySelector('#lobbyOpts').innerHTML = optionsHTML(game) + `<div id="lobbyLv">${levelsHTML(game)}</div>`; bindLobbyOptions(v);
   });
   const bindLobbyOptions = v => { bindOptions(v); bindChecks(v); bindVariant(v); };
+  if (!S.onOpp) S.onOpp = 'auto';
+  if (!S.onPartner) S.onPartner = 'auto';
   if (!S.onBMode) S.onBMode = S.bMode || 'p4';
   if (!S.onTPlayers) S.onTPlayers = S.tMode || 4;
   if (S.onPPlayers === undefined) S.onPPlayers = S.pPlayers || 6;
@@ -6847,7 +6855,7 @@ async function showLobby(game) {
     <label class="namef"><span>${t.yourName}</span><input id="nm" maxlength="16" value="${esc(S.name || '')}" autocomplete="nickname"></label>
     <div class="tlist" id="tList"><p class="muted">…</p></div>
     <div class="gsep"></div><div class="glab">${t.newTable}</div>
-    <div id="lobbyOpts">${optionsHTML(game)}</div>
+    <div id="lobbyOpts">${optionsHTML(game)}<div id="lobbyLv">${levelsHTML(game)}</div></div>
     <div class="btns"><button class="sec" id="lx">${t.close}</button><button class="pri" id="lnew">${t.create}</button></div>`, v => {
     const nm = v.querySelector('#nm');
     nm.oninput = () => { S.name = nm.value.trim().slice(0, 16); save(); };
@@ -6864,6 +6872,7 @@ async function showLobby(game) {
                 : { players: +(S.onLPlayers || S.uPlayers || 4), variant: S.onLVariant || S.uVar || 'classic', target: S.onLTarget === undefined ? (S.uTarget ?? 500) : S.onLTarget,
                   stack: S.onLVariant === 'nomercy' || !!S.onLStack, sevenO: S.onLVariant === 'classic' && !!S.onLSevenO, jumpIn: S.onLVariant === 'classic' && !!S.onLJumpIn, drawUntil: S.onLVariant !== 'nomercy' && !!S.onLDrawUntil, pace: S.onLPace || S.uPace || 'normal' };
       try {
+        opts.oppLevel = S.onOpp || 'auto'; if (teamGame(g)) opts.partnerLevel = S.onPartner || 'auto';
         const r = await (await fetch(SERVER + '/api/tables', { method: 'POST', body: JSON.stringify({ game: g, opts, pid: S.pid, name: S.name }) })).json();
         alive = false; clearInterval(timer); joinTable(r.id, true);
       } catch (e) { status(t.offline); }

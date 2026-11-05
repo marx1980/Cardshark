@@ -28,7 +28,13 @@ const clean = s => String(s || '').replace(/[<>&"'`]/g, '').replace(/^[@\s]+/, '
 const TARGETS = { b: [2, 3, 4], t: [21, 31, 41], h: [501, 701, 1001] };
 const DEF_TARGET = { b: 3, t: 41, h: 1001 };
 const B_MODES = { p4: { players: 4, activeSeats: [0, 1, 2, 3] }, s4: { players: 4, solo: true, activeSeats: [0, 1, 2, 3] }, s3: { players: 3, activeSeats: [0, 1, 3] }, d2: { players: 2, double: true, activeSeats: [0, 2] } };
+// the host may fix the strength of the bots at the table ('auto' = follow the humans' ratings)
+const botLevel = (game, v) => TIER[game] && Object.keys(TIER[game]).includes(v) ? v : 'auto';
 function cleanOpts(game, o) {
+  const base = cleanOptsGame(game, o), src = o && typeof o === 'object' ? o : {};
+  return { ...base, oppLevel: botLevel(game, src.oppLevel), partnerLevel: botLevel(game, src.partnerLevel) };
+}
+function cleanOptsGame(game, o) {
   o = o && typeof o === 'object' ? o : {};
   if (game === 'p') {
     const players = Math.max(2, Math.min(6, Math.floor(+o.players) || 6));
@@ -273,6 +279,9 @@ export class Table {
   levelFor(seat) {
     const g = this.info.game, hum = this.humanSeats();
     const individual = ['p', 'r', 'l'].includes(g) || (g === 'b' && (this.info.opts.solo || this.info.opts.players === 3)) || ((g === 'b' || g === 't') && this.info.opts.players === 2);
+    const o = this.info.opts, partner = !individual && hum.some(h => h % 2 === seat % 2);
+    const fixed = partner ? o.partnerLevel : o.oppLevel;
+    if (fixed && fixed !== 'auto' && TIER[g][fixed]) return fixed;
     const opp = hum.filter(s => individual ? s !== seat : s % 2 !== seat % 2), pool = opp.length ? opp : hum;
     if (!pool.length) return 'average';
     const avg = pool.reduce((x, s) => x + (this.ratings[this.info.seats[s].pid]?.r?.[g] ?? TIER[g].average), 0) / pool.length;
