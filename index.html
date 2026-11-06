@@ -29,6 +29,8 @@
   color-scheme: dark;
 }
 html,body{height:100%}
+/* the page never pans or scrolls sideways (iPhone could drag the whole screen left, with a scroll bar) */
+html{overflow-x:hidden}body{overflow-x:clip;touch-action:pan-y}
 body{margin:0;background:#243B42;color:var(--ink);font-family:var(--body);font-size:16px;-webkit-tap-highlight-color:transparent;overscroll-behavior:none}
 button{font:inherit;color:inherit}
 :focus-visible{outline:2px solid var(--brass);outline-offset:2px}
