@@ -309,8 +309,12 @@ table.stats td b{display:inline-block;min-width:1.4em;font-size:15px}
 .zb-grp .svgc svg,.zb-grp .svgc img{width:100%;height:auto;display:block;border-radius:4px;box-shadow:0 1px 3px rgba(0,0,0,.35)}
 @keyframes pop{from{transform:translate(-50%,-50%) scale(.7);opacity:0}}
 .action{min-height:52px;display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;padding-block:8px 4px;text-align:center}
-.msg{font-size:15px;color:var(--ink)}
-.msg .m{color:var(--muted)}
+.msg{font-size:26px;line-height:1.2;color:var(--ink);font-weight:600;text-wrap:balance}
+.msg .m{color:var(--muted);font-weight:500}
+/* the player's own turn: brighter and glowing so it stands out from waiting */
+.msg.yt{color:var(--brass);text-shadow:0 0 6px rgba(217,169,74,.55),0 0 18px rgba(217,169,74,.35);animation:ytGlow 2.4s ease-in-out infinite}
+@keyframes ytGlow{0%,100%{text-shadow:0 0 6px rgba(217,169,74,.45),0 0 14px rgba(217,169,74,.25)}50%{text-shadow:0 0 10px rgba(217,169,74,.85),0 0 26px rgba(217,169,74,.55)}}
+@media (prefers-reduced-motion: reduce){.msg.yt{animation:none}}
 .why{display:inline-flex;align-items:center;gap:7px;color:var(--brass);font-size:14px;line-height:1.25;text-align:left}
 .why svg{width:17px;height:17px;flex:none}
 .why .m{display:block;color:var(--muted);font-size:12.5px;margin-top:2px}
@@ -6277,7 +6281,7 @@ function renderHand() {
 }
 function renderAll() { if (netMulti()) { renderNetAll(); return; } $('#trumpChip').style.display = ''; $('#table').classList.remove('online-new', 'net-l', 'net-p', 'net-r'); renderBar(); renderSeats(); renderStock(); renderHand(); }
 function setAction(html) { $('#action').innerHTML = html; }
-function status(text, muted) { setAction(`<div class="msg">${muted ? `<span class="m">${text}</span>` : text}</div>`); }
+function status(text, muted) { const yt = !muted && text === L().yourTurn; setAction(`<div class="msg${yt ? " yt" : ""}">${muted ? `<span class="m">${text}</span>` : text}</div>`); }
 
 // declared cards shown near the player, kept inside the table
 function reveal(seat, html, ms) {
@@ -6421,7 +6425,7 @@ let hintMsg = null;   // the action line the hint replaced, put back when the hi
 function clearHint() {
   if (!hintId) return;
   hintId = null;
-  const m = $('#action .msg'); if (m) m.innerHTML = hintMsg !== null ? hintMsg : L().yourTurn;
+  const m = $('#action .msg'); if (m) { m.innerHTML = hintMsg !== null ? hintMsg : L().yourTurn; m.classList.toggle('yt', hintMsg === null); }
   hintMsg = null;
 }
 function showHint() {
@@ -6726,7 +6730,7 @@ function showBelaChoice(legal) {
   myBela = true;
   if (!legal.some(c => E.hBelaEligible(G, 0, c))) return;
   const t = L();
-  setAction(`<div class="msg">${t.yourTurn}</div><div class="sigs"><button class="sig" id="belaTog" aria-pressed="true">${t.belaToggle}</button></div><div class="msg"><span class="m">${t.belaHint}</span></div>`);
+  setAction(`<div class="msg yt">${t.yourTurn}</div><div class="sigs"><button class="sig" id="belaTog" aria-pressed="true">${t.belaToggle}</button></div><div class="msg"><span class="m">${t.belaHint}</span></div>`);
   $('#belaTog').onclick = () => { myBela = !myBela; $('#belaTog').setAttribute('aria-pressed', myBela); };
 }
 function showZvanja() {
@@ -6768,7 +6772,7 @@ function showSignals() {
   if (!(G && G.game === 't' && G.opts.signals && G.seats.length === 4)) return;
   const t = L(), lead = G.trick.length === 0;
   const opts = lead ? ['kucam', 'strisco'] : ['volo', 'strisco'];
-  setAction(`<div class="msg">${t.yourTurn}</div><div class="sigs">${opts.map(k => `<button class="sig" data-sig="${k}" aria-pressed="false">${t.sigName[k]}</button>`).join('')}</div>`);
+  setAction(`<div class="msg yt">${t.yourTurn}</div><div class="sigs">${opts.map(k => `<button class="sig" data-sig="${k}" aria-pressed="false">${t.sigName[k]}</button>`).join('')}</div>`);
   $('#action').querySelectorAll('.sig').forEach(b => b.onclick = () => {
     mySig = mySig === b.dataset.sig ? null : b.dataset.sig;
     $('#action').querySelectorAll('.sig').forEach(x => x.setAttribute('aria-pressed', x.dataset.sig === mySig));
@@ -7229,12 +7233,12 @@ async function askHuman(req) {
   status(t.yourTurn);
   if (G.game === 'h' && req.bela && req.bela.length) {
     myBela = true;
-    setAction(`<div class="msg">${t.yourTurn}</div><div class="sigs"><button class="sig" id="belaTog" aria-pressed="true">${t.belaToggle}</button></div><div class="msg"><span class="m">${t.belaHint}</span></div>`);
+    setAction(`<div class="msg yt">${t.yourTurn}</div><div class="sigs"><button class="sig" id="belaTog" aria-pressed="true">${t.belaToggle}</button></div><div class="msg"><span class="m">${t.belaHint}</span></div>`);
     $('#belaTog').onclick = () => { myBela = !myBela; $('#belaTog').setAttribute('aria-pressed', myBela); };
   }
   if (G.game === 't' && req.sigs && req.sigs.length) {
     mySig = null;
-    setAction(`<div class="msg">${t.yourTurn}</div><div class="sigs">${req.sigs.map(k => `<button class="sig" data-sig="${k}" aria-pressed="false">${t.sigName[k]}</button>`).join('')}</div>`);
+    setAction(`<div class="msg yt">${t.yourTurn}</div><div class="sigs">${req.sigs.map(k => `<button class="sig" data-sig="${k}" aria-pressed="false">${t.sigName[k]}</button>`).join('')}</div>`);
     $('#action').querySelectorAll('.sig').forEach(b => b.onclick = () => { mySig = mySig === b.dataset.sig ? null : b.dataset.sig; $('#action').querySelectorAll('.sig').forEach(x => x.setAttribute('aria-pressed', x.dataset.sig === mySig)); });
   }
   // the card is sent; the server's play event places it (so the queue keeps going while we wait for the tap)
