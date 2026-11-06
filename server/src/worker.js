@@ -29,10 +29,13 @@ const TARGETS = { b: [2, 3, 4], t: [21, 31, 41], h: [501, 701, 1001] };
 const DEF_TARGET = { b: 3, t: 41, h: 1001 };
 const B_MODES = { p4: { players: 4, activeSeats: [0, 1, 2, 3] }, s4: { players: 4, solo: true, activeSeats: [0, 1, 2, 3] }, s3: { players: 3, activeSeats: [0, 1, 3] }, d2: { players: 2, double: true, activeSeats: [0, 2] } };
 // the host may fix the strength of the bots at the table ('auto' = follow the humans' ratings)
+// seconds a player may sit idle before a bot plays for them; 0 = never (capped at five minutes so a table cannot hang), default as before
+const TAKEOVER = [5, 10, 15, 20, 25, 30];
+const takeoverOpt = v => (v === 0 || v === '0' || v === 'never') ? 0 : TAKEOVER.includes(+v) ? +v : 30;
 const botLevel = (game, v) => TIER[game] && Object.keys(TIER[game]).includes(v) ? v : 'auto';
 function cleanOpts(game, o) {
   const base = cleanOptsGame(game, o), src = o && typeof o === 'object' ? o : {};
-  return { ...base, oppLevel: botLevel(game, src.oppLevel), partnerLevel: botLevel(game, src.partnerLevel) };
+  return { ...base, oppLevel: botLevel(game, src.oppLevel), partnerLevel: botLevel(game, src.partnerLevel), takeover: takeoverOpt(src.takeover) };
 }
 function cleanOptsGame(game, o) {
   o = o && typeof o === 'object' ? o : {};
@@ -332,14 +335,17 @@ export class Table {
     })().finally(() => { this.resuming = null; });
     await this.resuming;
   }
+  // the creator's takeover time for this table
+  turnMs() { const v = this.info.opts && this.info.opts.takeover; return v === 0 ? 300000 : v ? v * 1000 : TURN_MS; }
   ask(seat, req) {
     const s = this.info.seats[seat], ws = s && s.pid && this.socks.get(s.pid);
     if (!ws || this.away.has(seat)) return sleep(800).then(() => null);   // away: the bot plays this turn
+    const ms = this.turnMs();
     return new Promise(resolve => {
-      const deadline = Date.now() + TURN_MS;
-      const timer = setTimeout(() => { this.asks.delete(seat); this.away.add(seat); this.sendSeat(seat, { t: 'away' }); this.pushBots(); resolve(null); }, TURN_MS);
+      const deadline = Date.now() + ms;
+      const timer = setTimeout(() => { this.asks.delete(seat); this.away.add(seat); this.sendSeat(seat, { t: 'away' }); this.pushBots(); resolve(null); }, ms);
       this.asks.set(seat, { resolve, timer, req, deadline });
-      this.sendWs(ws, { t: 'ask', req, ms: TURN_MS });
+      this.sendWs(ws, { t: 'ask', req, ms });
     });
   }
   askQuick(seat, req, ms) {

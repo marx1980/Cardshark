@@ -59,9 +59,12 @@ button{font:inherit;color:inherit}
 .namef{display:flex;flex-direction:column;gap:4px;margin:4px 0 10px;font-size:13px;color:var(--sheet-muted);font-weight:700}
 .namef input{font:600 16px var(--ui,inherit);padding:10px 12px;border-radius:10px;border:1px solid var(--sheet-line);background:#fff;color:var(--sheet-ink)}
 .tlist{display:flex;flex-direction:column;gap:8px;max-height:38vh;overflow:auto;margin:6px 0}
-.trow{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;align-items:baseline;text-align:left;background:#e6f1e9;border:1px solid #9ab8a0;border-radius:12px;padding:10px 12px;color:var(--sheet-ink);cursor:pointer;box-shadow:0 2px 5px rgba(42,33,24,.1)}
+.trow{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto auto;gap:4px 10px;align-items:center;text-align:left;background:#e6f1e9;border:1px solid #9ab8a0;border-radius:12px;padding:9px 12px;color:var(--sheet-ink);cursor:pointer;box-shadow:0 2px 5px rgba(42,33,24,.1)}
 .trow:active{background:#dcebdd}
-.trow b{font-size:16px}.trow small{color:var(--sheet-muted);font-size:12.5px}.trow .tseats{grid-column:1/3;font-size:13.5px}.trow .thost{display:block;margin-bottom:3px;color:var(--sheet-muted);font-size:12px}.trow .thost b{color:#245b3d;font-size:15px}
+.trow .thost{grid-column:1;grid-row:1;min-width:0;overflow-wrap:anywhere}.trow .thost b{color:#245b3d;font-size:16px}
+.trow .tdots{grid-column:2;grid-row:1;display:flex;gap:4px;justify-content:flex-end}.trow .tdot{width:10px;height:10px;border-radius:50%;border:1.5px solid #245b3d}.trow .tdot.on{background:#245b3d}
+.trow small{grid-column:1;grid-row:2;align-self:end;min-width:0;color:var(--sheet-ink);font:600 13.5px var(--ui,inherit)}
+.trow .tjoin{grid-column:2;grid-row:2;justify-self:end;align-self:end;background:#245b3d;color:#fff;border-radius:999px;padding:5px 14px;font:700 13.5px var(--ui,inherit)}
 .wtable{display:grid;grid-template-rows:auto auto auto;gap:10px;margin:12px 0;justify-items:center}
 .wtable.wn{grid-template-rows:none;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
 .wtable.wn .wseat{width:100%;min-width:0}
@@ -3175,10 +3178,17 @@ const UnoUI = (() => {
     const card = st.hands[0].find(c => c.id === id);
     human({ card });
   }
-  const waitHuman = extra => new Promise(res => { wait = { res, ...extra }; render(); });
+  // a player idle past the takeover time is played by a bot (idle: true)
+  const takeMs = () => (+api.S.takeover || 0) * 1000;
+  const waitHuman = extra => new Promise(res => {
+    let timer = 0;
+    const done = v => { clearTimeout(timer); res(v); };
+    wait = { res: done, ...extra }; render();
+    if (takeMs()) timer = setTimeout(() => { if (wait && wait.res === done) { wait = null; done({ idle: true }); } }, takeMs());
+  });
   // the colour for a wild card is picked just above the hand, so the hand stays in view
   let colorWait = null;
-  function askColor() { return new Promise(res => { colorWait = res; renderAct(); }); }
+  function askColor() { return new Promise(res => { let timer = 0; colorWait = v => { clearTimeout(timer); res(v); }; renderAct(); if (takeMs()) timer = setTimeout(() => { if (colorWait) { colorWait = null; renderAct(); res(U.bestColor(st, 0)); } }, takeMs()); }); }
   function askSwap() {
     const t = T();
     return new Promise(res => api.openSheet(`<h3>${t.swap}</h3><div class="btns col">${seatOrder.filter(p => !st.eliminated[p]).map(p => `<button class="sec" data-p="${p}">${esc(nm(p))} · ${st.hands[p].length}</button>`).join('')}</div>`, v => {
@@ -3248,11 +3258,17 @@ const UnoUI = (() => {
   }
   async function humanTurn(my) {
     const a = await waitHuman(); check(my);
+    if (a.idle) { levels[0] = levels[1]; return botTurn(0, my); }
     if (a.draw) {
       const r = U.drawTurn(st, 0); render();
       await animDraw(0, r.cards.length); render();
       if (r.ended || r.penalty || !r.playable) return;
       const a2 = await waitHuman({ drawn: r.playable }); check(my);
+      if (a2.idle) {
+        levels[0] = levels[1];
+        if (U.botPlayDrawn(st, 0, r.playable, levels[0])) { const fx = U.play(st, 0, r.playable, U.bestColor(st, 0)); await animPlay(fx); await afterPlay(fx, my); } else { U.passAfterDraw(st, 0); render(); }
+        return;
+      }
       if (a2.pass || !a2.card) { U.passAfterDraw(st, 0); render(); return; }
       return humanPlay(a2.card, my);
     }
@@ -4034,7 +4050,8 @@ const PokerUI = (() => {
     let timer = 0;
     const done = v => { clearTimeout(timer); res(v); };
     wait = { res: done, ...extra }; render();
-    if (takeoverMs()) timer = setTimeout(() => { if (!wait || wait.res !== done) return; wait = null; done(A.decide(st, 0, levels[1] || 'average', model)); }, takeoverMs());
+    const tk = (+api.S.takeover || 0) * 1000;
+    if (tk) timer = setTimeout(() => { if (!wait || wait.res !== done) return; wait = null; done(A.decide(st, 0, levels[1] || 'average', model)); }, tk);
   });
 
   // ---------------------------------------------------------------- the game
@@ -4791,8 +4808,16 @@ const RemiUI = (() => {
         ckpt();
         const p = st.turn;
         if (p === 0) {
-          await new Promise(res => { wait = { res }; render(); });
+          // a player idle past the takeover time (counted from their last tap) is played by a bot
+          const tk = (+api.S.takeover || 0) * 1000;
+          const r = await new Promise(res => {
+            let timer = 0;
+            const arm = () => { clearTimeout(timer); if (tk) timer = setTimeout(() => { if (wait && wait.res === done) { wait = null; done({ idle: true }); } }, tk); };
+            const done = v => { clearTimeout(timer); root.removeEventListener('pointerdown', arm, true); res(v); };
+            wait = { res: done }; render(); arm(); root.addEventListener('pointerdown', arm, true);
+          });
           check(my); lastMeld = null; flash = null;
+          if (r && r.idle) { sel.clear(); while (st.staged && st.staged.length) R.unstage(st, 0, st.staged.length - 1); levels[0] = levels[1]; await botTurn(0, my); }
         } else await botTurn(p, my);
         render();
       }
@@ -4899,7 +4924,7 @@ const STR = {
       cols: { r: 'Crvena', y: 'Žuta', g: 'Zelena', b: 'Plava', p: 'Ružičasta', t: 'Tirkizna', o: 'Narančasta', v: 'Ljubičasta' } },
     sol: { name: 'Pasijans', score: 'Bodovi', time: 'Vrijeme', moves: 'Potezi', newGame: 'Nova igra', restart: 'Ista podjela', hint: 'Savjet', undo: 'Natrag', auto: 'Završi', won: 'Pasijans je složen!', noMoves: 'Nema više poteza', home: 'Izbornik',
       draw: 'Vučenje', draw1: '1 karta', draw3: '3 karte', passes: 'Prolazi kroz špil', inf: 'Bez ograničenja', scoring: 'Bodovanje', standard: 'Standardno', vegas: 'Vegas', none: 'Bez bodova', timed: 'Bodovi ovise o vremenu', tapMove: 'Dodir sam premješta kartu', left: 'Špil na desnoj strani', cont: 'Nastavi', played: 'Odigrano', wonN: 'Riješeno', best: 'Najbolje vrijeme', bestScore: 'Najviše bodova', streak: 'Niz pobjeda' },
-    online: 'Online', rejoin: 'Nastavi online igru', gameGone: 'Ta igra više ne postoji', playAgain: 'Igraj opet', waitOthers: (n, m) => `Čeka se ostale · ${n}/${m}`, tables: 'Otvoreni stolovi', newTable: 'Novi stol', noTables: 'Nema otvorenih stolova', host: 'Domaćin', yourName: 'Tvoje ime', sit: 'Sjedni', free: 'Slobodno', startT: 'Započni', waitHost: 'Čeka se domaćin', invite: 'Pozovi', leaveT: 'Izađi', leaveConfirm: 'Izaći sa stola?', botPlays: 'Bot igra za tebe', takeOver: 'Preuzmi', rating: 'Rejting', offline: 'Nema veze sa serverom', reconnecting: 'Ponovno spajanje…', copied: 'Poveznica kopirana', bots: 'Prazna mjesta igraju botovi', create: 'Otvori stol',
+    online: 'Online', join: 'Pridruži se', rejoin: 'Nastavi online igru', gameGone: 'Ta igra više ne postoji', playAgain: 'Igraj opet', waitOthers: (n, m) => `Čeka se ostale · ${n}/${m}`, tables: 'Otvoreni stolovi', newTable: 'Novi stol', noTables: 'Nema otvorenih stolova', host: 'Domaćin', yourName: 'Tvoje ime', sit: 'Sjedni', free: 'Slobodno', startT: 'Započni', waitHost: 'Čeka se domaćin', invite: 'Pozovi', leaveT: 'Izađi', leaveConfirm: 'Izaći sa stola?', botPlays: 'Bot igra za tebe', takeOver: 'Preuzmi', rating: 'Rejting', offline: 'Nema veze sa serverom', reconnecting: 'Ponovno spajanje…', copied: 'Poveznica kopirana', bots: 'Prazna mjesta igraju botovi', create: 'Otvori stol',
     auto: 'Auto', level: 'Protivnici', partner: 'Partner', stats: 'Statistika', lvShort: { novice: 'Poč.', average: 'Pros.', pro: 'Pro', cardshark: 'Shark' }, lv: { novice: 'Početnik', average: 'Prosječan', pro: 'Pro', cardshark: 'Cardshark' },
     speed: 'Brzina', takeover: 'Preuzimanje bota (u sek)', never: 'Nikad', slow: 'Sporo', normal: 'Normalno', fast: 'Brzo', tap: 'Igranje karte', tap1: 'Jedan dodir', tap2: 'Dva dodira',
     rules: 'Pravila', rulesB: 'Pravila briškule', rulesH: 'Pravila bele',
@@ -4977,7 +5002,7 @@ const STR = {
       cols: { r: 'Red', y: 'Yellow', g: 'Green', b: 'Blue', p: 'Pink', t: 'Teal', o: 'Orange', v: 'Purple' } },
     sol: { name: 'Solitaire', score: 'Score', time: 'Time', moves: 'Moves', newGame: 'New game', restart: 'Same deal', hint: 'Hint', undo: 'Undo', auto: 'Finish', won: 'Solved!', noMoves: 'No more moves', home: 'Menu',
       draw: 'Draw', draw1: '1 card', draw3: '3 cards', passes: 'Passes through the stock', inf: 'Unlimited', scoring: 'Scoring', standard: 'Standard', vegas: 'Vegas', none: 'None', timed: 'Timed scoring', tapMove: 'Tap moves the card for you', left: 'Stock on the right', cont: 'Continue', played: 'Played', wonN: 'Solved', best: 'Best time', bestScore: 'Best score', streak: 'Win streak' },
-    online: 'Online', rejoin: 'Rejoin online game', gameGone: 'That game no longer exists', playAgain: 'Play again', waitOthers: (n, m) => `Waiting for others · ${n}/${m}`, tables: 'Open tables', newTable: 'New table', noTables: 'No open tables', host: 'Host', yourName: 'Your name', sit: 'Sit', free: 'Free', startT: 'Start', waitHost: 'Waiting for the host', invite: 'Invite', leaveT: 'Leave', leaveConfirm: 'Leave the table?', botPlays: 'A bot is playing for you', takeOver: 'Take over', rating: 'Rating', offline: 'Can’t reach the server', reconnecting: 'Reconnecting…', copied: 'Link copied', bots: 'Empty seats are played by bots', create: 'Open table',
+    online: 'Online', join: 'Join', rejoin: 'Rejoin online game', gameGone: 'That game no longer exists', playAgain: 'Play again', waitOthers: (n, m) => `Waiting for others · ${n}/${m}`, tables: 'Open tables', newTable: 'New table', noTables: 'No open tables', host: 'Host', yourName: 'Your name', sit: 'Sit', free: 'Free', startT: 'Start', waitHost: 'Waiting for the host', invite: 'Invite', leaveT: 'Leave', leaveConfirm: 'Leave the table?', botPlays: 'A bot is playing for you', takeOver: 'Take over', rating: 'Rating', offline: 'Can’t reach the server', reconnecting: 'Reconnecting…', copied: 'Link copied', bots: 'Empty seats are played by bots', create: 'Open table',
     auto: 'Auto', level: 'Opponents', partner: 'Partner', stats: 'Stats', lvShort: { novice: 'Nov.', average: 'Avg.', pro: 'Pro', cardshark: 'Shark' }, lv: { novice: 'Novice', average: 'Average', pro: 'Pro', cardshark: 'Cardshark' },
     speed: 'Speed', takeover: 'Bot takeover (in sec)', never: 'Never', slow: 'Slow', normal: 'Normal', fast: 'Fast', tap: 'Playing a card', tap1: 'One tap', tap2: 'Two taps',
     rules: 'Rules', rulesB: 'Briscola rules', rulesH: 'Belote rules',
@@ -6826,7 +6851,9 @@ if (!S.pid) { S.pid = Array.from(crypto.getRandomValues(new Uint8Array(12)), b =
 let NET = null;   // { id, ws, info, mySeat, q, busy, closing }
 const wsURL = id => SERVER.replace(/^http/, 'ws') + `/api/table/${id}/ws`;
 const gameName = g => L().gameNames[g];
-const optsLine = (g, o) => {
+// what a room lists besides its players: the game's own settings, the fixed bot level if the host set one, and the bot-takeover time
+const optsLine = (g, o) => { const t = L(), lv = o.oppLevel && o.oppLevel !== 'auto' && t.lvShort[o.oppLevel] ? ` · ${t.lvShort[o.oppLevel]}` : ''; return `${optsCore(g, o)}${lv} · ${o.takeover === 0 ? t.never : `${o.takeover || 30} s`}`; };
+const optsCore = (g, o) => {
   const t = L();
   if (g === 'b') { const m = o.mode || 'p4'; return `${({ p4: '4 · ', d2: '2 · ' })[m] || ''}${t.modeN(m)} · ${t.target(+o.target || 3)}`; }
   if (g === 't') return `${t.tModeN(+o.players === 2 ? 2 : 4)} · ${t.hTo} ${+o.target || 41}`;
@@ -6843,7 +6870,7 @@ async function showLobby(game) {
       const r = await (await fetch(SERVER + '/api/tables')).json();
       const el = document.querySelector('#tList'); if (!el) return;
       const tables = r.tables.filter(x => x.game === game);
-      el.innerHTML = tables.length ? tables.map(x => `<button class="trow" data-id="${x.id}"><b>${gameName(x.game)}</b><small>${esc(optsLine(x.game, x.opts))}</small><span class="tseats"><span class="thost">${t.host}: <b>${esc(x.hostName || '')}</b></span><span>${x.seats.map(n => n ? esc(botName(n)) : '·').join(' · ')}</span></span></button>`).join('') : `<p class="muted">${t.noTables}</p>`;
+      el.innerHTML = tables.length ? tables.map(x => `<button class="trow" data-id="${x.id}"><span class="thost"><b>${esc(x.hostName || '')}</b></span><span class="tdots" aria-label="${x.seats.filter(n => n).length}/${x.seats.length}">${x.seats.map(n => `<i class="tdot${n ? ' on' : ''}"></i>`).join('')}</span><small>${esc(optsLine(x.game, x.opts))}</small><span class="tjoin">${t.join}</span></button>`).join('') : `<p class="muted">${t.noTables}</p>`;
       el.querySelectorAll('.trow').forEach(b => b.onclick = () => { alive = false; clearInterval(timer); joinTable(b.dataset.id); });
     } catch (e) { const el = document.querySelector('#tList'); if (el) el.innerHTML = `<p class="muted">${t.offline}</p>`; }
   };
@@ -6914,7 +6941,7 @@ async function showLobby(game) {
                 : { players: +(S.onLPlayers || S.uPlayers || 4), variant: S.onLVariant || S.uVar || 'classic', target: S.onLTarget === undefined ? (S.uTarget ?? 500) : S.onLTarget,
                   stack: S.onLVariant === 'nomercy' || !!S.onLStack, sevenO: S.onLVariant === 'classic' && !!S.onLSevenO, jumpIn: S.onLVariant === 'classic' && !!S.onLJumpIn, drawUntil: S.onLVariant !== 'nomercy' && !!S.onLDrawUntil, pace: S.onLPace || S.uPace || 'normal' };
       try {
-        opts.oppLevel = S.onOpp || 'auto'; if (teamGame(g)) opts.partnerLevel = S.onPartner || 'auto';
+        opts.oppLevel = S.onOpp || 'auto'; if (teamGame(g)) opts.partnerLevel = S.onPartner || 'auto'; opts.takeover = +S.takeover || 0;
         const r = await (await fetch(SERVER + '/api/tables', { method: 'POST', body: JSON.stringify({ game: g, opts, pid: S.pid, name: S.name }) })).json();
         alive = false; clearInterval(timer); joinTable(r.id, true);
       } catch (e) { status(t.offline); }
