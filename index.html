@@ -115,6 +115,7 @@ table.stats td b{display:inline-block;min-width:1.4em;font-size:15px}
 .opt{display:flex;flex-direction:column;gap:6px}
 .opt>span{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700}
 .seg{display:flex;flex-wrap:wrap;gap:6px}
+.tk{padding:4px 2px 2px}.tk-v{font:700 18px var(--ui,inherit);margin:0 0 6px;color:inherit}.tk input[type=range]{width:100%;margin:0;accent-color:#2f6b52}.tk-l{display:flex;justify-content:space-between;font-size:12px;opacity:.75;margin-top:2px}
 .seg button{flex:1 1 auto;min-width:64px;background:rgba(0,0,0,.22);border:1px solid var(--faint);border-radius:10px;padding:9px 10px;cursor:pointer;font-size:15px;color:var(--ink)}
 .seg button[aria-pressed="true"]{background:var(--ink);color:var(--felt-lo);border-color:var(--ink);font-weight:700}
 .note{font-size:13px;color:var(--muted);margin:0}
@@ -4028,7 +4029,13 @@ const PokerUI = (() => {
     }
     render();
   }
-  const waitHuman = extra => new Promise(res => { wait = { res, ...extra }; render(); });
+  const waitHuman = extra => new Promise(res => {
+    // idle past the takeover time: a bot plays this seat's move
+    let timer = 0;
+    const done = v => { clearTimeout(timer); res(v); };
+    wait = { res: done, ...extra }; render();
+    if (takeoverMs()) timer = setTimeout(() => { if (!wait || wait.res !== done) return; wait = null; done(A.decide(st, 0, levels[1] || 'average', model)); }, takeoverMs());
+  });
 
   // ---------------------------------------------------------------- the game
   async function run(my, cont) {
@@ -4849,7 +4856,7 @@ const $ = s => document.querySelector(s);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
 // ---------- settings ----------
-const DEF = { lang: (navigator.language || '').toLowerCase().startsWith('hr') ? 'hr' : 'en', bMode: 'p4', bTarget: 3, tMode: 4, tTarget: 41, tAkuze: true, tLongNap: false, tThirdsLast: false, tSignals: true, tClockwise: false, bReveal: false, hTarget: 1001, speed: 'normal', bLevel: 'cardshark', tLevel: 'cardshark', hLevel: 'cardshark', tap: 2, bDeck: 'triestine', hDeck: 'hungarian', uVar: 'classic', uPlayers: 4, uLevel: 'cardshark', uTarget: 500 };
+const DEF = { lang: (navigator.language || '').toLowerCase().startsWith('hr') ? 'hr' : 'en', bMode: 'p4', bTarget: 3, tMode: 4, tTarget: 41, tAkuze: true, tLongNap: false, tThirdsLast: false, tSignals: true, tClockwise: false, bReveal: false, hTarget: 1001, speed: 'normal', bLevel: 'cardshark', tLevel: 'cardshark', hLevel: 'cardshark', tap: 2, bDeck: 'triestine', hDeck: 'hungarian', uVar: 'classic', uPlayers: 4, uLevel: 'cardshark', uTarget: 500, takeover: 0 };
 let S = { ...DEF };
 try { Object.assign(S, JSON.parse(localStorage.getItem('stih.v1') || '{}')); } catch (e) { }
 // older saves had players + double separately; 4-player double is not a real variant
@@ -4894,7 +4901,7 @@ const STR = {
       draw: 'Vučenje', draw1: '1 karta', draw3: '3 karte', passes: 'Prolazi kroz špil', inf: 'Bez ograničenja', scoring: 'Bodovanje', standard: 'Standardno', vegas: 'Vegas', none: 'Bez bodova', timed: 'Bodovi ovise o vremenu', tapMove: 'Dodir sam premješta kartu', left: 'Špil na desnoj strani', cont: 'Nastavi', played: 'Odigrano', wonN: 'Riješeno', best: 'Najbolje vrijeme', bestScore: 'Najviše bodova', streak: 'Niz pobjeda' },
     online: 'Online', rejoin: 'Nastavi online igru', gameGone: 'Ta igra više ne postoji', playAgain: 'Igraj opet', waitOthers: (n, m) => `Čeka se ostale · ${n}/${m}`, tables: 'Otvoreni stolovi', newTable: 'Novi stol', noTables: 'Nema otvorenih stolova', host: 'Domaćin', yourName: 'Tvoje ime', sit: 'Sjedni', free: 'Slobodno', startT: 'Započni', waitHost: 'Čeka se domaćin', invite: 'Pozovi', leaveT: 'Izađi', leaveConfirm: 'Izaći sa stola?', botPlays: 'Bot igra za tebe', takeOver: 'Preuzmi', rating: 'Rejting', offline: 'Nema veze sa serverom', reconnecting: 'Ponovno spajanje…', copied: 'Poveznica kopirana', bots: 'Prazna mjesta igraju botovi', create: 'Otvori stol',
     auto: 'Auto', level: 'Protivnici', partner: 'Partner', stats: 'Statistika', lvShort: { novice: 'Poč.', average: 'Pros.', pro: 'Pro', cardshark: 'Shark' }, lv: { novice: 'Početnik', average: 'Prosječan', pro: 'Pro', cardshark: 'Cardshark' },
-    speed: 'Brzina', slow: 'Sporo', normal: 'Normalno', fast: 'Brzo', tap: 'Igranje karte', tap1: 'Jedan dodir', tap2: 'Dva dodira',
+    speed: 'Brzina', takeover: 'Preuzimanje bota (u sek)', never: 'Nikad', slow: 'Sporo', normal: 'Normalno', fast: 'Brzo', tap: 'Igranje karte', tap1: 'Jedan dodir', tap2: 'Dva dodira',
     rules: 'Pravila', rulesB: 'Pravila briškule', rulesH: 'Pravila bele',
     settings: 'Postavke', language: 'Jezik',
     sumT: () => `${S.tMode === 2 ? '2 igrača' : '4 igrača · u paru'} · do ${S.tTarget}`, tModeN: n => n === 2 ? '2 · jedan na jedan' : '4 · u paru',
@@ -4972,7 +4979,7 @@ const STR = {
       draw: 'Draw', draw1: '1 card', draw3: '3 cards', passes: 'Passes through the stock', inf: 'Unlimited', scoring: 'Scoring', standard: 'Standard', vegas: 'Vegas', none: 'None', timed: 'Timed scoring', tapMove: 'Tap moves the card for you', left: 'Stock on the right', cont: 'Continue', played: 'Played', wonN: 'Solved', best: 'Best time', bestScore: 'Best score', streak: 'Win streak' },
     online: 'Online', rejoin: 'Rejoin online game', gameGone: 'That game no longer exists', playAgain: 'Play again', waitOthers: (n, m) => `Waiting for others · ${n}/${m}`, tables: 'Open tables', newTable: 'New table', noTables: 'No open tables', host: 'Host', yourName: 'Your name', sit: 'Sit', free: 'Free', startT: 'Start', waitHost: 'Waiting for the host', invite: 'Invite', leaveT: 'Leave', leaveConfirm: 'Leave the table?', botPlays: 'A bot is playing for you', takeOver: 'Take over', rating: 'Rating', offline: 'Can’t reach the server', reconnecting: 'Reconnecting…', copied: 'Link copied', bots: 'Empty seats are played by bots', create: 'Open table',
     auto: 'Auto', level: 'Opponents', partner: 'Partner', stats: 'Stats', lvShort: { novice: 'Nov.', average: 'Avg.', pro: 'Pro', cardshark: 'Shark' }, lv: { novice: 'Novice', average: 'Average', pro: 'Pro', cardshark: 'Cardshark' },
-    speed: 'Speed', slow: 'Slow', normal: 'Normal', fast: 'Fast', tap: 'Playing a card', tap1: 'One tap', tap2: 'Two taps',
+    speed: 'Speed', takeover: 'Bot takeover (in sec)', never: 'Never', slow: 'Slow', normal: 'Normal', fast: 'Fast', tap: 'Playing a card', tap1: 'One tap', tap2: 'Two taps',
     rules: 'Rules', rulesB: 'Briscola rules', rulesH: 'Belote rules',
     settings: 'Settings', language: 'Language',
     sumT: () => `${S.tMode === 2 ? '2 players' : '4 players · pairs'} · to ${S.tTarget}`, tModeN: n => n === 2 ? '2 · head to head' : '4 · pairs',
@@ -5512,6 +5519,11 @@ function openSheet(html, onBind) {
   const first = veil.querySelector('button'); if (first) first.focus({ preventScroll: true });
 }
 function closeSheet() { $('#overlay').innerHTML = ''; }
+// bot takeover presets in seconds; 0 = never
+const TAKE_STEPS = [5, 10, 15, 20, 25, 30, 0];
+const takeLabel = (v, t) => (+v ? `${+v}` : t.never);
+// a player who stays idle for the chosen time is played by a bot until they act again
+function takeoverMs() { return (+S.takeover || 0) * 1000; }
 function showSettings() {
   const t = L();
   const D = E.bDeck(), H = E.hDeck();
@@ -5527,6 +5539,7 @@ function showSettings() {
   openSheet(`<h3>${t.settings}</h3>
     <h4>${t.language}</h4>${seg('lang', [['hr', 'Hrvatski'], ['en', 'English']])}
     <h4>${t.speed}</h4>${seg('speed', [['slow', t.slow], ['normal', t.normal], ['fast', t.fast]])}
+    <h4>${t.takeover}</h4><div class="tk"><div class="tk-v" id="tkv">${takeLabel(S.takeover, t)}</div><input type="range" id="tkr" min="0" max="${TAKE_STEPS.length - 1}" step="1" value="${TAKE_STEPS.indexOf(+S.takeover || 0) < 0 ? TAKE_STEPS.length - 1 : TAKE_STEPS.indexOf(+S.takeover || 0)}" aria-label="${t.takeover}"><div class="tk-l">${TAKE_STEPS.map(v => `<span>${v || t.never}</span>`).join('')}</div></div>
     <h4>${t.deckB}</h4><div class="decks">${deckRow('b', pickB, 'bDeck')}</div>
     <h4>${t.deckH}</h4><div class="decks">${deckRow('h', pickH, 'hDeck')}</div>
     <h4>${t.deckF}</h4><div class="decks">${Object.keys(Cards.FR).map(k => `<button class="deck" data-fd="${k}" aria-pressed="${Cards.frDeck(S.fDeck) === k}"><span class="dk-cards">${['Hk', 'Sq', 'Dj'].map(c => `<span class="svgc">${Cards.frFace(c, k)}</span>`).join('')}</span><span class="dk-name"><b>${Cards.FR[k].name[S.lang]}</b></span></button>`).join('')}</div>
@@ -5534,6 +5547,8 @@ function showSettings() {
     <p class="muted credit">v68</p>
     <div class="btns"><button class="pri" id="sx">${t.close}</button></div>`, v => {
     v.querySelector('#sx').onclick = () => { closeSheet(); if (G) renderAll(); else renderHome(); };
+    const tkr = v.querySelector('#tkr');
+    if (tkr) tkr.oninput = () => { S.takeover = TAKE_STEPS[+tkr.value]; save(); v.querySelector('#tkv').textContent = takeLabel(S.takeover, t); };
     v.onclick = e => { if (e.target === v) { closeSheet(); if (G) renderAll(); else renderHome(); } };
     v.querySelectorAll('[data-fd]').forEach(b => b.onclick = () => { S.fDeck = b.dataset.fd; save(); showSettings(); });
     v.querySelectorAll('[data-fb]').forEach(b => b.onclick = () => { S.fBack = b.dataset.fb; save(); v.querySelectorAll('[data-fb]').forEach(x => x.setAttribute('aria-pressed', x === b)); });
@@ -6303,7 +6318,16 @@ async function collectTrick(winner) {
 
 // human input
 function humanPick(legalIds) {
-  return new Promise(res => { pending = { legal: new Set(legalIds), res }; sel = null; hintId = null; hintMsg = null; renderHand(); });
+  return new Promise(res => {
+    let timer = 0;
+    const done = card => { clearTimeout(timer); res(card); };
+    pending = { legal: new Set(legalIds), res: done }; sel = null; hintId = null; hintMsg = null; renderHand();
+    if (takeoverMs()) timer = setTimeout(() => {
+      if (!pending || pending.res !== done) return;
+      pending = null; sel = null; hintId = null; hintMsg = null; $('#bHint').hidden = true; renderHand();
+      done(AI.play(G.game, G, 0, lvOf(0) || 'average', AIO));
+    }, takeoverMs());
+  });
 }
 function playFromHand(e) {
   if (netMulti()) { playNetFromHand(e); return; }
@@ -6642,7 +6666,10 @@ function humanBid(isDealer) {
   return new Promise(res => {
     const btns = [0, 1, 2, 3].map(s => `<button data-s="${s}">${Cards.suitIcon('h', s, 20)}${suitName('h', s)}</button>`).join('');
     setAction(`<div class="msg">${isDealer ? t.mustCall : t.callPrompt}</div><div class="bid">${btns}<button class="pass" data-s="-1" ${isDealer ? 'disabled' : ''}>${t.pass}</button></div>`);
-    $('#action').querySelectorAll('button[data-s]').forEach(b => b.onclick = () => { if (b.disabled) return; setAction(''); res(+b.dataset.s); });
+    let timer = 0;
+    const done = v => { clearTimeout(timer); setAction(''); res(v); };
+    $('#action').querySelectorAll('button[data-s]').forEach(b => b.onclick = () => { if (b.disabled) return; done(+b.dataset.s); });
+    if (takeoverMs()) timer = setTimeout(() => done(AI.bid(G, 0, lvOf(0) || 'average')), takeoverMs());
   });
 }
 function scoreSheetHTML(row, mw) {
