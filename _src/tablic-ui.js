@@ -8,7 +8,7 @@ const TablicUI = (() => {
     hr: { name: 'Tablić', players: 'Igrači', target: 'Do', we: 'Mi', they: 'Oni', you: 'Ti', partner: 'Partner', stock: 'Špil', pile: 'Hrpa', take: 'Uzmi', lay: 'Ostavi', clear: 'Poništi',
       yourTurn: 'Tvoj potez', thinking: n => `${n} igra…`, tabla: 'TABLA!', round: 'Runda', cards: 'Karte', pts: 'Bodovi', most: 'Najviše', tablas: 'Table', total: 'Ukupno', next: 'Dalje',
       won: 'Pobjeda!', lost: 'Poraz', again: 'Nova igra', home: 'Početna', n2: '2', n3: '3', n4: '4 · parovi', bad: 'Ne ide', sum: 'Zbroj se ne slaže', roundN: r => `${r}. runda`, level: 'Razina' },
-    en: { name: 'Tablić', players: 'Players', target: 'To', we: 'We', they: 'They', you: 'You', partner: 'Partner', stock: 'Stock', pile: 'Pile', take: 'Take', lay: 'Lay down', clear: 'Clear',
+    en: { name: 'Tablanette', players: 'Players', target: 'To', we: 'We', they: 'They', you: 'You', partner: 'Partner', stock: 'Stock', pile: 'Pile', take: 'Take', lay: 'Lay down', clear: 'Clear',
       yourTurn: 'Your turn', thinking: n => `${n} is playing…`, tabla: 'TABLA!', round: 'Round', cards: 'Cards', pts: 'Points', most: 'Most', tablas: 'Tablas', total: 'Total', next: 'Next',
       won: 'You won!', lost: 'You lost', again: 'New game', home: 'Home', n2: '2', n3: '3', n4: '4 · pairs', bad: 'Not allowed', sum: 'The sum does not match', roundN: r => `Round ${r}`, level: 'Level' }
   };

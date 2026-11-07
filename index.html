@@ -5305,7 +5305,7 @@ const TablicUI = (() => {
     hr: { name: 'Tablić', players: 'Igrači', target: 'Do', we: 'Mi', they: 'Oni', you: 'Ti', partner: 'Partner', stock: 'Špil', pile: 'Hrpa', take: 'Uzmi', lay: 'Ostavi', clear: 'Poništi',
       yourTurn: 'Tvoj potez', thinking: n => `${n} igra…`, tabla: 'TABLA!', round: 'Runda', cards: 'Karte', pts: 'Bodovi', most: 'Najviše', tablas: 'Table', total: 'Ukupno', next: 'Dalje',
       won: 'Pobjeda!', lost: 'Poraz', again: 'Nova igra', home: 'Početna', n2: '2', n3: '3', n4: '4 · parovi', bad: 'Ne ide', sum: 'Zbroj se ne slaže', roundN: r => `${r}. runda`, level: 'Razina' },
-    en: { name: 'Tablić', players: 'Players', target: 'To', we: 'We', they: 'They', you: 'You', partner: 'Partner', stock: 'Stock', pile: 'Pile', take: 'Take', lay: 'Lay down', clear: 'Clear',
+    en: { name: 'Tablanette', players: 'Players', target: 'To', we: 'We', they: 'They', you: 'You', partner: 'Partner', stock: 'Stock', pile: 'Pile', take: 'Take', lay: 'Lay down', clear: 'Clear',
       yourTurn: 'Your turn', thinking: n => `${n} is playing…`, tabla: 'TABLA!', round: 'Round', cards: 'Cards', pts: 'Points', most: 'Most', tablas: 'Tablas', total: 'Total', next: 'Next',
       won: 'You won!', lost: 'You lost', again: 'New game', home: 'Home', n2: '2', n3: '3', n4: '4 · pairs', bad: 'Not allowed', sum: 'The sum does not match', roundN: r => `Round ${r}`, level: 'Level' }
   };
@@ -7354,7 +7354,7 @@ const PrefUI = (() => {
       yourTurn: 'Tvoj potez', bidding: n => `${n} licitira…`, playing: n => `${n} igra…`, discard: 'Odbaci 2 karte', declare: 'Ugovor', whistQ: 'Vist?', waitingFor: n => `${n} odlučuje…`,
       next: 'Dalje', won: 'Pobjeda!', lost: 'Poraz', again: 'Nova igra', home: 'Početna', made: 'Ispunjeno', down: 'Pad', noPlay: 'Bez igre', tricks: 'Štihovi', points: 'Bodovi', total: 'Ukupno',
       confirm: 'Odbaci', nt: 'BA', bad: 'Ne ide', err: { bad: 'Ne ide', follow: 'Moraš slijediti boju', bid: 'Ta licitacija nije moguća', turn: 'Nisi na redu', discard: 'Odaberi 2 karte' } },
-    en: { name: 'Preferans', deals: 'Deals', poolEnd: 'Match ends', endTwo: 'Two pools', endThree: 'All three pools', poolCap: 'Pool limit', capOn: 'Stops at target', capOff: 'No limit', scoring: 'Scoring', simple: 'Simple', poolMt: 'Pool & mountain', poolTo: 'Pool', pl: 'Pool', mt: 'Mountain', dealN: n => `Deal ${n}`, you: 'You', pass: 'Pass', whist: 'Whist', misere: 'Misère', raspasy: 'Raspasy', decl: 'Declarer', deal: (n, m) => `Deal ${n}/${m}`, yourBid: 'Your bid',
+    en: { name: 'Preference', deals: 'Deals', poolEnd: 'Match ends', endTwo: 'Two pools', endThree: 'All three pools', poolCap: 'Pool limit', capOn: 'Stops at target', capOff: 'No limit', scoring: 'Scoring', simple: 'Simple', poolMt: 'Pool & mountain', poolTo: 'Pool', pl: 'Pool', mt: 'Mountain', dealN: n => `Deal ${n}`, you: 'You', pass: 'Pass', whist: 'Whist', misere: 'Misère', raspasy: 'Raspasy', decl: 'Declarer', deal: (n, m) => `Deal ${n}/${m}`, yourBid: 'Your bid',
       yourTurn: 'Your turn', bidding: n => `${n} is bidding…`, playing: n => `${n} is playing…`, discard: 'Discard 2 cards', declare: 'Contract', whistQ: 'Whist?', waitingFor: n => `${n} is deciding…`,
       next: 'Next', won: 'You won!', lost: 'You lost', again: 'New game', home: 'Home', made: 'Made', down: 'Down', noPlay: 'No play', tricks: 'Tricks', points: 'Points', total: 'Total',
       confirm: 'Discard', nt: 'NT', bad: 'Not allowed', err: { bad: 'Not allowed', follow: 'You must follow suit', bid: 'That bid is not possible', turn: 'Not your turn', discard: 'Pick 2 cards' } }
@@ -7763,7 +7763,7 @@ const STR = {
     sHacc: ['herc', 'bundevu', 'zeleni', 'žir'], sBacc: ['kupe', 'dinare', 'špade', 'baštone']
   },
   en: {
-    gameNames: { b: 'Briscola', t: 'Tressette', h: 'Belote', p: 'Poker', r: 'Rummy', l: 'L’Unico!', a: 'Tablić', c: 'Bridge', f: 'Preferans' },
+    gameNames: { b: 'Briscola', t: 'Tressette', h: 'Belote', p: 'Poker', r: 'Rummy', l: 'L’Unico!', a: 'Tablanette', c: 'Bridge', f: 'Preference' },
     tagline: 'Briscola and Belote at the café table — you against three computer players.',
     bSub: 'Triestine cards · 40 cards · trump suit (briscola)', hSub: 'German-suited cards · 32 cards · declarations, belote, 1001',
     players: 'Players', p2: '2 · head to head', p4: '4 · partners',
@@ -7944,7 +7944,7 @@ const RULES = {
 <h4>Turn</h4><ul><li>First the non-dealer may take the turned-up card or pass, then the dealer. If both pass, the non-dealer draws from the stock. After that you draw from the stock or the discard pile, then discard one card. A card taken from the discard pile cannot be discarded straight away.</li></ul>
 <h4>Knocking</h4><ul><li>When your deadwood after discarding is 10 or less, you may knock. The opponent then lays off cards onto your melds and the deadwood is compared.</li><li>The lower deadwood scores the difference. If the opponent's deadwood is not higher (undercut), they score the difference + 25.</li><li>Gin: no deadwood, 25 + the opponent's deadwood (no laying off). Big gin: all 11 cards in melds with no discard, 31 + the opponent's deadwood.</li></ul>
 <h4>End</h4><ul><li>When the stock is down to 2 cards and a player discards without knocking, the hand is void.</li><li>First to 100 (or 50) wins. The winner gets a game bonus equal to the target, and each player a bonus for every hand won (25; 10 in the short game).</li></ul>`,
-    f: `<h3>Preferans</h3>
+    f: `<h3>Preference</h3>
 <h4>Cards and deal</h4><ul><li>32 cards (7–A), 3 players. Each gets 10 cards and 2 go to the talon. Suit order for bidding: spades, diamonds, clubs, hearts, no trump.</li></ul>
 <h4>Bidding</h4><ul><li>The player left of the dealer bids first. A bid is a number of tricks (6–10) and a suit; misère sits between 9 and 10. A pass is final.</li><li>If everyone passes the deal is played as raspasy: no trump, every trick taken costs a point.</li></ul>
 <h4>Declarer and whist</h4><ul><li>The highest bidder takes the talon, discards 2 cards and names the final contract (not below the bid).</li><li>Each defender says whist or pass. If both pass, the declarer scores without playing. Otherwise the declarer leads, you must follow suit, and if you cannot, you must play a trump.</li></ul>
@@ -8535,7 +8535,7 @@ RULES.hr.a = `<h3>Tablić</h3>
 <h4>Karte</h4><ul><li>52 karte, 2–4 igrača (u četvero se igra u parovima). Svatko dobiva po šest karata, a četiri se otvore na stol.</li><li>Brojevi 2–10 vrijede koliko piše, dečko 12, dama 13, kralj 14, as 1 ili 11.</li></ul>
 <h4>Potez</h4><ul><li>Baci se jedna karta. Smije uzeti jednu kartu sa stola iste vrijednosti ili više karata čiji je zbroj jednak njezinoj vrijednosti; može se uzeti i više takvih skupina odjednom. Bačena karta ide u hrpu zajedno s uzetima.</li><li>Ako ništa ne uzima, ostaje na stolu.</li></ul>
 <h4>Bodovi</h4><ul><li>Svaki as, desetka, dečko, dama i kralj vrijedi 1 bod; desetka karo 2 boda; dvojka tref 1 bod. Najviše karata 3 boda (nitko ako je izjednačeno). Tabla – pražnjenje stola – 1 bod (ne u zadnjem potezu).</li><li>Kad karte ponestanu, ostatak sa stola uzima onaj tko je zadnji nešto uzeo. Pobjeđuje tko prvi dosegne 101 (ili 51); ako je izjednačeno, igra se još jedna runda.</li></ul>`;
-RULES.en.a = `<h3>Tablić</h3>
+RULES.en.a = `<h3>Tablanette</h3>
 <h4>Cards</h4><ul><li>52 cards, 2–4 players (four play as two pairs). Everyone gets six cards at a time; four cards start face up on the table.</li><li>2–10 are worth their number, J 12, Q 13, K 14, an ace 1 or 11.</li></ul>
 <h4>Your turn</h4><ul><li>Play one card. It may take one table card of the same value, or any cards that add up to its value; you may take several such groups at once. The played card goes to your pile with them.</li><li>If it takes nothing, it stays on the table.</li></ul>
 <h4>Scoring</h4><ul><li>Each ace, 10, J, Q and K is 1 point; the 10♦ is 2 points; the 2♣ is 1 point. Most cards is 3 points (nobody if tied). A tabla, clearing the table, is 1 point (not on the last play).</li><li>When the cards run out, the last player to capture takes what is left. First to 101 (or 51) wins; a tie plays another round.</li></ul>`;
