@@ -5,11 +5,11 @@ const PrefUI = (() => {
     myReq = null, idleTimer = 0, nextRes = null, lastEnd = null, selLevel = 0, selD = new Set(), shownTrick = null;
   class Abort extends Error {}
   const TX = {
-    hr: { name: 'Preferans', deals: 'Dijeljenja', you: 'Ti', pass: 'Pas', whist: 'Vist', misere: 'Misère', raspasy: 'Raspasy', decl: 'Igrač', deal: (n, m) => `Igra ${n}/${m}`, yourBid: 'Tvoja licitacija',
+    hr: { name: 'Preferans', deals: 'Dijeljenja', scoring: 'Bodovanje', simple: 'Jednostavno', poolMt: 'Pula i gora', poolTo: 'Pula', pl: 'Pula', mt: 'Gora', dealN: n => `Igra ${n}`, you: 'Ti', pass: 'Pas', whist: 'Vist', misere: 'Misère', raspasy: 'Raspasy', decl: 'Igrač', deal: (n, m) => `Igra ${n}/${m}`, yourBid: 'Tvoja licitacija',
       yourTurn: 'Tvoj potez', bidding: n => `${n} licitira…`, playing: n => `${n} igra…`, discard: 'Odbaci 2 karte', declare: 'Ugovor', whistQ: 'Vist?', waitingFor: n => `${n} odlučuje…`,
       next: 'Dalje', won: 'Pobjeda!', lost: 'Poraz', again: 'Nova igra', home: 'Početna', made: 'Ispunjeno', down: 'Pad', noPlay: 'Bez igre', tricks: 'Štihovi', points: 'Bodovi', total: 'Ukupno',
       confirm: 'Odbaci', nt: 'BA', bad: 'Ne ide', err: { bad: 'Ne ide', follow: 'Moraš slijediti boju', bid: 'Ta licitacija nije moguća', turn: 'Nisi na redu', discard: 'Odaberi 2 karte' } },
-    en: { name: 'Preferans', deals: 'Deals', you: 'You', pass: 'Pass', whist: 'Whist', misere: 'Misère', raspasy: 'Raspasy', decl: 'Declarer', deal: (n, m) => `Deal ${n}/${m}`, yourBid: 'Your bid',
+    en: { name: 'Preferans', deals: 'Deals', scoring: 'Scoring', simple: 'Simple', poolMt: 'Pool & mountain', poolTo: 'Pool', pl: 'Pool', mt: 'Mountain', dealN: n => `Deal ${n}`, you: 'You', pass: 'Pass', whist: 'Whist', misere: 'Misère', raspasy: 'Raspasy', decl: 'Declarer', deal: (n, m) => `Deal ${n}/${m}`, yourBid: 'Your bid',
       yourTurn: 'Your turn', bidding: n => `${n} is bidding…`, playing: n => `${n} is playing…`, discard: 'Discard 2 cards', declare: 'Contract', whistQ: 'Whist?', waitingFor: n => `${n} is deciding…`,
       next: 'Next', won: 'You won!', lost: 'You lost', again: 'New game', home: 'Home', made: 'Made', down: 'Down', noPlay: 'No play', tricks: 'Tricks', points: 'Points', total: 'Total',
       confirm: 'Discard', nt: 'NT', bad: 'Not allowed', err: { bad: 'Not allowed', follow: 'You must follow suit', bid: 'That bid is not possible', turn: 'Not your turn', discard: 'Pick 2 cards' } }
@@ -89,14 +89,14 @@ const PrefUI = (() => {
     { const l = root && root.querySelector('#prLast'); if (l) l.style.display = api.S['last_f'] === false ? 'none' : ''; }
     if (!cur || !root) return;
     const t = tx(), v = cur;
-    $('#prScore').innerHTML = `<span>${t.you}</span><b>${v.scores[0]}</b><small>${v.deal}/${v.deals}</small>`;
+    $('#prScore').innerHTML = `<span>${t.you}</span><b>${v.scores[0]}</b><small>${v.opts.scoring === 'pool' ? `${v.pool[0]}/${v.opts.pool}` : `${v.deal}/${v.deals}`}</small>`;
     // strip
     const ctr = $('#prCtr'), tr3 = `${[0, 1, 2].map(i => `<span>${i === 0 ? t.you : esc(nameOf(i))} <b>${v.won[i]}</b></span>`).join('')}`;
     if (v.phase === 'play' || v.phase === 'done') {
       ctr.innerHTML = `${v.raspasy ? `<span class="brct">${t.raspasy}</span>` : `<span class="brct">${bidH(v.contract)}</span><span>${t.decl}: <b>${esc(nameOf(v.declarer))}</b></span>`}${tr3}`;
     } else if (v.phase === 'whist' || v.phase === 'declare' || v.phase === 'talon') {
       ctr.innerHTML = `<span class="brct">${bidH(v.contract !== null && v.contract !== undefined ? v.contract : v.high.idx)}</span><span>${t.decl}: <b>${esc(nameOf(v.declarer))}</b></span>`;
-    } else ctr.innerHTML = `<span>${t.deal(v.deal, v.deals)}</span>${v.high ? `<span class="brct">${bidH(v.high.idx)}</span><span><b>${esc(nameOf(v.high.seat))}</b></span>` : ''}`;
+    } else ctr.innerHTML = `<span>${v.opts.scoring === 'pool' ? t.dealN(v.deal) : t.deal(v.deal, v.deals)}</span>${v.high ? `<span class="brct">${bidH(v.high.idx)}</span><span><b>${esc(nameOf(v.high.seat))}</b></span>` : ''}`;
     // other seats
     const seats = $('#prSeats'); seats.replaceChildren();
     for (let i = 1; i < 3; i++) {
@@ -105,7 +105,7 @@ const PrefUI = (() => {
       o.className = `brseat ${POS[i]}${turn ? ' turn' : ''}`; o.dataset.s = i;
       const backs = Array.from({ length: Math.min(n, 7) }, () => `<span class="tbback">${Cards.frBack(api.S.fDeck, api.S.fBack)}</span>`).join('');
       const tag = v.declarer === i && v.phase !== 'bid' ? t.decl : (v.whist[i] === 'w' ? t.whist : '');
-      o.innerHTML = `<div class="tbcnt">${backs}</div><b class="tbnm">${esc(nameOf(i))}</b><small>${v.scores[i]}${tag ? ' · ' + tag : ''}</small>`;
+      o.innerHTML = `<div class="tbcnt">${backs}</div><b class="tbnm">${esc(nameOf(i))}</b><small>${v.scores[i]}${v.opts.scoring === 'pool' ? ` · ${v.pool[i]}/${v.opts.pool}` : ''}${tag ? ' · ' + tag : ''}</small>`;
       seats.append(o);
     }
     // trick
@@ -207,8 +207,8 @@ const PrefUI = (() => {
     const t = tx(), r = ev.result, v = ev.scores;
     const sign = n => n > 0 ? '+' + n : String(n);
     const title = over ? (ev.over && lastEnd && ev.scores[0] === Math.max(...ev.scores) ? t.won : t.lost) : r.raspasy ? t.raspasy : `${bidH(r.contract)} · ${esc(nameOf(r.declarer))} · ${r.noPlay ? t.noPlay : r.made ? t.made : t.down}`;
-    const rows = [0, 1, 2].map(i => `<tr${i === r.declarer ? ' class="w"' : ''}><td>${i === 0 ? t.you : esc(nameOf(i))}${r.whist[i] === 'w' ? ' · ' + t.whist : ''}</td><td>${r.noPlay ? '·' : r.tricks[i]}</td><td>${sign(r.add[i])}</td><td><b>${v[i]}</b></td></tr>`).join('');
-    return `<h3>${title}</h3><table class="pis utab"><thead><tr><th></th><th>${t.tricks}</th><th>${t.points}</th><th>${t.total}</th></tr></thead><tbody>${rows}</tbody></table>`;
+    const rows = [0, 1, 2].map(i => `<tr${i === r.declarer ? ' class="w"' : ''}><td>${i === 0 ? t.you : esc(nameOf(i))}${r.whist[i] === 'w' ? ' · ' + t.whist : ''}</td><td>${r.noPlay ? '·' : r.tricks[i]}</td>${r.pool ? '' : `<td>${sign(r.add[i])}</td>`}${r.pool ? `<td>${r.pool[i]}</td><td>${r.mount[i]}</td>` : ''}<td><b>${v[i]}</b>${r.pool ? `<small> ${sign(r.add[i])}</small>` : ''}</td></tr>`).join('');
+    return `<h3>${title}</h3><table class="pis utab"${r.pool ? '' : ''}><thead><tr><th></th><th>${t.tricks}</th>${r.pool ? '' : `<th>${t.points}</th>`}${r.pool ? `<th>${t.pl}</th><th>${t.mt}</th>` : ''}<th>${t.total}</th></tr></thead><tbody>${rows}</tbody></table>`;
   }
   function handEndSheet(ev, v) {
     const t = tx(), html = resultHTML(ev, false);
@@ -279,7 +279,7 @@ const PrefUI = (() => {
       const pn = api.pickBotNames({ 1: levels[1], 2: levels[2] }); offNames = [null, pn[1], pn[2]];
       st = null;
     } else { levels = saved.levels; offNames = saved.names; }
-    const opts = saved ? JSON.parse(saved.st).opts : { players: 3, deals: S.fDeals || 6 };
+    const opts = saved ? JSON.parse(saved.st).opts : { players: 3, deals: S.fDeals || 6, scoring: S.fScoring === 'pool' ? 'pool' : 'simple', pool: S.fPool || 6 };
     P.run(makeHost(opts, saved ? { st: saved.st, at: saved.at } : null)).catch(e => { if (!(e instanceof Abort)) console.error(e); });
   }
   const start = () => begin(null);

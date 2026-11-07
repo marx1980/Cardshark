@@ -97,3 +97,6 @@ Check at 375×667 and 390×780/844. The only expected console error is Google Fo
 ## v98 – Preferans (game code 'f')
 - Rules/bots/view/run in server/src/pref.js, screen in _src/pref-ui.js (embedded by tools/embed.py). 3 players, bidding 6–10 + misère, talon, whist/pass, raspasy; match = 6 or 12 deals, highest total wins. runner MODS f, worker: TIER f, cleanOptsGame f ({deals}), individual rating.
 - Client: `S.fLevel`, `S.fDeals`, lobby `S.onFDeals`, saves `S.prefSave`, stats `S.prefStats`, last-trick toggle `last_f`, rules key 'f'.
+
+## v99 – Preferans pool & mountain
+- `opts.scoring` 'simple'|'pool', `opts.pool` 6|10 (pref.js `settle`): made contract fills pool, failure/raspasy go to mountain, whists written against declarer; match ends when two pools are full (cap 30 deals); `st.scores` is the running settlement vs table average. Client `S.fScoring`, `S.fPool`, lobby `S.onFScoring`/`S.onFPool`.

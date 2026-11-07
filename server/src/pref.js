@@ -7,6 +7,9 @@
 // Scoring: contract value v = 2 × (level − 5) (misère 10). Made: declarer +v. Down: −v for every missing trick, and each whisting
 // defender +v for every missing trick. Every whisting defender also gets v per trick he took. Misère: +10, or −10 per trick taken.
 // The match is a fixed number of deals (every player deals equally often); highest total wins.
+// Pool & mountain (optional): a made contract fills the declarer's pool (up to the pool target), a failed one adds to his mountain,
+// whist points are written against the declarer, and raspasy tricks go to the mountain. The match ends when two pools are full.
+// Everyone's total settles against the table average: pool − average pool, minus mountain − average mountain, plus whists won minus whists lost.
 // Pure module (no I/O): the server and the app both run it.
 const Pref = (() => {
   const SUITS = ['S', 'D', 'C', 'H'];             // low to high; 'N' = no trump
@@ -29,8 +32,8 @@ const Pref = (() => {
 
   // ---------------------------------------------------------------- state
   function newMatch(opts) {
-    const deals = [6, 12].includes(+opts.deals) ? +opts.deals : 6;
-    return { game: 'f', n: 3, opts: { players: 3, deals }, deal: 0, dealer: 0, scores: [0, 0, 0], hands: null, talon: [], phase: 'bid', turn: 0,
+    const deals = [6, 12].includes(+opts.deals) ? +opts.deals : 6, pool = opts.scoring === 'pool';
+    return { game: 'f', n: 3, opts: { players: 3, deals, scoring: pool ? 'pool' : 'simple', pool: pool ? ([6, 10].includes(+opts.pool) ? +opts.pool : 6) : 0 }, pl: [0, 0, 0], mt: [0, 0, 0], wh: [[0, 0, 0], [0, 0, 0], [0, 0, 0]], deal: 0, dealer: 0, scores: [0, 0, 0], hands: null, talon: [], phase: 'bid', turn: 0,
       log: [], passed: [false, false, false], high: null, declarer: -1, contract: null, whist: [null, null, null], trick: [], won: [0, 0, 0],
       leader: 0, last: null, raspasy: false, result: null, matchOver: false, winner: -1, played: 0 };
   }
@@ -132,6 +135,13 @@ const Pref = (() => {
     st.phase = 'play'; st.trick = [];
     st.leader = st.raspasy ? next(st.dealer) : st.declarer; st.turn = st.leader;
   }
+  function settle(st) {
+    const avgP = st.pl.reduce((a, b) => a + b, 0) / 3, avgM = st.mt.reduce((a, b) => a + b, 0) / 3;
+    return [0, 1, 2].map(i => {
+      let w = 0; for (const j of [0, 1, 2]) if (j !== i) w += st.wh[i][j] - st.wh[j][i];
+      return Math.round((st.pl[i] - avgP) - (st.mt[i] - avgM) + w);
+    });
+  }
   function endDeal(st, r) {
     const add = [0, 0, 0], c = st.contract, res = { k: 'deal', add, tricks: st.won.slice(), declarer: st.declarer, contract: c, whist: st.whist.slice(), raspasy: st.raspasy, made: null, noPlay: false };
     if (st.raspasy) { for (let s = 0; s < 3; s++) add[s] = -st.won[s]; res.k = 'raspasy'; }
@@ -146,9 +156,20 @@ const Pref = (() => {
         for (const w of [d1, d2]) if (st.whist[w] === 'w') add[w] = v * st.won[w] + (res.made ? 0 : v * under);
       }
     }
-    for (let s = 0; s < 3; s++) st.scores[s] += add[s];
+    if (st.opts.scoring === 'pool') {
+      const T = st.opts.pool, before = st.scores.slice();
+      if (st.raspasy) for (let s = 0; s < 3; s++) st.mt[s] += st.won[s];
+      else {
+        const d = st.declarer;
+        if (add[d] > 0) st.pl[d] = Math.min(T, st.pl[d] + add[d]); else st.mt[d] += -add[d];
+        for (const w of defenders(st)) if (add[w] > 0) st.wh[w][d] += add[w];
+      }
+      st.scores = settle(st);
+      for (let s = 0; s < 3; s++) add[s] = st.scores[s] - before[s];
+      res.pool = st.pl.slice(); res.mount = st.mt.slice();
+    } else for (let s = 0; s < 3; s++) st.scores[s] += add[s];
     res.scores = st.scores.slice(); st.result = res; st.phase = 'done';
-    if (st.deal >= st.opts.deals) {
+    if (st.opts.scoring === 'pool' ? (st.pl.filter(x => x >= st.opts.pool).length >= 2 || st.deal >= 30) : st.deal >= st.opts.deals) {
       st.matchOver = true; const m = Math.max(...st.scores); st.winner = st.scores.indexOf(m);
     }
     return { ...r, ended: true };
@@ -276,7 +297,7 @@ const Pref = (() => {
   const perm = (a, me) => Array.isArray(a) ? [0, 1, 2].map(r => a[(me + r) % 3]) : a;
   function view(st, me) {
     return {
-      game: 'f', n: 3, opts: st.opts, deal: st.deal, deals: st.opts.deals, dealer: rel(st.dealer, me), phase: st.phase,
+      game: 'f', n: 3, opts: st.opts, deal: st.deal, deals: st.opts.deals, pool: perm(st.pl, me), mount: perm(st.mt, me), dealer: rel(st.dealer, me), phase: st.phase,
       log: st.log.map(x => ({ seat: rel(x.seat, me), idx: x.idx })), passed: perm(st.passed, me), high: st.high ? { idx: st.high.idx, seat: rel(st.high.seat, me) } : null,
       declarer: rel(st.declarer, me), contract: st.contract, whist: perm(st.whist, me), raspasy: st.raspasy,
       hand: st.hands && st.hands[me] ? st.hands[me].slice() : [], counts: st.hands ? perm(st.hands.map(h => h.length), me) : [0, 0, 0],
@@ -289,7 +310,7 @@ const Pref = (() => {
     for (const k of ['seat', 'winner', 'declarer', 'by']) if (typeof r[k] === 'number' && r[k] >= 0) r[k] = rel(r[k], me);
     if (r.result) {
       const x = { ...r.result };
-      for (const k of ['add', 'tricks', 'whist', 'scores']) if (Array.isArray(x[k])) x[k] = perm(x[k], me);
+      for (const k of ['add', 'tricks', 'whist', 'scores', 'pool', 'mount']) if (Array.isArray(x[k])) x[k] = perm(x[k], me);
       if (typeof x.declarer === 'number' && x.declarer >= 0) x.declarer = rel(x.declarer, me);
       r.result = x;
     }
