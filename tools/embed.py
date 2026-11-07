@@ -6,7 +6,8 @@ import re, sys, pathlib
 root = pathlib.Path(__file__).resolve().parent.parent
 html = (root / 'index.html').read_text()
 PARTS = [('tablic.js', 'server/src/tablic.js'), ('tablic-ui.js', '_src/tablic-ui.js'),
-         ('bridge.js', 'server/src/bridge.js'), ('bridge-ui.js', '_src/bridge-ui.js')]
+         ('bridge.js', 'server/src/bridge.js'), ('bridge-ui.js', '_src/bridge-ui.js'),
+         ('gin.js', 'server/src/gin.js'), ('gin-ui.js', '_src/gin-ui.js')]
 APP = '<script>// ===================== APP (UI + game flow) ====================='
 for name, path in PARTS:
     p = root / path

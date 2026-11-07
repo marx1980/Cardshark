@@ -67,6 +67,7 @@ function cleanOptsGame(game, o) {
     const players = Math.max(2, Math.min(6, Math.floor(+o.players) || 6));
     return { players, activeSeats: Array.from({ length: players }, (_, s) => s), variant: o.variant === 'draw' ? 'draw' : 'holdem', blinds: o.blinds === 'fast' ? 'fast' : 'slow' };
   }
+  if (game === 'r' && o.variant === 'gin') return { players: 2, activeSeats: [0, 1], variant: 'gin', target: +o.target === 50 ? 50 : 100 };
   if (game === 'r') {
     const players = Math.max(2, Math.min(6, Math.floor(+o.players) || 4));
     return { players, activeSeats: Array.from({ length: players }, (_, s) => s), target: [0, 501, 1001].includes(+o.target) ? +o.target : 501 };

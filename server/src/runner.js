@@ -9,6 +9,7 @@ const RemiAI = require('./remibot.js');
 const Unico = require('./unico.js');
 const Tablic = require('./tablic.js');
 const Bridge = require('./bridge.js');
+const Gin = require('./gin.js');
 const MODS = { a: Tablic, c: Bridge };   // games that bring their own rules, views and match loop
 
 const PACE = { bot: 800, trick: 1800, deal: 700, decl: 3200, akuza: 1600, called: 1100 };
@@ -51,7 +52,7 @@ const deser = j => JSON.parse(j, (k, v) => v && typeof v === 'object' && Array.i
 
 class Runner {
   // io: { sleep(ms), send(seat, msg), ask(seat, req) -> Promise<answer|null>, level(seat), waitNext(ms), isHuman(seat) }
-  constructor(game, opts, io, saved = null) { this.game = game; this.opts = opts; this.io = io; this.st = null; this.turn = null; this.saved = saved; this.mod = MODS[game] || null; }
+  constructor(game, opts, io, saved = null) { this.game = game; this.opts = opts; this.io = io; this.st = null; this.turn = null; this.saved = saved; this.mod = (game === 'r' && opts && opts.variant === 'gin') ? Gin : (MODS[game] || null); }
   // a checkpoint the table keeps in storage, so a restarted server can carry on from here
   async checkpoint(at) { if (this.io.save) await this.io.save({ at, st: ser(this.st), turn: this.turn }); }
 
@@ -114,7 +115,7 @@ class Runner {
   async run() {
     const g = this.game, o = this.opts;
     if (g === 'p') return this.pokerMatch();
-    if (g === 'r') return this.remiMatch();
+    if (g === 'r' && !this.mod) return this.remiMatch();
     if (g === 'l') return this.unicoMatch();
     if (this.mod) return this.mod.run(this);
     if (g === 'b') this.st = E.bNew({ players: o.players || 4, solo: !!o.solo, double: !!o.double, target: o.target || 3, reveal: false });

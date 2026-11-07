@@ -89,3 +89,7 @@ Check at 375×667 and 390×780/844. The only expected console error is Google Fo
 - Commits for v45–v47 were made under Marko's email, so GitHub shows them as Unverified. They weren't rewritten, because that needs a force-push to `main`. From now on, commit as `Claude <norepl[...]
 - Hint stays offline only, to keep online ratings fair. Revisit if Marko wants it in online play.
 - Online play supports all multiplayer games; Solitaire remains offline-only because it is single-player.
+
+## v97 – Gin Rummy (variant of Rummy)
+- Rules/bots/view/run in server/src/gin.js, screen in _src/gin-ui.js (both embedded by tools/embed.py). Game code stays 'r'; `opts.variant === 'gin'` selects it (runner.js picks Gin as `mod`, worker.js cleanOptsGame forces 2 players, target 50/100).
+- Client: `S.rVar` ('remi'|'gin'), `S.gTarget`; lobby `S.onRVar`/`S.onGTarget`; saves `S.ginSave`, stats `S.ginStats`; AUX 'r' returns GinUI only when table opts.variant is gin. Rules key 'g'.
