@@ -103,3 +103,13 @@ Check at 375×667 and 390×780/844. The only expected console error is Google Fo
 
 ## v99 options – Preferans pool end and limit
 - `opts.poolEnd` 'two' (default) | 'three' (match ends when two or all three pools are full); `opts.poolCap` 'cap' (default, pool stops at target) | 'open'. Client `S.fPoolEnd`, `S.fPoolCap`; lobby `S.onFPoolEnd`, `S.onFPoolCap`.
+
+## v101 – English names
+- English home tiles/lists: Tablanette (a), Preference (f).
+
+## v102 – Preferans in three versions (Russian, Austrian, Balkan)
+- `opts.version` 'russian' (default, the old game, unchanged) | 'austrian' | 'balkan'. `Pref.SCHEMA[version]` lists every option with `vals`, `def` and `vis` (when it applies); `Pref.cleanOpts(raw)` normalises them (worker `cleanOptsGame` 'f' uses it) and `Pref.bidsFor(opts)` builds the contract list (indices are what `bid`/`declare` actions carry).
+- Austrian/Balkan share the generic engine in pref.js (`actG`, `advanceG`, `toDef`, `afterDef`, `afterInv`, `toPlay`, `startPlayG`, `endDealG`, `scoreA`, `scoreB`, `botG`); phases: bid, talon, declare, whist (defender: whist=play / pass=drop out / kontra), kontra, invite, solo (Austrian declarer may drop), noaces, play, done. Trick size = number of active players.
+- Austrian options: hand, open (misère/slam), nt, drop, invite, mult, prefGame, aces4, aces0, deals. Balkan: scoring bula|pot|swabian, bula 30|50, deals, top sans|sansUno|slam, pref, igra, step, same, refa, drop, invite, kontra off|two|four, two normal|kontra|serbia|slovenia, lead left|right.
+- Client: `S.fVersion`; options stored flat as `S.fa_<k>` / `S.fb_<k>` (lobby `S.onFV`, `S.onfa_<k>`, `S.onfb_<k>`); `PrefUI.rows/optsFrom` build the segmented rows for the sheet and lobby; rules keys 'f' (Russian), 'fa', 'fb'.
+- Sources: en.wikipedia Préférence (Austrian, Balkan), pagat Croatian/Serbian/Slovenian Preference; en.wikipedia Preferans = Russian. hr.wikipedia Preferans could not be fetched.
