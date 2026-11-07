@@ -72,6 +72,7 @@ const TablicUI = (() => {
   // ---------------------------------------------------------------- drawing
   function render() {
     { const s = root && root.querySelector('#tbSet'); if (s) s.style.display = mode === 'net' ? 'none' : ''; }
+    { const l = root && root.querySelector('#tbLast'); if (l) l.style.display = api.S['last_a'] === false ? 'none' : ''; }
     if (!cur || !root) return;
     const t = tx(), v = cur, n = v.n;
     // score chip

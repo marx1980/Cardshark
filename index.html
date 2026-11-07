@@ -5332,6 +5332,7 @@ const TablicUI = (() => {
   // ---------------------------------------------------------------- drawing
   function render() {
     { const s = root && root.querySelector('#tbSet'); if (s) s.style.display = mode === 'net' ? 'none' : ''; }
+    { const l = root && root.querySelector('#tbLast'); if (l) l.style.display = api.S['last_a'] === false ? 'none' : ''; }
     if (!cur || !root) return;
     const t = tx(), v = cur, n = v.n;
     // score chip
@@ -6132,6 +6133,7 @@ const BridgeUI = (() => {
   // ---------------------------------------------------------------- drawing
   function render() {
     { const s = root && root.querySelector('#brSet'); if (s) s.style.display = mode === 'net' ? 'none' : ''; }
+    { const l = root && root.querySelector('#brLast'); if (l) l.style.display = api.S['last_c'] === false ? 'none' : ''; }
     if (!cur || !root) return;
     const t = tx(), v = cur;
     $('#brScore').innerHTML = `<span>${t.we}</span><b>${v.total[0]}</b><small>:</small><b>${v.total[1]}</b><span>${t.they}</span>`;
@@ -6460,7 +6462,7 @@ const STR = {
       close: n => `Najbolja nakon ${n} simuliranih podjela, ali tijesno.`,
       short: (n, d) => `${n} simuliranih podjela · ${d === null ? 'skoro izjednačeno' : `+${String(d).replace('.', ',')} ${Number.isInteger(d) ? hrBod(d) : 'boda'} ispred sljedeće`}`
     },
-    lastTrick: 'Zadnji štih', noLast: 'Još nije odigran nijedan štih.', took: n => `Nosi: ${n}`, pts: 'bodova',
+    lastTrick: 'Zadnji štih', lastBtn: 'Gumb za zadnji štih', noLast: 'Još nije odigran nijedan štih.', took: n => `Nosi: ${n}`, pts: 'bodova',
     handWon: 'Dobili ste ruku!', handLost: 'Izgubili ste ruku.', handDraw: 'Neriješeno, 60 : 60.',
     matchWon: 'Partija je vaša!', matchLost: 'Partija je izgubljena.', youWon: 'POBJEDA!', youLost: 'PORAZ!',
     next: 'Sljedeća ruka', again: 'Nova partija', home: 'Izbornik',
@@ -6538,7 +6540,7 @@ const STR = {
       close: n => `Best in ${n} simulated deals, but only just.`,
       short: (n, d) => `${n} simulated deals · ${d === null ? 'nearly a tie' : `+${d} ${d === 1 ? 'point' : 'points'} vs next best`}`
     },
-    lastTrick: 'Last trick', noLast: 'No trick has been played yet.', took: n => `Taken by: ${n}`, pts: 'points',
+    lastTrick: 'Last trick', lastBtn: 'Last trick button', noLast: 'No trick has been played yet.', took: n => `Taken by: ${n}`, pts: 'points',
     handWon: 'You won the hand!', handLost: 'You lost the hand.', handDraw: 'Draw, 60 : 60.',
     matchWon: 'The match is yours!', matchLost: 'Match lost.', youWon: 'YOU WON!', youLost: 'YOU LOST!',
     next: 'Next hand', again: 'New match', home: 'Menu',
@@ -6795,6 +6797,14 @@ function renderHome() {
   // an odd number of games: the last tile sits in the middle
   { const ps = [...document.querySelectorAll('#home .poster')]; ps.forEach(x => x.classList.remove('solo')); if (ps.length % 2) ps[ps.length - 1].classList.add('solo'); }
 }
+const lastOn = g => S['last_' + g] !== false;
+function syncLastBtns() {
+  const b = $('#bLast'); if (b) b.style.display = G && !lastOn(G.game) ? 'none' : '';
+  const a = document.querySelector('#tbLast'); if (a) a.style.display = lastOn('a') ? '' : 'none';
+  const c = document.querySelector('#brLast'); if (c) c.style.display = lastOn('c') ? '' : 'none';
+}
+const lastToggle = g => `<div class="gsep"></div><div class="rules-list"><label class="tog"><span><b>${L().lastBtn}</b></span><input type="checkbox" data-last="${g}" ${lastOn(g) ? 'checked' : ''}></label></div>`;
+const bindLast = v => v.querySelectorAll('input[data-last]').forEach(i => i.onchange = () => { S['last_' + i.dataset.last] = i.checked; save(); syncLastBtns(); });
 function showGameSheet(game) {
   const t = L();
   const seg = (key, opts) => `<div class="seg dark" role="group">${opts.map(([v, lab]) => `<button data-k="${key}" data-v="${v}" aria-pressed="${S[key] === v}">${lab}</button>`).join('')}</div>`;
@@ -6807,7 +6817,7 @@ function showGameSheet(game) {
       + `<div class="gsep"></div><div class="glab">${t.localRules}</div><div class="rules-list">${[['tAkuze', t.rAkuze], ['tLongNap', t.rLongNap], ['tThirdsLast', t.rThirds], ['tSignals', t.rSignals], ['tClockwise', t.rClockwise]].map(([k, [lab, sub]]) => `<label class="tog"><span><b>${lab}</b><small>${sub}</small></span><input type="checkbox" data-opt="${k}" ${S[k] ? 'checked' : ''}></label>`).join('')}</div>`
     : lvl.replace('<div class="gsep"></div>', '') + `<div class="gsep"></div><div class="glab">${t.hTo}</div>` + seg('hTarget', [[501, '501'], [701, '701'], [1001, '1001']]);
   openSheet(`<div class="gsh"><h3>${gameName(game)}</h3><button class="link" id="gRules">${t.rules}</button></div>
-    <div class="gsegs">${body}</div>
+    <div class="gsegs">${body}${lastToggle(game)}</div>
     <div class="btns"><button class="sec" id="gClose">${L().close}</button><button class="play wide" id="gPlay">${L().sol.newGame}</button></div>`, v => {
     v.onclick = e => { if (e.target === v) closeSheet(); };
     v.querySelector('#gClose').onclick = closeSheet;
@@ -6819,6 +6829,7 @@ function showGameSheet(game) {
     });
     v.querySelectorAll('input[data-opt]').forEach(i => i.onchange = () => { S[i.dataset.opt] = i.checked; save(); });
     v.querySelector('#lvP').hidden = !partnerOn();
+    bindLast(v);
     v.querySelector('#gRules').onclick = () => showRules(game);
     v.querySelector('#gPlay').onclick = () => startGame(game);
   });
@@ -6883,7 +6894,7 @@ function showTablicSheet() {
   openSheet(`<div class="gsh"><h3>${u.name}</h3><button class="link" id="gRules">${t.rules}</button></div>
     <div class="gsegs"><div class="glab">${u.players}</div>${seg('aPlayers', [[2, u.n2], [3, u.n3], [4, u.n4]])}
     ${lsel('aPartner', t.partner, 'lvP')}${lsel('aLevel', t.level, 'lvO')}
-    <div class="gsep"></div><div class="glab">${u.target}</div>${seg('aTarget', [[101, '101'], [51, '51']])}</div>
+    <div class="gsep"></div><div class="glab">${u.target}</div>${seg('aTarget', [[101, '101'], [51, '51']])}${lastToggle('a')}</div>
     <div class="btns"><button class="sec" id="gClose">${L().close}</button><button class="play wide" id="gPlay">${L().sol.newGame}</button></div>`, v => {
     v.onclick = e => { if (e.target === v) closeSheet(); };
     v.querySelector('#gClose').onclick = closeSheet;
@@ -6894,6 +6905,7 @@ function showTablicSheet() {
       b.parentNode.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b)); sync();
     });
     sync();
+    bindLast(v);
     v.querySelector('#gRules').onclick = () => showRules('a');
     v.querySelector('#gPlay').onclick = () => TablicUI.start();
   });
@@ -6903,11 +6915,12 @@ function showBridgeSheet() {
   if (!S.cOpp) S.cOpp = 'cardshark'; if (!S.cPartner) S.cPartner = 'cardshark';
   const lsel = (key, lab) => `<div class="glab">${lab}</div><div class="seg dark levels" role="group">${AI.LEVELS.map(l => `<button data-k="${key}" data-v="${l}" aria-pressed="${S[key] === l}">${t.lv[l]}</button>`).join('')}</div>`;
   openSheet(`<div class="gsh"><h3>${u.name}</h3><button class="link" id="gRules">${t.rules}</button></div>
-    <div class="gsegs">${lsel('cPartner', t.partner)}<div class="gsep"></div>${lsel('cOpp', t.level)}</div>
+    <div class="gsegs">${lsel('cPartner', t.partner)}<div class="gsep"></div>${lsel('cOpp', t.level)}${lastToggle('c')}</div>
     <div class="btns"><button class="sec" id="gClose">${L().close}</button><button class="play wide" id="gPlay">${L().sol.newGame}</button></div>`, v => {
     v.onclick = e => { if (e.target === v) closeSheet(); };
     v.querySelector('#gClose').onclick = closeSheet;
     v.querySelectorAll('.seg button').forEach(b => b.onclick = () => { S[b.dataset.k] = b.dataset.v; save(); b.parentNode.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b)); });
+    bindLast(v);
     v.querySelector('#gRules').onclick = () => showRules('c');
     v.querySelector('#gPlay').onclick = () => BridgeUI.start();
   });
@@ -7549,6 +7562,7 @@ function renderNetAll() {
   if (NET) { if (pre) netAnimate(pre); else netAnimate({ hand: {}, seats: {} }); }
 }
 function renderNetAllNow() {
+  syncLastBtns();
   $('#table').classList.add('online-new'); $('#table').classList.toggle('net-l', G.game === 'l');
   renderNetBar();
   $('#table').classList.toggle('net-p', G.game === 'p'); $('#table').classList.toggle('net-r', G.game === 'r');
@@ -7833,7 +7847,7 @@ function renderHand() {
   if (showTalon) for (let i = 0; i < 2; i++) html += `<div class="hc talon" style="left:${x0 + (cards.length + i) * step}px">${Cards.back('h')}</div>`;
   el.innerHTML = html;
 }
-function renderAll() { if (netMulti()) { renderNetAll(); return; } $('#trumpChip').style.display = ''; $('#table').classList.remove('online-new', 'net-l', 'net-p', 'net-r'); renderBar(); renderSeats(); renderStock(); renderHand(); }
+function renderAll() { syncLastBtns(); if (netMulti()) { renderNetAll(); return; } $('#trumpChip').style.display = ''; $('#table').classList.remove('online-new', 'net-l', 'net-p', 'net-r'); renderBar(); renderSeats(); renderStock(); renderHand(); }
 function setAction(html) { $('#action').innerHTML = html; }
 function status(text, muted) { const yt = !muted && text === L().yourTurn; setAction(`<div class="msg${yt ? " yt" : ""}">${muted ? `<span class="m">${text}</span>` : text}</div>`); }
 

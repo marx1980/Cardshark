@@ -81,6 +81,7 @@ const BridgeUI = (() => {
   // ---------------------------------------------------------------- drawing
   function render() {
     { const s = root && root.querySelector('#brSet'); if (s) s.style.display = mode === 'net' ? 'none' : ''; }
+    { const l = root && root.querySelector('#brLast'); if (l) l.style.display = api.S['last_c'] === false ? 'none' : ''; }
     if (!cur || !root) return;
     const t = tx(), v = cur;
     $('#brScore').innerHTML = `<span>${t.we}</span><b>${v.total[0]}</b><small>:</small><b>${v.total[1]}</b><span>${t.they}</span>`;
