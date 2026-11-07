@@ -26,7 +26,7 @@ const GinUI = (() => {
 
   function show() {
     root = document.querySelector('#gin');
-    for (const id of ['#home', '#table', '#sol', '#uno', '#poker', '#remi', '#tablic', '#bridge']) { const el = document.querySelector(id); if (el) el.hidden = true; }
+    for (const id of ['#home', '#table', '#sol', '#uno', '#poker', '#remi', '#tablic', '#bridge', '#pref']) { const el = document.querySelector(id); if (el) el.hidden = true; }
     root.hidden = false; root.style.setProperty('--rr', Cards.frRatio(api.S.fDeck));
     root.innerHTML = `<header class="ubar"><button class="ib" id="gnHome" aria-label="${api.L().sol.home}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M15 5l-7 7 7 7"/></svg></button>
       <div class="chip score" id="gnScore"></div>

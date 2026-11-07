@@ -93,3 +93,7 @@ Check at 375×667 and 390×780/844. The only expected console error is Google Fo
 ## v97 – Gin Rummy (variant of Rummy)
 - Rules/bots/view/run in server/src/gin.js, screen in _src/gin-ui.js (both embedded by tools/embed.py). Game code stays 'r'; `opts.variant === 'gin'` selects it (runner.js picks Gin as `mod`, worker.js cleanOptsGame forces 2 players, target 50/100).
 - Client: `S.rVar` ('remi'|'gin'), `S.gTarget`; lobby `S.onRVar`/`S.onGTarget`; saves `S.ginSave`, stats `S.ginStats`; AUX 'r' returns GinUI only when table opts.variant is gin. Rules key 'g'.
+
+## v98 – Preferans (game code 'f')
+- Rules/bots/view/run in server/src/pref.js, screen in _src/pref-ui.js (embedded by tools/embed.py). 3 players, bidding 6–10 + misère, talon, whist/pass, raspasy; match = 6 or 12 deals, highest total wins. runner MODS f, worker: TIER f, cleanOptsGame f ({deals}), individual rating.
+- Client: `S.fLevel`, `S.fDeals`, lobby `S.onFDeals`, saves `S.prefSave`, stats `S.prefStats`, last-trick toggle `last_f`, rules key 'f'.

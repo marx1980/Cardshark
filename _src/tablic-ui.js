@@ -25,7 +25,7 @@ const TablicUI = (() => {
   const nameOf = i => i === 0 ? tx().you : mode === 'net' ? api.botName((ctx.names || {})[i] || '') : api.botName(offNames[i] || '');
   function show() {
     root = document.querySelector('#tablic');
-    for (const id of ['#home', '#table', '#sol', '#uno', '#poker', '#remi', '#bridge', '#gin']) { const el = document.querySelector(id); if (el) el.hidden = true; }
+    for (const id of ['#home', '#table', '#sol', '#uno', '#poker', '#remi', '#bridge', '#gin', '#pref']) { const el = document.querySelector(id); if (el) el.hidden = true; }
     root.hidden = false; root.style.setProperty('--rr', Cards.frRatio(api.S.fDeck));
     root.innerHTML = `<header class="ubar"><button class="ib" id="tbHome" aria-label="${api.L().sol.home}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M15 5l-7 7 7 7"/></svg></button>
       <div class="chip score" id="tbScore"></div>
