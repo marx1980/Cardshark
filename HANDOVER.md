@@ -113,3 +113,7 @@ Check at 375×667 and 390×780/844. The only expected console error is Google Fo
 - Austrian options: hand, open (misère/slam), nt, drop, invite, mult, prefGame, aces4, aces0, deals. Balkan: scoring bula|pot|swabian, bula 30|50, deals, top sans|sansUno|slam, pref, igra, step, same, refa, drop, invite, kontra off|two|four, two normal|kontra|serbia|slovenia, lead left|right.
 - Client: `S.fVersion`; options stored flat as `S.fa_<k>` / `S.fb_<k>` (lobby `S.onFV`, `S.onfa_<k>`, `S.onfb_<k>`); `PrefUI.rows/optsFrom` build the segmented rows for the sheet and lobby; rules keys 'f' (Russian), 'fa', 'fb'.
 - Sources: en.wikipedia Préférence (Austrian, Balkan), pagat Croatian/Serbian/Slovenian Preference; en.wikipedia Preferans = Russian. hr.wikipedia Preferans could not be fetched.
+
+## v103 — Rummy table layout + card backs
+- Opponent tiles (`.ropp`) now sit in one row at a fixed `top:78px` (offline `SPOTS` in the Remi module, online `REMI_SPOTS` used by `renderNetRemi`; `NET_SPOTS` is still shared by poker). 5 opponents get `--w:72px`. `.rtable` padding-top is 132px so melds start below the tiles; the score chip no longer collides.
+- All card backs (bots' `.rback`, `netFaceNode` fallbacks) use `Cards.frBack(S.fDeck, S.fBack)`, so they match the draw pile and the setting. The `.net-card-back` green stripe CSS is now unused.

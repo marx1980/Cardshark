@@ -388,7 +388,7 @@ table.stats td b{display:inline-block;min-width:1.4em;font-size:15px}
 .net-r .rtable{padding-bottom:calc(54px * var(--rr) + 16px)}
 .net-r .net-rpiles{position:absolute;left:0;right:0;bottom:0;z-index:3}
 .net-r .rpile:disabled{opacity:1;cursor:default}
-.net-r .ropp{top:max(calc(var(--y) * 1%),44px)}
+.net-r .ropp{top:78px}
 .net-r .net-board,.net-p .net-board{display:none}
 .net-l .action,.net-p .action,.net-r .action{padding:6px 8px 2px;min-height:44px}
 .net-l .action .msg,.net-p .action .msg,.net-r .action .msg{display:none}
@@ -601,14 +601,14 @@ button.upile{cursor:pointer}
 #remi .chip.score small{color:var(--muted);font-size:12px}
 .rboard{position:relative;flex:1;min-height:0}
 .ropps{position:absolute;inset:0;z-index:2;pointer-events:none}
-.ropp{position:absolute;left:clamp(48px,calc(var(--x) * 1%),calc(100% - 48px));top:calc(var(--y) * 1%);transform:translate(-50%,-50%);width:clamp(86px,24vw,150px);box-sizing:border-box;display:flex;flex-direction:column;align-items:center;gap:2px;padding:5px 4px;border-radius:12px;border:1px solid rgba(255,255,255,.1);background:rgba(0,0,0,.34);min-width:0;font-size:12.5px}
+.ropp{position:absolute;left:clamp(48px,calc(var(--x) * 1%),calc(100% - 48px));top:78px;transform:translate(-50%,-50%);width:var(--w,clamp(60px,22vw,150px));box-sizing:border-box;display:flex;flex-direction:column;align-items:center;gap:2px;padding:5px 4px;border-radius:12px;border:1px solid rgba(255,255,255,.1);background:rgba(0,0,0,.34);min-width:0;font-size:12.5px}
 .ropp.turn{border-color:var(--brass);box-shadow:0 0 0 2px rgba(214,171,82,.35)}
 .ropp.open .rname b{color:#d9e7a8}
 .ropp .rname{max-width:100%;overflow:hidden}.ropp .rname b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
 .rcount{display:flex;align-items:center;justify-content:center;height:calc(25px * var(--rr));max-width:100%;position:relative}.rcount b{font-size:13px;position:absolute;right:-8px;top:-5px;background:rgba(0,0,0,.72);border-radius:99px;padding:0 5px}
 .rback{display:block;width:18px;height:calc(18px * var(--rr));margin-left:-11px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.4))}.rback:first-child{margin-left:0}.rback>*{width:100%!important;height:100%!important}
 .ropp small{color:var(--muted);font-variant-numeric:tabular-nums}
-.rtable{position:absolute;inset:0;overflow-y:auto;display:flex;flex-wrap:wrap;align-content:center;justify-content:center;gap:8px;padding:82px 10px 24px;--mw:clamp(40px,11.5vw,52px)}
+.rtable{position:absolute;inset:0;overflow-y:auto;display:flex;flex-wrap:wrap;align-content:center;justify-content:center;gap:8px;padding:132px 10px 24px;--mw:clamp(40px,11.5vw,52px)}
 .rmeld{display:flex;padding:3px;border-radius:8px;background:rgba(0,0,0,.18);border:1px solid rgba(255,255,255,.08);cursor:pointer}
 .rmeld.mine{border-color:rgba(214,171,82,.45)}
 .rmeld .rc{width:var(--mw);height:calc(var(--mw) * var(--rr));margin-left:calc(var(--mw) * -.62)}
@@ -4788,11 +4788,11 @@ const RemiUI = (() => {
   }
   const myTurn = () => wait && st.turn === 0;
   const SPOTS = {
-    1: [[50, 4]],
-    2: [[17, 14], [83, 14]],
-    3: [[13, 40], [50, 4], [87, 40]],
-    4: [[13, 52], [22, 10], [78, 10], [87, 52]],
-    5: [[12, 56], [14, 18], [50, 3], [86, 18], [88, 56]]
+    1: [[50, 0]],
+    2: [[27, 0], [73, 0]],
+    3: [[17, 0], [50, 0], [83, 0]],
+    4: [[13, 0], [37, 0], [63, 0], [87, 0]],
+    5: [[12, 0], [31, 0], [50, 0], [69, 0], [88, 0]]
   };
   function render() {
     if (!st || !root) return;
@@ -4804,12 +4804,11 @@ const RemiUI = (() => {
       const [x, y] = SPOTS[st.n - 1][p - 1];
       const opp = document.createElement('div');
       opp.className = `ropp${st.turn === p && st.winner === null ? ' turn' : ''}${st.opened[p] ? ' open' : ''}`;
-      opp.dataset.p = String(p); opp.style.setProperty('--x', String(x)); opp.style.setProperty('--y', String(y));
+      opp.dataset.p = String(p); if (st.n > 5) opp.style.setProperty('--w', '72px'); opp.style.setProperty('--x', String(x)); opp.style.setProperty('--y', String(y));
       const count = document.createElement('div'); count.className = 'rcount';
       for (let i = 0; i < Math.min(st.hands[p].length, 6); i++) {
-        const card = document.createElement('span'); card.className = 'rback';
-        const backCard = document.createElement('span'); backCard.className = 'net-card-back'; backCard.style.aspectRatio = String(Cards.frRatio(api.S.fDeck));
-        card.append(backCard); count.append(card);
+        const card = document.createElement('span'); card.className = 'rback'; card.innerHTML = Cards.frBack(api.S.fDeck, api.S.fBack);
+        count.append(card);
       }
       const countLabel = document.createElement('b'); countLabel.dataset.count = ''; count.append(countLabel);
       const nameBox = document.createElement('div'); nameBox.className = 'rname';
@@ -9202,14 +9201,14 @@ function netFaceNode(c) {
   const outer = document.createElement('div'); outer.className = 'svgc';
   const deck = Cards.frDeck(S.fDeck), dims = Cards.FR[deck];
   if (!c || c.hidden) {
-    const back = document.createElement('div'); back.className = 'net-card-back'; back.style.aspectRatio = `${dims.w}/${dims.h}`; outer.append(back); return outer;
+    outer.innerHTML = Cards.frBack(S.fDeck, S.fBack); return outer;
   }
   if (G.game === 'r' && c.s === 'X') {
     const joker = document.createElement('span'); joker.className = 'net-joker-face'; joker.style.aspectRatio = `${dims.w}/${dims.h}`; joker.textContent = 'JOKER'; outer.append(joker); return outer;
   }
   const cols = ['a', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'j', 'q', 'k'];
   const row = 'SHDC'.indexOf(c.s), col = cols.indexOf(frRank(c.r));
-  if (row < 0 || col < 0) { const back = document.createElement('div'); back.className = 'net-card-back'; back.style.aspectRatio = `${dims.w}/${dims.h}`; outer.append(back); return outer; }
+  if (row < 0 || col < 0) { outer.innerHTML = Cards.frBack(S.fDeck, S.fBack); return outer; }
   const face = document.createElement('div'); face.className = 'ci';
   face.style.aspectRatio = `${dims.w}/${dims.h}`; face.style.backgroundImage = `url(cards/${deck}.webp)`;
   face.style.backgroundSize = '1300% 500%'; face.style.backgroundPosition = `${(col / 12 * 100).toFixed(3)}% ${(row / 4 * 100).toFixed(3)}%`;
@@ -9240,6 +9239,7 @@ function renderNetSeatsUno() {
   return seats;
 }
 const NET_SPOTS = { 1: [[50, 4]], 2: [[17, 14], [83, 14]], 3: [[13, 40], [50, 4], [87, 40]], 4: [[13, 52], [22, 10], [78, 10], [87, 52]], 5: [[12, 56], [14, 18], [50, 3], [86, 18], [88, 56]] };
+const REMI_SPOTS = { 1: [[50, 0]], 2: [[27, 0], [73, 0]], 3: [[17, 0], [50, 0], [83, 0]], 4: [[13, 0], [37, 0], [63, 0], [87, 0]], 5: [[12, 0], [31, 0], [50, 0], [69, 0], [88, 0]] };
 const netSpots = n => NET_SPOTS[Math.min(Math.max(n - 1, 1), 5)];
 function renderNetPoker() {
   const t = L().poker, P = Poker, n = G.seats.length, result = G.street === 'show' ? G.result : null;
@@ -9277,11 +9277,11 @@ function renderNetRemi() {
   const t = L().remi, n = G.n || G.hands.length;
   const wrap = document.createElement('div'); wrap.className = 'rboard';
   const fr = (c, cls = '') => `<div class="rc ${cls}">${netFrHTML(c)}</div>`;
-  const spots = netSpots(n);
+  const spots = REMI_SPOTS[Math.min(Math.max(n - 1, 1), 5)];
   const opps = spots.slice(0, n - 1).map(([x, y], k) => {
     const p = k + 1, count = (G.handCounts || [])[p] ?? (G.hands[p] || []).length;
     const backs = Array.from({ length: Math.min(count, 6) }, () => `<span class="rback">${netFrHTML({ hidden: true })}</span>`).join('');
-    return `<div class="ropp${G.turn === p && G.winner == null ? ' turn' : ''}${G.opened?.[p] ? ' open' : ''}" data-p="${p}" style="--x:${x};--y:${y}"><div class="rcount">${backs}<b>${count}</b></div><div class="rname"><b>${esc(name(p) || '')}</b></div>${G.opts?.target ? `<small>${G.scores?.[p] ?? 0}</small>` : ''}</div>`;
+    return `<div class="ropp${G.turn === p && G.winner == null ? ' turn' : ''}${G.opened?.[p] ? ' open' : ''}" data-p="${p}" style="--x:${x};--y:${y}${n > 5 ? ";--w:72px" : ""}"><div class="rcount">${backs}<b>${count}</b></div><div class="rname"><b>${esc(name(p) || '')}</b></div>${G.opts?.target ? `<small>${G.scores?.[p] ?? 0}</small>` : ''}</div>`;
   }).join('');
   const oldMelds = NET?.snap?.game === 'r' ? NET.snap.melds : null, oldLens = NET?.snap?.game === 'r' ? NET.snap.meldLens || {} : {};
   const melds = (G.melds || []).map(m => `<div class="rmeld${m.owner === 0 ? ' mine' : ''}${oldMelds && !oldMelds.includes(m.id) ? ' new' : (oldLens[m.id] !== undefined && oldLens[m.id] !== m.cards.length ? ' fl' : '')}" data-m="${m.id}" style="--k:${m.cards.length}">${m.cards.map(c => fr(c)).join('')}</div>`).join('');
