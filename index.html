@@ -136,7 +136,7 @@ table.stats td b{display:inline-block;min-width:1.4em;font-size:15px}
 /* home: two posters */
 #home .wrap{min-height:100%;box-sizing:border-box;gap:12px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:min-content;align-content:start}
 #home .hbar{grid-column:1/-1}
-#table.online #bOpts,#table:not(.online) #bRules{display:none}
+#table.online #bOpts{display:none}
 .rejoin{grid-column:1/-1;display:flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:14px;padding:12px;background:var(--brass);color:var(--brass-ink);font:800 16px var(--display);cursor:pointer;box-shadow:0 3px 0 #8a6a28}
 .rejoin svg{width:20px;height:20px}
 #home .poster{box-sizing:border-box;min-width:0;flex:none;min-height:0;aspect-ratio:3/4;border-radius:20px}
@@ -658,6 +658,11 @@ button.upile{cursor:pointer}
 .tbfly{position:fixed;z-index:60;pointer-events:none;transform-origin:0 0}.tbfly>*{width:100%!important;height:100%!important;display:block}
 .tbbub{position:absolute;left:50%;top:38%;transform:translate(-50%,-50%);z-index:5;font:800 30px var(--display);color:#ecd078;text-shadow:0 2px 10px rgba(0,0,0,.6);animation:tbpop 1.4s ease-out forwards;pointer-events:none}
 @keyframes tbpop{0%{transform:translate(-50%,-30%) scale(.6);opacity:0}20%{transform:translate(-50%,-50%) scale(1.15);opacity:1}100%{transform:translate(-50%,-80%) scale(1);opacity:0}}
+/* last trick sheet */
+.lasttr{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:10px 0 4px}
+.lasttr .brt{position:static;transform:none}
+.lasttr .tbc{position:relative;width:58px;height:auto;aspect-ratio:5/7;margin:0}
+.lasttr .tbc svg{width:100%;height:100%}
 /* bridge */
 .poster.pc{background:radial-gradient(90% 90% at 50% 18%,#5a62c4,#161946)}
 #bridge{position:fixed;inset:0;z-index:20;display:flex;flex-direction:column;background:radial-gradient(120% 90% at 50% 35%,#1b4636,#09201a);user-select:none;-webkit-user-select:none;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--rr:1.5}
@@ -708,8 +713,8 @@ button.upile{cursor:pointer}
       <div class="chip" id="trumpChip"></div>
       <div class="chip score" id="scoreChip"></div>
       <button class="ib" id="bLast" aria-label="Last trick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 12a8 8 0 1 0 3-6.2"/><path d="M4 4v5h5"/></svg></button>
-      <button class="ib" id="bOpts" aria-label="Options"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
       <button class="ib" id="bRules" aria-label="Rules"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14"/><circle cx="12" cy="17.2" r=".6" fill="currentColor"/></svg></button>
+      <button class="ib" id="bOpts" aria-label="Options"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
     </header>
     <div class="felt" id="felt">
       <div class="seat s2" id="seat2"></div>
@@ -2259,6 +2264,7 @@ const Solitaire = (() => {
         <div class="chip sstat"><span class="k">${t.score}</span><b id="sScore">0</b></div>
         <div class="chip sstat"><span class="k">${t.time}</span><b id="sTime">0:00</b></div>
         <div class="chip sstat"><span class="k">${t.moves}</span><b id="sMoves">0</b></div>
+        <button class="ib" id="sHelp" aria-label="${t.rules}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14"/><circle cx="12" cy="17.2" r=".6" fill="currentColor"/></svg></button>
         <button class="ib" id="sOpts" aria-label="${api.L().settings}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
       </header>
       <div class="sboard" id="sBoard"></div>
@@ -2278,6 +2284,7 @@ const Solitaire = (() => {
     board.innerHTML = html;
     $('#sHome').onclick = leave;
     $('#sOpts').onclick = () => api.showOpts('s');
+    $('#sHelp').onclick = () => api.showRules('s');
     $('#sUndo').onclick = undo;
     $('#sHint').onclick = showHint;
     $('#sAuto').onclick = autoFinish;
@@ -3070,6 +3077,7 @@ const UnoUI = (() => {
     root.innerHTML = `<header class="ubar">
       <button class="ib" id="uHome" aria-label="${api.L().sol.home}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M15 5l-7 7 7 7"/></svg></button>
       <div class="chip score" id="uScore"></div>
+      <button class="ib" id="uHelp" aria-label="${api.L().rules}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14"/><circle cx="12" cy="17.2" r=".6" fill="currentColor"/></svg></button>
       <button class="ib" id="uRules" aria-label="${api.L().settings}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button></header>
       <div class="utable"><div class="uopps" id="uOpps"></div>
       <div class="ucenter" id="uCenter">
@@ -3083,6 +3091,7 @@ const UnoUI = (() => {
     startVoice();
     $('#uHome').onclick = leave;
     $('#uRules').onclick = () => api.showOpts('u');
+    $('#uHelp').onclick = () => api.showRules('u');
     $('#uDraw').onclick = () => human({ draw: true });
     $('#uHand').onclick = e => { const el = e.target.closest('.ucard'); if (el) tapCard(+el.dataset.id); };
     $('#uOpps').onclick = e => { const el = e.target.closest('.ucatch'); if (el) human({ catch: +el.dataset.p }); };
@@ -4008,12 +4017,14 @@ const PokerUI = (() => {
     root.innerHTML = `<header class="ubar">
       <button class="ib" id="pHome" aria-label="${api.L().sol.home}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M15 5l-7 7 7 7"/></svg></button>
       <div class="chip score" id="pInfo"></div>
+      <button class="ib" id="pHelp" aria-label="${api.L().rules}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14"/><circle cx="12" cy="17.2" r=".6" fill="currentColor"/></svg></button>
       <button class="ib" id="pRules" aria-label="${api.L().settings}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button></header>
       <div class="ptable" id="pTable"><div class="pfelt"></div><div class="pboard" id="pBoard"></div><div class="ppot" id="pPot"></div><div id="pSeats"></div></div>
       <div class="pme" id="pMe"></div>
       <div class="pact" id="pAct"></div>`;
     $('#pHome').onclick = leave;
     $('#pRules').onclick = () => api.showOpts('p');
+    $('#pHelp').onclick = () => api.showRules('p');
     $('#pAct').onclick = e => { const b = e.target.closest('button'); if (b && b.dataset.a) onAct(b.dataset.a, b); };
     $('#pMe').onclick = e => { const el = e.target.closest('.pmine'); if (el && wait && wait.draw) toggleDiscard(+el.dataset.k); };
     root.style.setProperty('--pr', ratio());
@@ -4721,6 +4732,7 @@ const RemiUI = (() => {
     root.innerHTML = `<header class="ubar">
       <button class="ib" id="rHome" aria-label="${api.L().sol.home}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M15 5l-7 7 7 7"/></svg></button>
       <div class="chip score" id="rScore"></div>
+      <button class="ib" id="rHelp" aria-label="${api.L().rules}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14"/><circle cx="12" cy="17.2" r=".6" fill="currentColor"/></svg></button>
       <button class="ib" id="rOpts" aria-label="${api.L().settings}">${G}</button></header>
       <div class="rboard"><div class="ropps" id="rOpps"></div><div class="rtable" id="rTable"></div></div>
       <div class="rpiles"><button class="rpile" id="rStock"></button><button class="rpile" id="rDisc"></button><div class="rstage" id="rStage"></div></div>
@@ -4728,6 +4740,7 @@ const RemiUI = (() => {
       <div class="rhand" id="rHand"></div>`;
     $('#rHome').onclick = leave;
     $('#rOpts').onclick = () => api.showOpts('r');
+    $('#rHelp').onclick = () => api.showRules('r');
     $('#rStock').onclick = () => human({ a: 'stock' });
     $('#rDisc').onclick = () => human({ a: sel.size === 1 && st.phase === 'play' ? 'discard' : 'take' });
     $('#rHand').onclick = e => { const el = e.target.closest('.rc'); if (el) toggle(el.dataset.id); };
@@ -5276,12 +5289,14 @@ const TablicUI = (() => {
     root.hidden = false; root.style.setProperty('--rr', Cards.frRatio(api.S.fDeck));
     root.innerHTML = `<header class="ubar"><button class="ib" id="tbHome" aria-label="${api.L().sol.home}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M15 5l-7 7 7 7"/></svg></button>
       <div class="chip score" id="tbScore"></div>
-      <button class="ib" id="tbSet" aria-label="${api.L().settings}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
-      <button class="ib" id="tbOpts" aria-label="${api.L().rules}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 .9-1 1.7M12 17h.01"/></svg></button></header>
+      <button class="ib" id="tbLast" aria-label="${api.L().lastTrick}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 12a8 8 0 1 0 3-6.2"/><path d="M4 4v5h5"/></svg></button>
+      <button class="ib" id="tbOpts" aria-label="${api.L().rules}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 .9-1 1.7M12 17h.01"/></svg></button>
+      <button class="ib" id="tbSet" aria-label="${api.L().settings}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button></header>
       <div class="tbboard"><div class="tbopps" id="tbOpps"></div><div class="tbtable" id="tbTable"></div><div class="tbinfo" id="tbInfo"></div></div>
       <div class="tbstatus" id="tbStatus"></div><div class="tbact" id="tbAct"></div><div class="tbhand" id="tbHand"></div>`;
     $('#tbHome').onclick = leave;
     $('#tbOpts').onclick = () => api.showRules('a');
+    $('#tbLast').onclick = lastCapSheet;
     $('#tbSet').onclick = () => api.showOpts('a');
     $('#tbHand').onclick = e => { const el = e.target.closest('.tbc'); if (el) tapHand(el.dataset.id); };
     $('#tbTable').onclick = e => { const el = e.target.closest('.tbc'); if (el) tapTable(el.dataset.id); };
@@ -5316,6 +5331,7 @@ const TablicUI = (() => {
 
   // ---------------------------------------------------------------- drawing
   function render() {
+    { const s = root && root.querySelector('#tbSet'); if (s) s.style.display = mode === 'net' ? 'none' : ''; }
     if (!cur || !root) return;
     const t = tx(), v = cur, n = v.n;
     // score chip
@@ -5383,6 +5399,13 @@ const TablicUI = (() => {
     if (ev.k === 'matchEnd') return matchEnd(ev, v);
     cur = v; render();
   }
+  let lastCap = null;
+  function lastCapSheet() {
+    const t = tx(), html = lastCap
+      ? `<h3>${api.L().lastTrick}</h3><div class="lasttr">${lastCap.cards.map(c => `<div class="tbc">${face(c)}</div>`).join('')}</div><p class="muted">${esc(nameOf(lastCap.by))}</p>`
+      : `<h3>${api.L().lastTrick}</h3><p>${api.L().noLast}</p>`;
+    api.openSheet(`${html}<div class="btns"><button class="pri" id="lx">${api.L().close}</button></div>`, v => v.querySelector('#lx').onclick = api.closeSheet);
+  }
   async function onPlay(ev, v) {
     const before = cur || v, c = ev.card, mine = ev.seat === 0;
     const srcEl = mine ? root.querySelector(`#tbHand [data-id="${c.id}"]`) : null;
@@ -5392,6 +5415,7 @@ const TablicUI = (() => {
     const el = root.querySelector(`#tbTable [data-id="${c.id}"]`);
     if (el) { el.style.visibility = 'hidden'; await fly(el.innerHTML, from, rectOf(el), 300); el.style.visibility = ''; }
     if (ev.taken.length) {
+      lastCap = { cards: [c, ...before.table.filter(x => ev.taken.includes(x.id))], by: ev.seat };
       const els = [c.id, ...ev.taken].map(id => root.querySelector(`#tbTable [data-id="${id}"]`)).filter(Boolean);
       els.forEach(e => e.classList.add('cap'));
       if (ev.tabla) bubble(tx().tabla);
@@ -6058,14 +6082,15 @@ const BridgeUI = (() => {
     root.hidden = false; root.style.setProperty('--rr', Cards.frRatio(api.S.fDeck));
     root.innerHTML = `<header class="ubar"><button class="ib" id="brHome" aria-label="${api.L().sol.home}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M15 5l-7 7 7 7"/></svg></button>
       <div class="chip score" id="brScore"></div>
-      <button class="ib" id="brSet" aria-label="${api.L().settings}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
-      <button class="ib" id="brRules" aria-label="${api.L().rules}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 .9-1 1.7M12 17h.01"/></svg></button></header>
+      <button class="ib" id="brLast" aria-label="${api.L().lastTrick}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 12a8 8 0 1 0 3-6.2"/><path d="M4 4v5h5"/></svg></button>
+      <button class="ib" id="brRules" aria-label="${api.L().rules}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 .9-1 1.7M12 17h.01"/></svg></button>
+      <button class="ib" id="brSet" aria-label="${api.L().settings}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button></header>
       <div class="brctr" id="brCtr"></div>
       <div class="brauc" id="brAuc" hidden></div>
       <div class="brdummy" id="brDummy" hidden></div>
       <div class="brboard"><div class="brseats" id="brSeats"></div><div class="brtrick" id="brTrick"></div></div>
       <div class="tbstatus" id="brStatus"></div><div class="brbox" id="brBox"></div><div class="brhand" id="brHand"></div>`;
-    $('#brHome').onclick = leave; $('#brRules').onclick = () => api.showRules('c'); $('#brSet').onclick = () => api.showOpts('c'); $('#brScore').onclick = scoreSheet;
+    $('#brHome').onclick = leave; $('#brRules').onclick = () => api.showRules('c'); $('#brLast').onclick = lastTrickSheet; $('#brSet').onclick = () => api.showOpts('c'); $('#brScore').onclick = scoreSheet;
     $('#brHand').onclick = e => { const el = e.target.closest('.tbc'); if (el) playTap(el.dataset.id, 0); };
     $('#brDummy').onclick = e => { const el = e.target.closest('.tbc'); if (el) playTap(el.dataset.id, cur.dummy); };
     $('#brBox').onclick = e => { const b = e.target.closest('button'); if (b) boxTap(b); };
@@ -6106,6 +6131,7 @@ const BridgeUI = (() => {
 
   // ---------------------------------------------------------------- drawing
   function render() {
+    { const s = root && root.querySelector('#brSet'); if (s) s.style.display = mode === 'net' ? 'none' : ''; }
     if (!cur || !root) return;
     const t = tx(), v = cur;
     $('#brScore').innerHTML = `<span>${t.we}</span><b>${v.total[0]}</b><small>:</small><b>${v.total[1]}</b><span>${t.they}</span>`;
@@ -6218,7 +6244,15 @@ const BridgeUI = (() => {
     if (el) { el.style.visibility = 'hidden'; await fly(el.innerHTML, from, rectOf(el), 300); el.style.visibility = ''; }
     if (v.trick.length === 0) { /* the trick completed: onTrick keeps showing it */ } else shownTrick = null;
   }
+  let lastTr = null;
+  function lastTrickSheet() {
+    const html = lastTr
+      ? `<h3>${api.L().lastTrick}</h3><div class="lasttr">${lastTr.trick.map(x => `<div class="tbc">${face(x.card)}</div>`).join('')}</div><p class="muted">${esc(nameOf(lastTr.winner))}</p>`
+      : `<h3>${api.L().lastTrick}</h3><p>${api.L().noLast}</p>`;
+    api.openSheet(`${html}<div class="btns"><button class="pri" id="lx">${api.L().close}</button></div>`, v => v.querySelector('#lx').onclick = api.closeSheet);
+  }
   async function onTrick(ev, v) {
+    lastTr = { trick: (shownTrick || v.trick).slice(), winner: ev.winner };
     await sleep(500);
     const els = [...root.querySelectorAll('#brTrick .tbc')], to = ev.winner === 0 ? rectOf($('#brHand')) : rectOf(root.querySelector(`.brseat[data-s="${ev.winner}"]`) || $('#brHand'));
     const rects = els.map(rectOf), htmls = els.map(e => e.innerHTML); els.forEach(e => e.style.visibility = 'hidden');

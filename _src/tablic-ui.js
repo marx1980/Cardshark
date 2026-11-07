@@ -29,12 +29,14 @@ const TablicUI = (() => {
     root.hidden = false; root.style.setProperty('--rr', Cards.frRatio(api.S.fDeck));
     root.innerHTML = `<header class="ubar"><button class="ib" id="tbHome" aria-label="${api.L().sol.home}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M15 5l-7 7 7 7"/></svg></button>
       <div class="chip score" id="tbScore"></div>
-      <button class="ib" id="tbSet" aria-label="${api.L().settings}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
-      <button class="ib" id="tbOpts" aria-label="${api.L().rules}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 .9-1 1.7M12 17h.01"/></svg></button></header>
+      <button class="ib" id="tbLast" aria-label="${api.L().lastTrick}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 12a8 8 0 1 0 3-6.2"/><path d="M4 4v5h5"/></svg></button>
+      <button class="ib" id="tbOpts" aria-label="${api.L().rules}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 .9-1 1.7M12 17h.01"/></svg></button>
+      <button class="ib" id="tbSet" aria-label="${api.L().settings}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button></header>
       <div class="tbboard"><div class="tbopps" id="tbOpps"></div><div class="tbtable" id="tbTable"></div><div class="tbinfo" id="tbInfo"></div></div>
       <div class="tbstatus" id="tbStatus"></div><div class="tbact" id="tbAct"></div><div class="tbhand" id="tbHand"></div>`;
     $('#tbHome').onclick = leave;
     $('#tbOpts').onclick = () => api.showRules('a');
+    $('#tbLast').onclick = lastCapSheet;
     $('#tbSet').onclick = () => api.showOpts('a');
     $('#tbHand').onclick = e => { const el = e.target.closest('.tbc'); if (el) tapHand(el.dataset.id); };
     $('#tbTable').onclick = e => { const el = e.target.closest('.tbc'); if (el) tapTable(el.dataset.id); };
@@ -69,6 +71,7 @@ const TablicUI = (() => {
 
   // ---------------------------------------------------------------- drawing
   function render() {
+    { const s = root && root.querySelector('#tbSet'); if (s) s.style.display = mode === 'net' ? 'none' : ''; }
     if (!cur || !root) return;
     const t = tx(), v = cur, n = v.n;
     // score chip
@@ -136,6 +139,13 @@ const TablicUI = (() => {
     if (ev.k === 'matchEnd') return matchEnd(ev, v);
     cur = v; render();
   }
+  let lastCap = null;
+  function lastCapSheet() {
+    const t = tx(), html = lastCap
+      ? `<h3>${api.L().lastTrick}</h3><div class="lasttr">${lastCap.cards.map(c => `<div class="tbc">${face(c)}</div>`).join('')}</div><p class="muted">${esc(nameOf(lastCap.by))}</p>`
+      : `<h3>${api.L().lastTrick}</h3><p>${api.L().noLast}</p>`;
+    api.openSheet(`${html}<div class="btns"><button class="pri" id="lx">${api.L().close}</button></div>`, v => v.querySelector('#lx').onclick = api.closeSheet);
+  }
   async function onPlay(ev, v) {
     const before = cur || v, c = ev.card, mine = ev.seat === 0;
     const srcEl = mine ? root.querySelector(`#tbHand [data-id="${c.id}"]`) : null;
@@ -145,6 +155,7 @@ const TablicUI = (() => {
     const el = root.querySelector(`#tbTable [data-id="${c.id}"]`);
     if (el) { el.style.visibility = 'hidden'; await fly(el.innerHTML, from, rectOf(el), 300); el.style.visibility = ''; }
     if (ev.taken.length) {
+      lastCap = { cards: [c, ...before.table.filter(x => ev.taken.includes(x.id))], by: ev.seat };
       const els = [c.id, ...ev.taken].map(id => root.querySelector(`#tbTable [data-id="${id}"]`)).filter(Boolean);
       els.forEach(e => e.classList.add('cap'));
       if (ev.tabla) bubble(tx().tabla);
