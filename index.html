@@ -6476,7 +6476,7 @@ const STR = {
       close: n => `Najbolja nakon ${n} simuliranih podjela, ali tijesno.`,
       short: (n, d) => `${n} simuliranih podjela · ${d === null ? 'skoro izjednačeno' : `+${String(d).replace('.', ',')} ${Number.isInteger(d) ? hrBod(d) : 'boda'} ispred sljedeće`}`
     },
-    lastTrick: 'Zadnji štih', lastBtn: 'Gumb za zadnji štih', noLast: 'Još nije odigran nijedan štih.', took: n => `Nosi: ${n}`, pts: 'bodova',
+    lastTrick: 'Zadnji štih', lastBtn: 'Gumb za zadnji štih', resumeOpt: 'Nastavi igru', newOpt: 'Nova igra', noLast: 'Još nije odigran nijedan štih.', took: n => `Nosi: ${n}`, pts: 'bodova',
     handWon: 'Dobili ste ruku!', handLost: 'Izgubili ste ruku.', handDraw: 'Neriješeno, 60 : 60.',
     matchWon: 'Partija je vaša!', matchLost: 'Partija je izgubljena.', youWon: 'POBJEDA!', youLost: 'PORAZ!',
     next: 'Sljedeća ruka', again: 'Nova partija', home: 'Izbornik',
@@ -6554,7 +6554,7 @@ const STR = {
       close: n => `Best in ${n} simulated deals, but only just.`,
       short: (n, d) => `${n} simulated deals · ${d === null ? 'nearly a tie' : `+${d} ${d === 1 ? 'point' : 'points'} vs next best`}`
     },
-    lastTrick: 'Last trick', lastBtn: 'Last trick button', noLast: 'No trick has been played yet.', took: n => `Taken by: ${n}`, pts: 'points',
+    lastTrick: 'Last trick', lastBtn: 'Last trick button', resumeOpt: 'Continue game', newOpt: 'New game', noLast: 'No trick has been played yet.', took: n => `Taken by: ${n}`, pts: 'points',
     handWon: 'You won the hand!', handLost: 'You lost the hand.', handDraw: 'Draw, 60 : 60.',
     matchWon: 'The match is yours!', matchLost: 'Match lost.', youWon: 'YOU WON!', youLost: 'YOU LOST!',
     next: 'Next hand', again: 'New match', home: 'Menu',
@@ -6814,13 +6814,13 @@ function renderHome() {
   { const r = $('#goRejoin'); if (r) r.onclick = () => { joinTable(S.netTable.id, false, true); status(L().reconnecting, true); $('#home').hidden = true; $('#table').hidden = false; }; }
   $('#goStats').onclick = showStats;
   // a tile starts the game with the last settings, or carries on the saved one; options live on the game screen
-  for (const g of ['b', 't', 'h']) $('#go' + g.toUpperCase()).onclick = () => startGame(g, hasSave(g));
-  $('#goS').onclick = () => Solitaire.start(Solitaire.hasSaved());
-  $('#goU').onclick = () => UnoUI.hasSaved() ? UnoUI.resume() : UnoUI.start();
-  $('#goP').onclick = () => PokerUI.hasSaved() ? PokerUI.resume() : PokerUI.start();
-  $('#goR').onclick = () => RemiUI.hasSaved() ? RemiUI.resume() : RemiUI.start();
-  $('#goA').onclick = () => TablicUI.hasSaved() ? TablicUI.resume() : TablicUI.start();
-  $('#goC').onclick = () => BridgeUI.hasSaved() ? BridgeUI.resume() : BridgeUI.start();
+  for (const g of ['b', 't', 'h']) $('#go' + g.toUpperCase()).onclick = () => resumeChoice(hasSave(g), () => startGame(g, true), () => startGame(g, false));
+  $('#goS').onclick = () => resumeChoice(Solitaire.hasSaved(), () => Solitaire.start(true), () => Solitaire.start(false));
+  $('#goU').onclick = () => resumeChoice(UnoUI.hasSaved(), () => UnoUI.resume(), () => UnoUI.start());
+  $('#goP').onclick = () => resumeChoice(PokerUI.hasSaved(), () => PokerUI.resume(), () => PokerUI.start());
+  $('#goR').onclick = () => resumeChoice(RemiUI.hasSaved(), () => RemiUI.resume(), () => RemiUI.start());
+  $('#goA').onclick = () => resumeChoice(TablicUI.hasSaved(), () => TablicUI.resume(), () => TablicUI.start());
+  $('#goC').onclick = () => resumeChoice(BridgeUI.hasSaved(), () => BridgeUI.resume(), () => BridgeUI.start());
   if (SERVER) for (const g of ['b', 't', 'h', 'p', 'r', 'l', 'a', 'c']) $('#tables' + g.toUpperCase()).onclick = () => showLobby(g);
   // an odd number of games: the last tile sits in the middle
   { const ps = [...document.querySelectorAll('#home .poster')]; ps.forEach(x => x.classList.remove('solo')); if (ps.length % 2) ps[ps.length - 1].classList.add('solo'); }
@@ -6861,6 +6861,13 @@ function showGameSheet(game) {
     v.querySelector('#gRules').onclick = () => showRules(game);
     v.querySelector('#gPlay').onclick = () => startGame(game);
   });
+}
+// a saved single-player game: ask whether to carry it on or start a new one
+function resumeChoice(saved, onResume, onNew) {
+  if (!saved) return onNew();
+  const t = L();
+  openSheet(`<div class="btns"><button class="pri" id="rsC">${t.resumeOpt}</button><button class="sec" id="rsN">${t.newOpt}</button></div>`,
+    v => { v.querySelector('#rsC').onclick = () => { closeSheet(); onResume(); }; v.querySelector('#rsN').onclick = () => { closeSheet(); onNew(); }; });
 }
 function showHome() { token++; pending = null; G = null; closeSheet(); $('#table').hidden = true; $('#sol').hidden = true; $('#uno').hidden = true; $('#poker').hidden = true; $('#remi').hidden = true; $('#tablic').hidden = true; $('#bridge').hidden = true; $('#home').hidden = false; renderHome(); }
 // the title shrinks until the header buttons fit on narrow phones and wide fonts
