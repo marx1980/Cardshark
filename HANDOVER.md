@@ -100,3 +100,6 @@ Check at 375×667 and 390×780/844. The only expected console error is Google Fo
 
 ## v99 – Preferans pool & mountain
 - `opts.scoring` 'simple'|'pool', `opts.pool` 6|10 (pref.js `settle`): made contract fills pool, failure/raspasy go to mountain, whists written against declarer; match ends when two pools are full (cap 30 deals); `st.scores` is the running settlement vs table average. Client `S.fScoring`, `S.fPool`, lobby `S.onFScoring`/`S.onFPool`.
+
+## v99 options – Preferans pool end and limit
+- `opts.poolEnd` 'two' (default) | 'three' (match ends when two or all three pools are full); `opts.poolCap` 'cap' (default, pool stops at target) | 'open'. Client `S.fPoolEnd`, `S.fPoolCap`; lobby `S.onFPoolEnd`, `S.onFPoolCap`.

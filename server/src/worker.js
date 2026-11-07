@@ -73,7 +73,7 @@ function cleanOptsGame(game, o) {
     const players = Math.max(2, Math.min(6, Math.floor(+o.players) || 4));
     return { players, activeSeats: Array.from({ length: players }, (_, s) => s), target: [0, 501, 1001].includes(+o.target) ? +o.target : 501 };
   }
-  if (game === 'f') return { players: 3, activeSeats: [0, 1, 2], deals: +o.deals === 12 ? 12 : 6, scoring: o.scoring === 'pool' ? 'pool' : 'simple', pool: o.scoring === 'pool' ? (+o.pool === 10 ? 10 : 6) : 0 };
+  if (game === 'f') return { players: 3, activeSeats: [0, 1, 2], deals: +o.deals === 12 ? 12 : 6, scoring: o.scoring === 'pool' ? 'pool' : 'simple', pool: o.scoring === 'pool' ? (+o.pool === 10 ? 10 : 6) : 0, poolEnd: o.poolEnd === 'three' ? 'three' : 'two', poolCap: o.poolCap === 'open' ? 'open' : 'cap' };
   if (game === 'c') return { players: 4, activeSeats: [0, 1, 2, 3] };
   if (game === 'a') {
     const players = [2, 3, 4].includes(Math.floor(+o.players)) ? Math.floor(+o.players) : 2;

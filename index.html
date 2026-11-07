@@ -6992,7 +6992,8 @@ if (typeof module !== 'undefined') module.exports = GinUI;
 // defender +v for every missing trick. Every whisting defender also gets v per trick he took. Misère: +10, or −10 per trick taken.
 // The match is a fixed number of deals (every player deals equally often); highest total wins.
 // Pool & mountain (optional): a made contract fills the declarer's pool (up to the pool target), a failed one adds to his mountain,
-// whist points are written against the declarer, and raspasy tricks go to the mountain. The match ends when two pools are full.
+// whist points are written against the declarer, and raspasy tricks go to the mountain. Options: the match ends when two pools are
+// full (default) or all three (poolEnd 'three'); a closed pool stops at the target (default) or keeps growing (poolCap 'open').
 // Everyone's total settles against the table average: pool − average pool, minus mountain − average mountain, plus whists won minus whists lost.
 // Pure module (no I/O): the server and the app both run it.
 const Pref = (() => {
@@ -7017,7 +7018,7 @@ const Pref = (() => {
   // ---------------------------------------------------------------- state
   function newMatch(opts) {
     const deals = [6, 12].includes(+opts.deals) ? +opts.deals : 6, pool = opts.scoring === 'pool';
-    return { game: 'f', n: 3, opts: { players: 3, deals, scoring: pool ? 'pool' : 'simple', pool: pool ? ([6, 10].includes(+opts.pool) ? +opts.pool : 6) : 0 }, pl: [0, 0, 0], mt: [0, 0, 0], wh: [[0, 0, 0], [0, 0, 0], [0, 0, 0]], deal: 0, dealer: 0, scores: [0, 0, 0], hands: null, talon: [], phase: 'bid', turn: 0,
+    return { game: 'f', n: 3, opts: { players: 3, deals, scoring: pool ? 'pool' : 'simple', pool: pool ? ([6, 10].includes(+opts.pool) ? +opts.pool : 6) : 0, poolEnd: opts.poolEnd === 'three' ? 'three' : 'two', poolCap: opts.poolCap === 'open' ? 'open' : 'cap' }, pl: [0, 0, 0], mt: [0, 0, 0], wh: [[0, 0, 0], [0, 0, 0], [0, 0, 0]], deal: 0, dealer: 0, scores: [0, 0, 0], hands: null, talon: [], phase: 'bid', turn: 0,
       log: [], passed: [false, false, false], high: null, declarer: -1, contract: null, whist: [null, null, null], trick: [], won: [0, 0, 0],
       leader: 0, last: null, raspasy: false, result: null, matchOver: false, winner: -1, played: 0 };
   }
@@ -7145,7 +7146,7 @@ const Pref = (() => {
       if (st.raspasy) for (let s = 0; s < 3; s++) st.mt[s] += st.won[s];
       else {
         const d = st.declarer;
-        if (add[d] > 0) st.pl[d] = Math.min(T, st.pl[d] + add[d]); else st.mt[d] += -add[d];
+        if (add[d] > 0) st.pl[d] = st.opts.poolCap === 'open' ? st.pl[d] + add[d] : Math.min(T, st.pl[d] + add[d]); else st.mt[d] += -add[d];
         for (const w of defenders(st)) if (add[w] > 0) st.wh[w][d] += add[w];
       }
       st.scores = settle(st);
@@ -7153,7 +7154,7 @@ const Pref = (() => {
       res.pool = st.pl.slice(); res.mount = st.mt.slice();
     } else for (let s = 0; s < 3; s++) st.scores[s] += add[s];
     res.scores = st.scores.slice(); st.result = res; st.phase = 'done';
-    if (st.opts.scoring === 'pool' ? (st.pl.filter(x => x >= st.opts.pool).length >= 2 || st.deal >= 30) : st.deal >= st.opts.deals) {
+    if (st.opts.scoring === 'pool' ? (st.pl.filter(x => x >= st.opts.pool).length >= (st.opts.poolEnd === 'three' ? 3 : 2) || st.deal >= 30) : st.deal >= st.opts.deals) {
       st.matchOver = true; const m = Math.max(...st.scores); st.winner = st.scores.indexOf(m);
     }
     return { ...r, ended: true };
@@ -7349,11 +7350,11 @@ const PrefUI = (() => {
     myReq = null, idleTimer = 0, nextRes = null, lastEnd = null, selLevel = 0, selD = new Set(), shownTrick = null;
   class Abort extends Error {}
   const TX = {
-    hr: { name: 'Preferans', deals: 'Dijeljenja', scoring: 'Bodovanje', simple: 'Jednostavno', poolMt: 'Pula i gora', poolTo: 'Pula', pl: 'Pula', mt: 'Gora', dealN: n => `Igra ${n}`, you: 'Ti', pass: 'Pas', whist: 'Vist', misere: 'Misère', raspasy: 'Raspasy', decl: 'Igrač', deal: (n, m) => `Igra ${n}/${m}`, yourBid: 'Tvoja licitacija',
+    hr: { name: 'Preferans', deals: 'Dijeljenja', poolEnd: 'Kraj igre', endTwo: 'Dvije pule', endThree: 'Sve tri pule', poolCap: 'Ograničenje pule', capOn: 'Do cilja', capOff: 'Bez ograničenja', scoring: 'Bodovanje', simple: 'Jednostavno', poolMt: 'Pula i gora', poolTo: 'Pula', pl: 'Pula', mt: 'Gora', dealN: n => `Igra ${n}`, you: 'Ti', pass: 'Pas', whist: 'Vist', misere: 'Misère', raspasy: 'Raspasy', decl: 'Igrač', deal: (n, m) => `Igra ${n}/${m}`, yourBid: 'Tvoja licitacija',
       yourTurn: 'Tvoj potez', bidding: n => `${n} licitira…`, playing: n => `${n} igra…`, discard: 'Odbaci 2 karte', declare: 'Ugovor', whistQ: 'Vist?', waitingFor: n => `${n} odlučuje…`,
       next: 'Dalje', won: 'Pobjeda!', lost: 'Poraz', again: 'Nova igra', home: 'Početna', made: 'Ispunjeno', down: 'Pad', noPlay: 'Bez igre', tricks: 'Štihovi', points: 'Bodovi', total: 'Ukupno',
       confirm: 'Odbaci', nt: 'BA', bad: 'Ne ide', err: { bad: 'Ne ide', follow: 'Moraš slijediti boju', bid: 'Ta licitacija nije moguća', turn: 'Nisi na redu', discard: 'Odaberi 2 karte' } },
-    en: { name: 'Preferans', deals: 'Deals', scoring: 'Scoring', simple: 'Simple', poolMt: 'Pool & mountain', poolTo: 'Pool', pl: 'Pool', mt: 'Mountain', dealN: n => `Deal ${n}`, you: 'You', pass: 'Pass', whist: 'Whist', misere: 'Misère', raspasy: 'Raspasy', decl: 'Declarer', deal: (n, m) => `Deal ${n}/${m}`, yourBid: 'Your bid',
+    en: { name: 'Preferans', deals: 'Deals', poolEnd: 'Match ends', endTwo: 'Two pools', endThree: 'All three pools', poolCap: 'Pool limit', capOn: 'Stops at target', capOff: 'No limit', scoring: 'Scoring', simple: 'Simple', poolMt: 'Pool & mountain', poolTo: 'Pool', pl: 'Pool', mt: 'Mountain', dealN: n => `Deal ${n}`, you: 'You', pass: 'Pass', whist: 'Whist', misere: 'Misère', raspasy: 'Raspasy', decl: 'Declarer', deal: (n, m) => `Deal ${n}/${m}`, yourBid: 'Your bid',
       yourTurn: 'Your turn', bidding: n => `${n} is bidding…`, playing: n => `${n} is playing…`, discard: 'Discard 2 cards', declare: 'Contract', whistQ: 'Whist?', waitingFor: n => `${n} is deciding…`,
       next: 'Next', won: 'You won!', lost: 'You lost', again: 'New game', home: 'Home', made: 'Made', down: 'Down', noPlay: 'No play', tricks: 'Tricks', points: 'Points', total: 'Total',
       confirm: 'Discard', nt: 'NT', bad: 'Not allowed', err: { bad: 'Not allowed', follow: 'You must follow suit', bid: 'That bid is not possible', turn: 'Not your turn', discard: 'Pick 2 cards' } }
@@ -7856,7 +7857,7 @@ const RULES = {
 <h4>Licitacija</h4><ul><li>Prvi licitira igrač lijevo od djelitelja. Ponuda je broj štihova (6–10) i boja; misère je između 9 i 10. Pas je konačan.</li><li>Ako svi kažu pas, igra se raspasy: bez aduta, svaki štih nosi minus bod.</li></ul>
 <h4>Igrač i vist</h4><ul><li>Najviši licitant uzima talon, odbacuje 2 karte i objavljuje konačni ugovor (ne niži od ponude).</li><li>Svaki protivnik kaže vist ili pas. Ako oba kažu pas, igrač dobiva bodove bez igranja. Inače se igra: igrač izlazi prvi, mora se slijediti boja, a ako je nemaš, moraš baciti adut.</li></ul>
 <h4>Bodovi</h4><ul><li>Vrijednost ugovora v = 2 × (broj štihova − 5), misère 10.</li><li>Ispunjen ugovor: igrač +v. Pad: igrač −v za svaki štih koji fali, a svaki vist +v za svaki štih koji fali.</li><li>Svaki vist dobiva još v za svaki svoj štih.</li><li>Misère: igrač ne smije uzeti štih; +10, inače −10 za svaki štih.</li><li>Igra traje 6 ili 12 dijeljenja; pobjeđuje tko ima najviše bodova.</li></ul>
-<h4>Pula i gora</h4><ul><li>Opcija bodovanja: ispunjen ugovor puni igračevu pulu (do cilja), pad ide u goru, a vistovi se upisuju protiv igrača. Raspasy štihovi idu u goru.</li><li>Igra završava kad su dvije pule pune. Rezultat: pula − prosječna pula, minus gora − prosječna gora, plus dobiveni minus izgubljeni vistovi.</li></ul>`,
+<h4>Pula i gora</h4><ul><li>Opcija bodovanja: ispunjen ugovor puni igračevu pulu (do cilja), pad ide u goru, a vistovi se upisuju protiv igrača. Raspasy štihovi idu u goru.</li><li>Igra završava kad su dvije pule pune (ili sve tri, ako je tako postavljeno). Pula može stati na cilju ili rasti bez ograničenja. Rezultat: pula − prosječna pula, minus gora − prosječna gora, plus dobiveni minus izgubljeni vistovi.</li></ul>`,
     r: `<h3>Rummy</h3>
 <h4>Karte i djeljenje</h4><ul><li>Dva špila i četiri jokera, 2–6 igrača. Svatko dobiva 14 karata, a prvi igrač 15 i počinje bacanjem jedne karte.</li></ul>
 <h4>Potez</h4><ul><li>Vuče se karta sa špila ili gornja karta s hrpe – nju se mora iskoristiti u istom potezu. Potez završava bacanjem karte.</li></ul>
@@ -7948,7 +7949,7 @@ const RULES = {
 <h4>Bidding</h4><ul><li>The player left of the dealer bids first. A bid is a number of tricks (6–10) and a suit; misère sits between 9 and 10. A pass is final.</li><li>If everyone passes the deal is played as raspasy: no trump, every trick taken costs a point.</li></ul>
 <h4>Declarer and whist</h4><ul><li>The highest bidder takes the talon, discards 2 cards and names the final contract (not below the bid).</li><li>Each defender says whist or pass. If both pass, the declarer scores without playing. Otherwise the declarer leads, you must follow suit, and if you cannot, you must play a trump.</li></ul>
 <h4>Scoring</h4><ul><li>Contract value v = 2 × (tricks − 5), misère 10.</li><li>Made: declarer +v. Down: declarer −v for every missing trick, and each whisting defender +v for every missing trick.</li><li>Each whisting defender also gets v for every trick he took.</li><li>Misère: the declarer must take no trick; +10, otherwise −10 per trick.</li><li>A match is 6 or 12 deals; highest total wins.</li></ul>
-<h4>Pool and mountain</h4><ul><li>Scoring option: a made contract fills the declarer's pool (up to the target), a failure goes to his mountain, and whists are written against the declarer. Raspasy tricks go to the mountain.</li><li>The match ends when two pools are full. Result: pool − average pool, minus mountain − average mountain, plus whists won minus whists lost.</li></ul>`,
+<h4>Pool and mountain</h4><ul><li>Scoring option: a made contract fills the declarer's pool (up to the target), a failure goes to his mountain, and whists are written against the declarer. Raspasy tricks go to the mountain.</li><li>The match ends when two pools are full (or all three, if set). A pool can stop at the target or grow without limit. Result: pool − average pool, minus mountain − average mountain, plus whists won minus whists lost.</li></ul>`,
     r: `<h3>Rummy</h3>
 <h4>Cards and deal</h4><ul><li>Two decks and four jokers, 2–6 players. Everyone gets 14 cards; the first player gets 15 and starts by discarding one.</li></ul>
 <h4>A turn</h4><ul><li>Draw from the stock or take the top discard – which must be used in the same turn. End the turn by discarding a card.</li></ul>
@@ -8248,19 +8249,19 @@ function showTablicSheet() {
 }
 function showPrefSheet() {
   const t = L(), u = PrefUI.tx();
-  if (!S.fLevel) S.fLevel = 'cardshark'; if (!S.fDeals) S.fDeals = 6; if (!S.fScoring) S.fScoring = 'simple'; if (!S.fPool) S.fPool = 6;
+  if (!S.fLevel) S.fLevel = 'cardshark'; if (!S.fDeals) S.fDeals = 6; if (!S.fScoring) S.fScoring = 'simple'; if (!S.fPool) S.fPool = 6; if (!S.fPoolEnd) S.fPoolEnd = 'two'; if (!S.fPoolCap) S.fPoolCap = 'cap';
   const seg = (key, opts) => `<div class="seg dark" role="group">${opts.map(([v, lab]) => `<button data-k="${key}" data-v="${v}" aria-pressed="${String(S[key]) === String(v)}">${lab}</button>`).join('')}</div>`;
   openSheet(`<div class="gsh"><h3>${u.name}</h3><button class="link" id="gRules">${t.rules}</button></div>
     <div class="gsegs"><div class="glab">${t.level}</div><div class="seg dark levels" role="group">${AI.LEVELS.map(l => `<button data-k="fLevel" data-v="${l}" aria-pressed="${S.fLevel === l}">${t.lv[l]}</button>`).join('')}</div>
     <div class="gsep"></div><div class="glab">${u.scoring}</div>${seg('fScoring', [['simple', u.simple], ['pool', u.poolMt]])}
-    <div class="gsep"></div>${S.fScoring === 'pool' ? `<div class="glab">${u.poolTo}</div>${seg('fPool', [[6, '6'], [10, '10']])}` : `<div class="glab">${u.deals}</div>${seg('fDeals', [[6, '6'], [12, '12']])}`}${lastToggle('f')}</div>
+    <div class="gsep"></div>${S.fScoring === 'pool' ? `<div class="glab">${u.poolTo}</div>${seg('fPool', [[6, '6'], [10, '10']])}<div class="glab">${u.poolEnd}</div>${seg('fPoolEnd', [['two', u.endTwo], ['three', u.endThree]])}<div class="glab">${u.poolCap}</div>${seg('fPoolCap', [['cap', u.capOn], ['open', u.capOff]])}` : `<div class="glab">${u.deals}</div>${seg('fDeals', [[6, '6'], [12, '12']])}`}${lastToggle('f')}</div>
     <div class="btns"><button class="sec" id="gClose">${L().close}</button><button class="play wide" id="gPlay">${L().sol.newGame}</button></div>`, v => {
     v.onclick = e => { if (e.target === v) closeSheet(); };
     v.querySelector('#gClose').onclick = closeSheet;
     v.querySelectorAll('.seg button').forEach(b => b.onclick = () => {
       let val = b.dataset.v; val = isNaN(+val) ? val : +val;
       S[b.dataset.k] = val; save();
-      if (b.dataset.k === 'fScoring') { showPrefSheet(); return; }
+      if (b.dataset.k === 'fScoring' || b.dataset.k === 'fPool' || b.dataset.k === 'fPoolEnd' || b.dataset.k === 'fPoolCap') { showPrefSheet(); return; }
       b.parentNode.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b));
     });
     bindLast(v);
@@ -9824,7 +9825,7 @@ async function showLobby(game) {
       : g === 'h'
         ? `<div class="glab">${t.hTo}</div>${seg('hTarget', [[501, '501'], [701, '701'], [1001, '1001']])}`
         : g === 'c' ? ''
-        : g === 'f' ? `<div class="glab">${PrefUI.tx().scoring}</div>${seg('onFScoring', [['simple', PrefUI.tx().simple], ['pool', PrefUI.tx().poolMt]])}${S.onFScoring === 'pool' ? `<div class="glab">${PrefUI.tx().poolTo}</div>${seg('onFPool', [[6, '6'], [10, '10']])}` : `<div class="glab">${PrefUI.tx().deals}</div>${seg('onFDeals', [[6, '6'], [12, '12']])}`}`
+        : g === 'f' ? `<div class="glab">${PrefUI.tx().scoring}</div>${seg('onFScoring', [['simple', PrefUI.tx().simple], ['pool', PrefUI.tx().poolMt]])}${S.onFScoring === 'pool' ? `<div class="glab">${PrefUI.tx().poolTo}</div>${seg('onFPool', [[6, '6'], [10, '10']])}<div class="glab">${PrefUI.tx().poolEnd}</div>${seg('onFPoolEnd', [['two', PrefUI.tx().endTwo], ['three', PrefUI.tx().endThree]])}<div class="glab">${PrefUI.tx().poolCap}</div>${seg('onFPoolCap', [['cap', PrefUI.tx().capOn], ['open', PrefUI.tx().capOff]])}` : `<div class="glab">${PrefUI.tx().deals}</div>${seg('onFDeals', [[6, '6'], [12, '12']])}`}`
         : g === 'a'
           ? `<div class="glab">${TablicUI.tx().players}</div>${seg('onAPlayers', [[2, TablicUI.tx().n2], [3, TablicUI.tx().n3], [4, TablicUI.tx().n4]])}<div class="glab">${TablicUI.tx().target}</div>${seg('onATarget', [[101, '101'], [51, '51']])}`
         : g === 'p'
@@ -9845,7 +9846,7 @@ async function showLobby(game) {
     if (b.dataset.k === 'onBMode' || b.dataset.k === 'onTPlayers' || b.dataset.k === 'onAPlayers') { const lv = v.querySelector('#lobbyLv'); if (lv) lv.innerHTML = levelsHTML(game); bindOptions(v); }
   });
   const bindChecks = v => v.querySelectorAll('#lobbyOpts input[data-opt]').forEach(b => b.onchange = () => { S[b.dataset.opt] = b.checked; save(); });
-  const bindVariant = v => v.querySelectorAll('#lobbyOpts .seg button[data-k="onLVariant"],#lobbyOpts .seg button[data-k="onRVar"],#lobbyOpts .seg button[data-k="onFScoring"]').forEach(b => b.onclick = () => {
+  const bindVariant = v => v.querySelectorAll('#lobbyOpts .seg button[data-k="onLVariant"],#lobbyOpts .seg button[data-k="onRVar"],#lobbyOpts .seg button[data-k="onFScoring"],#lobbyOpts .seg button[data-k="onFPool"],#lobbyOpts .seg button[data-k="onFPoolEnd"],#lobbyOpts .seg button[data-k="onFPoolCap"]').forEach(b => b.onclick = () => {
     S[b.dataset.k] = b.dataset.v; save(); b.parentNode.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b));
     v.querySelector('#lobbyOpts').innerHTML = optionsHTML(game) + `<div id="lobbyLv">${levelsHTML(game)}</div>`; bindLobbyOptions(v);
   });
@@ -9862,6 +9863,8 @@ async function showLobby(game) {
   if (!S.onFDeals) S.onFDeals = S.fDeals || 6;
   if (!S.onFScoring) S.onFScoring = S.fScoring || 'simple';
   if (!S.onFPool) S.onFPool = S.fPool || 6;
+  if (!S.onFPoolEnd) S.onFPoolEnd = S.fPoolEnd || 'two';
+  if (!S.onFPoolCap) S.onFPoolCap = S.fPoolCap || 'cap';
   if (!S.onGTarget) S.onGTarget = S.gTarget || 100;
   if (!S.onPBlinds) S.onPBlinds = S.pBlinds || 'slow';
   if (S.onRPlayers === undefined) S.onRPlayers = S.rPlayers || 4;
@@ -9892,7 +9895,7 @@ async function showLobby(game) {
           : g === 'h' ? { target: S.hTarget }
             : g === 'a' ? { players: +S.onAPlayers || 2, target: S.onATarget || 101 }
             : g === 'c' ? {}
-            : g === 'f' ? { deals: +S.onFDeals || 6, scoring: S.onFScoring === 'pool' ? 'pool' : 'simple', pool: +S.onFPool || 6 }
+            : g === 'f' ? { deals: +S.onFDeals || 6, scoring: S.onFScoring === 'pool' ? 'pool' : 'simple', pool: +S.onFPool || 6, poolEnd: S.onFPoolEnd === 'three' ? 'three' : 'two', poolCap: S.onFPoolCap === 'open' ? 'open' : 'cap' }
             : g === 'p' ? { players: +(S.onPPlayers || S.pPlayers || 6), variant: S.onPVariant || S.pVar || 'holdem', blinds: S.onPBlinds || S.pBlinds || 'slow' }
               : g === 'r' && S.onRVar === 'gin' ? { players: 2, variant: 'gin', target: S.onGTarget || 100 }
               : g === 'r' ? { players: +(S.onRPlayers || S.rPlayers || 4), target: S.onRTarget === undefined ? (S.rTarget ?? 501) : S.onRTarget }

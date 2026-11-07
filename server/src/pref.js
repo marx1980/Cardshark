@@ -8,7 +8,8 @@
 // defender +v for every missing trick. Every whisting defender also gets v per trick he took. Misère: +10, or −10 per trick taken.
 // The match is a fixed number of deals (every player deals equally often); highest total wins.
 // Pool & mountain (optional): a made contract fills the declarer's pool (up to the pool target), a failed one adds to his mountain,
-// whist points are written against the declarer, and raspasy tricks go to the mountain. The match ends when two pools are full.
+// whist points are written against the declarer, and raspasy tricks go to the mountain. Options: the match ends when two pools are
+// full (default) or all three (poolEnd 'three'); a closed pool stops at the target (default) or keeps growing (poolCap 'open').
 // Everyone's total settles against the table average: pool − average pool, minus mountain − average mountain, plus whists won minus whists lost.
 // Pure module (no I/O): the server and the app both run it.
 const Pref = (() => {
@@ -33,7 +34,7 @@ const Pref = (() => {
   // ---------------------------------------------------------------- state
   function newMatch(opts) {
     const deals = [6, 12].includes(+opts.deals) ? +opts.deals : 6, pool = opts.scoring === 'pool';
-    return { game: 'f', n: 3, opts: { players: 3, deals, scoring: pool ? 'pool' : 'simple', pool: pool ? ([6, 10].includes(+opts.pool) ? +opts.pool : 6) : 0 }, pl: [0, 0, 0], mt: [0, 0, 0], wh: [[0, 0, 0], [0, 0, 0], [0, 0, 0]], deal: 0, dealer: 0, scores: [0, 0, 0], hands: null, talon: [], phase: 'bid', turn: 0,
+    return { game: 'f', n: 3, opts: { players: 3, deals, scoring: pool ? 'pool' : 'simple', pool: pool ? ([6, 10].includes(+opts.pool) ? +opts.pool : 6) : 0, poolEnd: opts.poolEnd === 'three' ? 'three' : 'two', poolCap: opts.poolCap === 'open' ? 'open' : 'cap' }, pl: [0, 0, 0], mt: [0, 0, 0], wh: [[0, 0, 0], [0, 0, 0], [0, 0, 0]], deal: 0, dealer: 0, scores: [0, 0, 0], hands: null, talon: [], phase: 'bid', turn: 0,
       log: [], passed: [false, false, false], high: null, declarer: -1, contract: null, whist: [null, null, null], trick: [], won: [0, 0, 0],
       leader: 0, last: null, raspasy: false, result: null, matchOver: false, winner: -1, played: 0 };
   }
@@ -161,7 +162,7 @@ const Pref = (() => {
       if (st.raspasy) for (let s = 0; s < 3; s++) st.mt[s] += st.won[s];
       else {
         const d = st.declarer;
-        if (add[d] > 0) st.pl[d] = Math.min(T, st.pl[d] + add[d]); else st.mt[d] += -add[d];
+        if (add[d] > 0) st.pl[d] = st.opts.poolCap === 'open' ? st.pl[d] + add[d] : Math.min(T, st.pl[d] + add[d]); else st.mt[d] += -add[d];
         for (const w of defenders(st)) if (add[w] > 0) st.wh[w][d] += add[w];
       }
       st.scores = settle(st);
@@ -169,7 +170,7 @@ const Pref = (() => {
       res.pool = st.pl.slice(); res.mount = st.mt.slice();
     } else for (let s = 0; s < 3; s++) st.scores[s] += add[s];
     res.scores = st.scores.slice(); st.result = res; st.phase = 'done';
-    if (st.opts.scoring === 'pool' ? (st.pl.filter(x => x >= st.opts.pool).length >= 2 || st.deal >= 30) : st.deal >= st.opts.deals) {
+    if (st.opts.scoring === 'pool' ? (st.pl.filter(x => x >= st.opts.pool).length >= (st.opts.poolEnd === 'three' ? 3 : 2) || st.deal >= 30) : st.deal >= st.opts.deals) {
       st.matchOver = true; const m = Math.max(...st.scores); st.winner = st.scores.indexOf(m);
     }
     return { ...r, ended: true };
