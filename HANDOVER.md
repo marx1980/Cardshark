@@ -32,7 +32,14 @@ Shipped since v50:
 - **v67**: Briškula (offline and online): when the last draw gives the face-up trump to a player, the trump flies from the stock to that player with a “takes the trump” bubble and a pause. Online, the server's `collect` event carries `trumpTo` and the runner waits longer before continuing.
 - **v68**: Briškula: explicitly gate the trump pickup animation, announcement, and longer pause on the final card being drawn from an emptying stock; all other trick collections keep their normal timing.
 
-The service-worker cache version is `cardshark-v68` at `sw.js:2`.
+- **v89**: added **Tablić** (2, 3 or 4 players; pairs at four; to 101 or 51) and **Contract Bridge** (rubber, four players in two partnerships), each with an offline game against bots at four levels and an online version (tables, seats, bot fill, ratings, bot takeover). Both are self-contained modules instead of branches of the old shared UI:
+  - `server/src/tablic.js`, `server/src/bridge.js`: pure rules + bots + the match loop (`run(host)`), shared by the server and the app. `_src/tablic-ui.js`, `_src/bridge-ui.js`: the screens (one screen for offline and online). **`python3 tools/embed.py` copies these four files into `index.html` as `<script>` blocks; edit the sources, not the blocks, and run the tool.**
+  - A game with its own screen plugs in through `MODS` in `server/src/runner.js` (it provides `view`, `rotEvent`, `run`) and `AUX` in the app's `handleNet` (the module takes every server message). Rules are in `RULES.<lang>.a / .c`, strings are in the UI modules (`TX`).
+  - Tablić: capture is any set of table cards (or several groups) adding up to the played card; the last capturer takes what is left; tabla +1 except on the very last play. Bots: novice (random), average (greedy), pro (avoids leaving captures for the next player), cardshark (expected best reply of the opponents' whole hand).
+  - Bridge: seat + 1 is on your left (clockwise), no honours, rubber ends the match. Bidding is natural and simple (`firstCall` + `ladder`); card play is a heuristic policy (average) or sampled perfect-information search (pro 8 worlds, cardshark 40). The declarer plays the dummy: the server asks the declarer with `req.for = dummy seat`. Strength (rubbers, head to head): average beat novice 40/40, pro beat average 38/40, cardshark beat pro 26/40.
+  - Not yet: hints, Bridge claims/concessions, Tablić/Bridge-specific online spectating.
+
+The service-worker cache version is `cardshark-v89` at `sw.js:2`.
 
 ## How the hint works (index.html, main UI script)
 

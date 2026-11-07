@@ -14,6 +14,8 @@ const TIER = {
   p: { novice: 1000, average: 1080, pro: 1180, cardshark: 1260 },
   r: { novice: 1000, average: 1080, pro: 1180, cardshark: 1260 },
   l: { novice: 1000, average: 1080, pro: 1180, cardshark: 1260 },
+  a: { novice: 1000, average: 1200, pro: 1330, cardshark: 1380 },
+  c: { novice: 1000, average: 1250, pro: 1450, cardshark: 1560 },
 };
 let TURN_MS = 30000;          // time to play before the bot takes the turn (env TURN_MS overrides, for testing)
 const STALE_MS = 30 * 60e3;   // waiting tables disappear after 30 minutes
@@ -47,6 +49,11 @@ function cleanOptsGame(game, o) {
     const players = Math.max(2, Math.min(6, Math.floor(+o.players) || 4));
     return { players, activeSeats: Array.from({ length: players }, (_, s) => s), target: [0, 501, 1001].includes(+o.target) ? +o.target : 501 };
   }
+  if (game === 'c') return { players: 4, activeSeats: [0, 1, 2, 3] };
+  if (game === 'a') {
+    const players = [2, 3, 4].includes(Math.floor(+o.players)) ? Math.floor(+o.players) : 2;
+    return { players, activeSeats: Array.from({ length: players }, (_, s) => s), target: [51, 101].includes(+o.target) ? +o.target : 101 };
+  }
   if (game === 'l') {
     const players = Math.max(2, Math.min(6, Math.floor(+o.players) || 4));
     const flag = (k, d) => typeof o[k] === 'boolean' ? o[k] : d;
@@ -76,7 +83,7 @@ export default {
     if (p === '/api/tables' && req.method === 'GET') return lobby.fetch('https://do/list');
     if (p === '/api/tables' && req.method === 'POST') {
       const b = await req.json().catch(() => ({}));
-      if (!['b', 't', 'h', 'p', 'r', 'l'].includes(b.game)) return json({ error: 'game' }, 400);
+      if (!['b', 't', 'h', 'p', 'r', 'l', 'a', 'c'].includes(b.game)) return json({ error: 'game' }, 400);
       const pid = String(b.pid || ''); if (!/^[a-f0-9]{8,64}$/.test(pid)) return json({ error: 'pid' }, 400);
       const id = rid();
       const t = env.TABLE.get(env.TABLE.idFromName(id));
@@ -111,7 +118,7 @@ export class Lobby {
 // ------------------------------------------------------------------ Registry (player records)
 export class Registry {
   constructor(state) { this.state = state; }
-  blank(name) { return { name, r: { ...Object.fromEntries(Object.entries(TIER).map(([g, t]) => [g, t.average])) }, w: { b: 0, t: 0, h: 0, p: 0, r: 0, l: 0 }, l: { b: 0, t: 0, h: 0, p: 0, r: 0, l: 0 } }; }
+  blank(name) { return { name, r: { ...Object.fromEntries(Object.entries(TIER).map(([g, t]) => [g, t.average])) }, w: { b: 0, t: 0, h: 0, p: 0, r: 0, l: 0, a: 0, c: 0 }, l: { b: 0, t: 0, h: 0, p: 0, r: 0, l: 0, a: 0, c: 0 } }; }
   normalize(record, name = 'Player') {
     const base = this.blank(record && record.name || name);
     if (!record) return base;
@@ -179,7 +186,7 @@ export class Table {
   async load() { if (!this.info) this.info = (await this.state.storage.get('info')) || null; }
   async save() { await this.state.storage.put('info', this.info); }
   publicInfo() { const i = this.info; return { id: i.id, game: i.game, opts: i.opts, activeSeats: i.opts.activeSeats || [0, 1, 2, 3], hostName: i.hostName, status: i.status, seats: i.seats.map(s => s ? { name: s.name, bot: !!s.bot, level: s.level || null, host: !!s.pid && s.pid === i.host } : null) }; }
-  seatMod() { return ['p', 'r', 'l'].includes(this.info.game) ? this.info.seats.length : 4; }
+  seatMod() { return ['p', 'r', 'l', 'a'].includes(this.info.game) ? this.info.seats.length : 4; }
   async announce() {
     await this.save();
     const info = this.publicInfo();
@@ -281,7 +288,7 @@ export class Table {
   // bot level: the level closest to the average rating of the humans it plays against
   levelFor(seat) {
     const g = this.info.game, hum = this.humanSeats();
-    const individual = ['p', 'r', 'l'].includes(g) || (g === 'b' && (this.info.opts.solo || this.info.opts.players === 3)) || ((g === 'b' || g === 't') && this.info.opts.players === 2);
+    const individual = ['p', 'r', 'l'].includes(g) || (g === 'a' && this.info.opts.players !== 4) || (g === 'b' && (this.info.opts.solo || this.info.opts.players === 3)) || ((g === 'b' || g === 't') && this.info.opts.players === 2);
     const o = this.info.opts, partner = !individual && hum.some(h => h % 2 === seat % 2);
     const fixed = partner ? o.partnerLevel : o.oppLevel;
     if (fixed && fixed !== 'auto' && TIER[g][fixed]) return fixed;
@@ -380,8 +387,10 @@ export class Table {
     const i = this.info, g = i.game;
     const active = i.opts.activeSeats || [0, 1, 2, 3];
     let groups;
-    if (['p', 'r', 'l'].includes(i.game)) {
+    if (['p', 'r', 'l'].includes(i.game) || (i.game === 'a' && i.opts.players !== 4)) {
       groups = active.map(s => [s]);
+    } else if (i.game === 'a') {
+      groups = [[0, 2], [1, 3]];
     } else if (i.game === 'b' && (i.opts.solo || i.opts.players === 3)) {
       const winnerSeat = this.runner.st.seats[winner];
       groups = [[winnerSeat], active.filter(s => s !== winnerSeat)];

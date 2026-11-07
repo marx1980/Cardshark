@@ -22,6 +22,9 @@ I will not rely on you to check status—I'll tell you proactively with clear su
 ### Visual issue reports
 When the user reports a visual issue and asks for a fix, don't re-check whether it exists; focus on fixing it. Only ask for screenshots if they are needed to understand the issue, and ask for them upfront to avoid unnecessary credit use.
 
+### Every game gets an online version
+When adding any new game, always build the online (multiplayer) version as well as the offline one. The only exception is a game that is single-player only (e.g. Solitaire). A game is not finished until it works offline against bots, online at a table, and with the Bot Takeover setting.
+
 ---
 
 ## Repository Context
@@ -31,7 +34,8 @@ When the user reports a visual issue and asks for a fix, don't re-check whether 
 **Architecture:** Single-file HTML app (~5.2k lines) with game engines, AI, and online play via Cloudflare Worker
 
 **Key files:**
-- `index.html` – Full app (ENGINE, AI, UI, games: Briškula/Bela/Trešeta/Solitaire/Uno/Poker/Remi)
+- `index.html` – Full app (ENGINE, AI, UI, games: Briškula/Bela/Trešeta/Solitaire/Uno/Poker/Remi/Tablić/Bridge)
+- `server/src/tablic.js`, `server/src/bridge.js`, `_src/*-ui.js` – newer games as modules; `python3 tools/embed.py` copies them into `index.html` (edit the sources, not the embedded blocks)
 - `sw.js` – Service worker cache management
 - `server/src/worker.js` – Online play backend (Cloudflare)
 - `HANDOVER.md` – Release notes and developer handover

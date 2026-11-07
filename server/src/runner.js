@@ -7,6 +7,9 @@ const Poker = require('./poker.js');
 const Remi = require('./remi.js');
 const RemiAI = require('./remibot.js');
 const Unico = require('./unico.js');
+const Tablic = require('./tablic.js');
+const Bridge = require('./bridge.js');
+const MODS = { a: Tablic, c: Bridge };   // games that bring their own rules, views and match loop
 
 const PACE = { bot: 800, trick: 1800, deal: 700, decl: 3200, akuza: 1600, called: 1100 };
 const relSeat = (seat, viewer, n) => ((seat - viewer) % n + n) % n;
@@ -48,11 +51,19 @@ const deser = j => JSON.parse(j, (k, v) => v && typeof v === 'object' && Array.i
 
 class Runner {
   // io: { sleep(ms), send(seat, msg), ask(seat, req) -> Promise<answer|null>, level(seat), waitNext(ms), isHuman(seat) }
-  constructor(game, opts, io, saved = null) { this.game = game; this.opts = opts; this.io = io; this.st = null; this.turn = null; this.saved = saved; }
+  constructor(game, opts, io, saved = null) { this.game = game; this.opts = opts; this.io = io; this.st = null; this.turn = null; this.saved = saved; this.mod = MODS[game] || null; }
   // a checkpoint the table keeps in storage, so a restarted server can carry on from here
   async checkpoint(at) { if (this.io.save) await this.io.save({ at, st: ser(this.st), turn: this.turn }); }
 
   emit(ev) {
+    if (this.mod) {
+      const n = this.st.n || 4;
+      for (let s = 0; s < n; s++) {
+        const view = this.mod.view(this.st, s); view.turn = this.turn === null ? null : ((this.turn - s) % n + n) % n;
+        this.io.send(s, { t: 'ev', ev: this.mod.rotEvent(ev, s, this.st), view });
+      }
+      return;
+    }
     const seats = Array.isArray(this.st.seats) && this.st.seats.every(Number.isInteger)
       ? this.st.seats : Array.from({ length: this.st.n || 4 }, (_, i) => i);
     for (const s of seats) {
@@ -65,6 +76,7 @@ class Runner {
   snapshot(seat) {
     if (!this.st || (!this.st.hands && this.game !== 'p')) return null;
     const n = this.st.n || 4;
+    if (this.mod) { const view = this.mod.view(this.st, seat); view.turn = this.turn === null ? null : ((this.turn - seat) % n + n) % n; return view; }
     const view = makeView(this.st, seat); view.turn = this.turn === null ? null : ((this.turn - seat) % n + n) % n;
     return view;
   }
@@ -104,6 +116,7 @@ class Runner {
     if (g === 'p') return this.pokerMatch();
     if (g === 'r') return this.remiMatch();
     if (g === 'l') return this.unicoMatch();
+    if (this.mod) return this.mod.run(this);
     if (g === 'b') this.st = E.bNew({ players: o.players || 4, solo: !!o.solo, double: !!o.double, target: o.target || 3, reveal: false });
     else if (g === 't') this.st = E.tNew({ players: o.players || 4, target: o.target || 41, akuze: o.akuze !== false, longNap: !!o.longNap, thirdsToLast: !!o.thirdsToLast, signals: o.signals !== false, clockwise: !!o.clockwise });
     else this.st = E.hNew({ target: o.target || 1001 });
