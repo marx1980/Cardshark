@@ -24,6 +24,28 @@ const CORS = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods
 const json = (o, status = 200) => new Response(JSON.stringify(o), { status, headers: { 'Content-Type': 'application/json', ...CORS } });
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const rid = () => Array.from(crypto.getRandomValues(new Uint8Array(4)), b => 'abcdefghjkmnpqrstuvwxyz23456789'[b % 31]).join('');
+// first letters [hr, en] of each bot name, per level (same order as BOT_NAMES in index.html)
+const BOT_INITIALS = {"novice": [["Z", "H"], ["K", "R"], ["H", "H"], ["V", "S"], ["M", "M"], ["P", "D"], ["K", "T"], ["P", "S"], ["J", "L"], ["L", "F"]], "average": [["J", "D"], ["K", "H"], ["K", "G"], ["Z", "Z"], ["Ž", "G"], ["B", "B"], ["L", "M"], ["K", "K"], ["J", "B"], ["D", "B"]], "pro": [["L", "F"], ["R", "L"], ["K", "M"], ["L", "W"], ["V", "O"], ["S", "F"], ["J", "H"], ["S", "O"], ["G", "C"], ["H", "H"]], "cardshark": [["L", "L"], ["T", "T"], ["V", "W"], ["M", "B"], ["O", "O"], ["J", "J"], ["L", "L"], ["P", "P"], ["K", "C"], ["O", "E"]]};
+// bots in one match get names with first letters that differ from each other and from the humans (in Croatian and English)
+function pickBotIndexes(botSeats, humanInitials) {
+  const hr = new Set(humanInitials.map(h => h[0])), en = new Set(humanInitials.map(h => h[1]));
+  const out = {};
+  const place = k => {
+    if (k === botSeats.length) return true;
+    const { s, lv } = botSeats[k];
+    const order = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].sort(() => Math.random() - 0.5);
+    for (const i of order) {
+      const [h, e] = BOT_INITIALS[lv][i];
+      if (hr.has(h) || en.has(e)) continue;
+      hr.add(h); en.add(e); out[s] = i;
+      if (place(k + 1)) return true;
+      hr.delete(h); en.delete(e); delete out[s];
+    }
+    return false;
+  };
+  if (!place(0)) for (const { s, lv } of botSeats) out[s] = Math.floor(Math.random() * 10); // cannot happen with 10 names per level
+  return out;
+}
 // player names: no markup characters, and never the '@level:n' form the app reads as a bot name
 const clean = s => String(s || '').replace(/[<>&"'`]/g, '').replace(/^[@\s]+/, '').trim().slice(0, 16) || 'Player';
 // table options: only the known settings, with values from the allowed set (anything else is dropped)
@@ -302,14 +324,15 @@ export class Table {
     i.status = 'playing';
     const pids = this.humanSeats().map(s => i.seats[s].pid);
     this.ratings = await (await this.registry().fetch('https://do/many', { method: 'POST', body: JSON.stringify({ pids }) })).json();
-    const used = new Set();
-    for (const s of (i.opts.activeSeats || [0, 1, 2, 3])) {
+    const seats = i.opts.activeSeats || [0, 1, 2, 3], botSeats = [];
+    for (const s of seats) {
       this.levels[s] = this.levelFor(s);
-      if (i.seats[s]) continue;
-      // the app turns '@level:n' into an animal name for that level (herbivores up to apex predators)
-      let n; do { n = Math.floor(Math.random() * 10); } while (used.has(this.levels[s] + n)); used.add(this.levels[s] + n);
-      i.seats[s] = { bot: true, name: '@' + this.levels[s] + ':' + n, level: this.levels[s] };
+      if (!i.seats[s]) botSeats.push({ s, lv: this.levels[s] });
     }
+    const humanInitials = seats.filter(s => i.seats[s] && !i.seats[s].bot).map(s => { const c = String(i.seats[s].name || 'P').trim().charAt(0).toUpperCase() || 'P'; return [c, c]; });
+    const idx = pickBotIndexes(botSeats, humanInitials);
+    // the app turns '@level:n' into an animal name for that level (herbivores up to apex predators)
+    for (const { s, lv } of botSeats) i.seats[s] = { bot: true, name: '@' + lv + ':' + idx[s], level: lv };
     await this.announce();
     for (const s of (i.opts.activeSeats || [0, 1, 2, 3])) this.sendSeat(s, { t: 'start', names: this.namesFor(s) });
     i.levels = { ...this.levels }; await this.save(); await this.state.storage.delete('game');

@@ -6759,10 +6759,24 @@ const botName = n => {
   if (m[2] === undefined) return L().lv[m[1]];
   return BOT_NAMES[m[1]][+m[2] % BOT_NAMES[m[1]].length].split('|')[S.lang === 'hr' ? 0 : 1];
 };
-// distinct animal names for the computer seats of one match
-function pickBotNames(levels) {
-  const used = new Set(), out = {};
-  for (const s in levels) { let i; do { i = Math.floor(Math.random() * 10); } while (used.has(levels[s] + i)); used.add(levels[s] + i); out[s] = '@' + levels[s] + ':' + i; }
+// bots in one match get names whose first letters differ from each other and from the human ('Ti' / 'You'), in both languages
+const BOT_INITIALS = (() => { const o = {}; for (const lv in BOT_NAMES) o[lv] = BOT_NAMES[lv].map(p => p.split('|').map(n => n[0].toUpperCase())); return o; })();
+function pickBotNames(levels, humanInitials = [['T', 'Y']]) {
+  const seats = Object.keys(levels), out = {};
+  const hr = new Set(humanInitials.map(h => h[0])), en = new Set(humanInitials.map(h => h[1]));
+  const place = k => {
+    if (k === seats.length) return true;
+    const s = seats[k], lv = levels[s];
+    for (const i of [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].sort(() => Math.random() - 0.5)) {
+      const [h, e] = BOT_INITIALS[lv][i];
+      if (hr.has(h) || en.has(e)) continue;
+      hr.add(h); en.add(e); out[s] = '@' + lv + ':' + i;
+      if (place(k + 1)) return true;
+      hr.delete(h); en.delete(e); delete out[s];
+    }
+    return false;
+  };
+  if (!place(0)) for (const s of seats) out[s] = '@' + levels[s] + ':' + Math.floor(Math.random() * 10); // cannot happen: 10 names per level
   return out;
 }
 // score-column labels: pairs/head-to-head use Us/Them, three players use their names
