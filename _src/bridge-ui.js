@@ -31,13 +31,14 @@ const BridgeUI = (() => {
     root.hidden = false; root.style.setProperty('--rr', Cards.frRatio(api.S.fDeck));
     root.innerHTML = `<header class="ubar"><button class="ib" id="brHome" aria-label="${api.L().sol.home}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M15 5l-7 7 7 7"/></svg></button>
       <div class="chip score" id="brScore"></div>
+      <button class="ib" id="brSet" aria-label="${api.L().settings}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
       <button class="ib" id="brRules" aria-label="${api.L().rules}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 .9-1 1.7M12 17h.01"/></svg></button></header>
       <div class="brctr" id="brCtr"></div>
       <div class="brauc" id="brAuc" hidden></div>
       <div class="brdummy" id="brDummy" hidden></div>
       <div class="brboard"><div class="brseats" id="brSeats"></div><div class="brtrick" id="brTrick"></div></div>
       <div class="tbstatus" id="brStatus"></div><div class="brbox" id="brBox"></div><div class="brhand" id="brHand"></div>`;
-    $('#brHome').onclick = leave; $('#brRules').onclick = () => api.showRules('c'); $('#brScore').onclick = scoreSheet;
+    $('#brHome').onclick = leave; $('#brRules').onclick = () => api.showRules('c'); $('#brSet').onclick = () => api.showOpts('c'); $('#brScore').onclick = scoreSheet;
     $('#brHand').onclick = e => { const el = e.target.closest('.tbc'); if (el) playTap(el.dataset.id, 0); };
     $('#brDummy').onclick = e => { const el = e.target.closest('.tbc'); if (el) playTap(el.dataset.id, cur.dummy); };
     $('#brBox').onclick = e => { const b = e.target.closest('button'); if (b) boxTap(b); };

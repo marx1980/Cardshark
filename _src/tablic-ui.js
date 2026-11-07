@@ -29,11 +29,13 @@ const TablicUI = (() => {
     root.hidden = false; root.style.setProperty('--rr', Cards.frRatio(api.S.fDeck));
     root.innerHTML = `<header class="ubar"><button class="ib" id="tbHome" aria-label="${api.L().sol.home}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M15 5l-7 7 7 7"/></svg></button>
       <div class="chip score" id="tbScore"></div>
+      <button class="ib" id="tbSet" aria-label="${api.L().settings}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
       <button class="ib" id="tbOpts" aria-label="${api.L().rules}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 .9-1 1.7M12 17h.01"/></svg></button></header>
       <div class="tbboard"><div class="tbopps" id="tbOpps"></div><div class="tbtable" id="tbTable"></div><div class="tbinfo" id="tbInfo"></div></div>
       <div class="tbstatus" id="tbStatus"></div><div class="tbact" id="tbAct"></div><div class="tbhand" id="tbHand"></div>`;
     $('#tbHome').onclick = leave;
     $('#tbOpts').onclick = () => api.showRules('a');
+    $('#tbSet').onclick = () => api.showOpts('a');
     $('#tbHand').onclick = e => { const el = e.target.closest('.tbc'); if (el) tapHand(el.dataset.id); };
     $('#tbTable').onclick = e => { const el = e.target.closest('.tbc'); if (el) tapTable(el.dataset.id); };
     $('#tbAct').onclick = e => { const b = e.target.closest('button'); if (b) act(b.dataset.a); };
