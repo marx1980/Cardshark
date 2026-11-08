@@ -126,3 +126,6 @@ Check at 375×667 and 390×780/844. The only expected console error is Google Fo
 
 ## v106/v107 — Bottom strip under game screens
 - The strip below the fixed game sections is outside the page (iOS), body colour #243B42; it can't be painted or covered (v106's 100lvh made the screens run under it and was reverted in v107, along with the html-background sync). Fix: each game section has a `::after` (z-index:-1, 64px) fading its backdrop to #243B42 at the bottom edge so there is no seam. Not verified on a real iPhone.
+
+## v108 — Per-game theme colour
+- `meta[name=theme-color]` follows the visible game section's outer backdrop colour (last colour in its gradient), and resets to #243B42 on the home screen. Observer on the section `hidden` attributes, placed before `Solitaire.init`. Not verified on a real iPhone.

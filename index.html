@@ -10867,6 +10867,20 @@ async function askHuman(req) {
     if (b) { b.click(); arm(); } else { showHome(); arm(); }
   });
 }
+// theme colour follows the active game's outer backdrop colour (status bar / bottom strip where the browser uses it); home resets it
+{
+  const ids = ['sol', 'poker', 'remi', 'tablic', 'gin', 'pref', 'bridge', 'uno'], tc = document.querySelector('meta[name=theme-color]');
+  const sync = () => {
+    if (!tc) return;
+    const el = ids.map(i => document.getElementById(i)).find(e => e && !e.hidden);
+    if (!el) { tc.content = '#243B42'; return; }
+    const cs = getComputedStyle(el), cols = cs.backgroundImage.match(/rgba?\([^)]*\)/g) || [];
+    tc.content = cols.length ? cols[cols.length - 1] : cs.backgroundColor;
+  };
+  const mo = new MutationObserver(sync);
+  for (const i of ids) { const e = document.getElementById(i); if (e) mo.observe(e, { attributes: true, attributeFilter: ['hidden'] }); }
+  sync();
+}
 Solitaire.init({ S, save: () => save(), L: () => L(), fx: matchResultFx, openSheet, closeSheet, showHome, toast, showOpts });
 RemiUI.init({ S, save: () => save(), L: () => L(), fx: matchResultFx, openSheet, closeSheet, showHome, toast, botName: n => botName(n), pickBotNames, showRules, showOpts });
 TablicUI.init({ S, save: () => save(), L: () => L(), fx: matchResultFx, openSheet, closeSheet, showHome, toast, botName: n => botName(n), pickBotNames, showRules, showOpts });
