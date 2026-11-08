@@ -135,3 +135,6 @@ Check at 375×667 and 390×780/844. The only expected console error is Google Fo
 
 ## v110 — Remove bottom fade
 - Removed the 64px `::after` fade on game sections; the root background colour (v109) covers the strip instead.
+
+## v111 — Gradient bottom edges match the strip
+- Radial gradients of the game screens now use a vertical radius that reaches the outer colour exactly at the bottom of the screen (120% 90% → 120% 65%; Solitaire 30% → 70%), so the bottom edge equals the root colour set in v109. Measured in a desktop browser: within 2–3 RGB levels for all games; Uno was already solid.
