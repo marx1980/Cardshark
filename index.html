@@ -10851,6 +10851,21 @@ async function askHuman(req) {
 { const q = new URLSearchParams(location.search).get('t'); if (q && SERVER && /^[a-z0-9]{4}$/.test(q)) setTimeout(() => joinTable(q, true), 300); }
 
 // ================= WIRING =================
+// Android/system back: keep one spare history entry so back steps inside the app (close a sheet, leave a game to the main page) instead of leaving it; from the main page it exits as usual
+{
+  const BACK = '#bHome,#sHome,#uHome,#pHome,#rHome,#tbHome,#brHome,#gnHome,#prHome';
+  const arm = () => { try { if (!history.state || !history.state.buf) history.pushState({ buf: 1 }, ''); } catch (e) { } };
+  const homeUp = () => { const hm = document.getElementById('home'); return hm && !hm.hidden; };
+  arm();
+  addEventListener('click', arm, true);
+  addEventListener('pointerup', arm, true);
+  addEventListener('popstate', () => {
+    if (document.getElementById('overlay').innerHTML.trim()) { closeSheet(); arm(); return; }
+    if (homeUp()) return;
+    const b = [...document.querySelectorAll(BACK)].find(x => x.offsetParent !== null);
+    if (b) { b.click(); arm(); } else { showHome(); arm(); }
+  });
+}
 Solitaire.init({ S, save: () => save(), L: () => L(), fx: matchResultFx, openSheet, closeSheet, showHome, toast, showOpts });
 RemiUI.init({ S, save: () => save(), L: () => L(), fx: matchResultFx, openSheet, closeSheet, showHome, toast, botName: n => botName(n), pickBotNames, showRules, showOpts });
 TablicUI.init({ S, save: () => save(), L: () => L(), fx: matchResultFx, openSheet, closeSheet, showHome, toast, botName: n => botName(n), pickBotNames, showRules, showOpts });

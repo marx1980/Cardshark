@@ -120,3 +120,6 @@ Check at 375×667 and 390×780/844. The only expected console error is Google Fo
 
 ## v104 — Home tile order
 - Default home order swaps Bridge and Tablić (B,T,U,H,P,R,C,F,A,S, keys = `.go` id minus "go"). Players can long-press (450ms) a tile and drag it onto another to move it; order saved per device in `S.homeOrder`. Implemented right after the home innerHTML in the home render (pointer events, click suppressed after a drag).
+
+## v105 — System/Android back button
+- `popstate` handler (just before the `Solitaire.init` block): a spare history entry `{buf:1}` is re-armed on every click; back closes an open sheet, else clicks the visible game's home button (`#bHome,#sHome,#uHome,#pHome,#rHome,#tbHome,#brHome,#gnHome,#prHome`), else (on the main page) does nothing so the next back exits the app.
