@@ -175,6 +175,7 @@ table.stats td b{display:inline-block;min-width:1.4em;font-size:15px}
 /* solitaire */
 .poster.ps{background:radial-gradient(90% 90% at 50% 18%,#5e3f86,#24153d)}
 #sol{position:fixed;inset:0;z-index:20;display:flex;flex-direction:column;background:radial-gradient(120% 90% at 50% 30%,#2a5c48,#13362a);touch-action:none;user-select:none;-webkit-user-select:none;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@supports (height:100lvh){@media (display-mode:standalone),(display-mode:fullscreen){#sol,#poker,#remi,#tablic,#gin,#pref,#bridge,#uno{bottom:auto;height:100lvh}}}
 #sol[hidden]{display:none}
 .sbar{display:flex;gap:6px;align-items:center;padding:8px 8px 4px;flex:none}
 .sbar .sstat{flex:1;justify-content:center;gap:5px;padding:5px 6px}
@@ -10865,6 +10866,21 @@ async function askHuman(req) {
     const b = [...document.querySelectorAll(BACK)].find(x => x.offsetParent !== null);
     if (b) { b.click(); arm(); } else { showHome(); arm(); }
   });
+}
+// the page canvas (behind and below the game screens, incl. the safe area at the bottom) takes the active game's backdrop
+{
+  const ids = ['sol', 'poker', 'remi', 'tablic', 'gin', 'pref', 'bridge', 'uno'], tc = document.querySelector('meta[name=theme-color]');
+  const sync = () => {
+    const root = document.documentElement, el = ids.map(i => document.getElementById(i)).find(e => e && !e.hidden);
+    if (!el) { root.style.backgroundImage = ''; root.style.backgroundColor = ''; if (tc) tc.content = '#243B42'; return; }
+    const cs = getComputedStyle(el), img = cs.backgroundImage;
+    root.style.backgroundImage = img === 'none' ? '' : img; root.style.backgroundColor = cs.backgroundColor;
+    root.style.backgroundAttachment = 'fixed'; root.style.backgroundRepeat = 'no-repeat';
+    const cols = (img.match(/rgba?\([^)]*\)/g) || []); if (tc) tc.content = cols.length ? cols[cols.length - 1] : cs.backgroundColor;
+  };
+  const mo = new MutationObserver(sync);
+  for (const i of ids) { const e = document.getElementById(i); if (e) mo.observe(e, { attributes: true, attributeFilter: ['hidden'] }); }
+  sync();
 }
 Solitaire.init({ S, save: () => save(), L: () => L(), fx: matchResultFx, openSheet, closeSheet, showHome, toast, showOpts });
 RemiUI.init({ S, save: () => save(), L: () => L(), fx: matchResultFx, openSheet, closeSheet, showHome, toast, botName: n => botName(n), pickBotNames, showRules, showOpts });

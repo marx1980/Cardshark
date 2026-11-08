@@ -123,3 +123,6 @@ Check at 375×667 and 390×780/844. The only expected console error is Google Fo
 
 ## v105 — System/Android back button
 - `popstate` handler (just before the `Solitaire.init` block): a spare history entry `{buf:1}` is re-armed on every click; back closes an open sheet, else clicks the visible game's home button (`#bHome,#sHome,#uHome,#pHome,#rHome,#tbHome,#brHome,#gnHome,#prHome`), else (on the main page) does nothing so the next back exits the app.
+
+## v106 — Bottom strip under game screens
+- Cause (iOS, viewport-fit=cover): the fixed game sections didn't cover the strip at the bottom, which showed the body's #243B42. Fix: a MutationObserver (before `Solitaire.init`) copies the visible game section's background onto `<html>` and `theme-color`; in standalone display-mode the fixed sections use `height:100lvh`. Not verified on a real iPhone.
