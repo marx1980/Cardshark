@@ -129,3 +129,6 @@ Check at 375×667 and 390×780/844. The only expected console error is Google Fo
 
 ## v108 — Per-game theme colour
 - `meta[name=theme-color]` follows the visible game section's outer backdrop colour (last colour in its gradient), and resets to #243B42 on the home screen. Observer on the section `hidden` attributes, placed before `Solitaire.init`. Not verified on a real iPhone.
+
+## v109 — Bottom strip colour (attempt)
+- Previous theme-colour sync only changed the status bar; the strip still showed the body colour. The sync now also sets `<html>` to the game's solid colour (last gradient colour, or the plain background) and makes `<body>` transparent while a game is visible; both cleared on home. Not verified on a real iPhone — if the strip still shows #243B42, the body/html background isn't what iOS paints there.

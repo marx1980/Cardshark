@@ -10873,9 +10873,13 @@ async function askHuman(req) {
   const sync = () => {
     if (!tc) return;
     const el = ids.map(i => document.getElementById(i)).find(e => e && !e.hidden);
-    if (!el) { tc.content = '#243B42'; return; }
+    const root = document.documentElement, body = document.body;
+    if (!el) { tc.content = '#243B42'; root.style.backgroundColor = ''; body.style.background = ''; return; }
     const cs = getComputedStyle(el), cols = cs.backgroundImage.match(/rgba?\([^)]*\)/g) || [];
-    tc.content = cols.length ? cols[cols.length - 1] : cs.backgroundColor;
+    const solid = cols.length ? cols[cols.length - 1] : cs.backgroundColor;
+    tc.content = solid;
+    // the bottom strip under the home indicator is painted by the root/body background: give it the game's solid colour
+    root.style.backgroundColor = solid; body.style.background = 'transparent';
   };
   const mo = new MutationObserver(sync);
   for (const i of ids) { const e = document.getElementById(i); if (e) mo.observe(e, { attributes: true, attributeFilter: ['hidden'] }); }
