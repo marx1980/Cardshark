@@ -140,6 +140,9 @@ table.stats td b{display:inline-block;min-width:1.4em;font-size:15px}
 .rejoin{grid-column:1/-1;display:flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:14px;padding:12px;background:var(--brass);color:var(--brass-ink);font:800 16px var(--display);cursor:pointer;box-shadow:0 3px 0 #8a6a28}
 .rejoin svg{width:20px;height:20px}
 #home .poster{box-sizing:border-box;min-width:0;flex:none;min-height:0;aspect-ratio:3/4;border-radius:20px}
+#home .poster.dragging{opacity:.9;box-shadow:0 14px 34px rgba(0,0,0,.5);transition:none}
+#home .poster.droptarget{outline:3px solid #f0c24b;outline-offset:-3px}
+#home .poster{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 #home .pfan{height:38%;top:8%}
 #home .pcap{padding:12px;flex-direction:column;align-items:center;gap:8px;text-align:center}
 #home .pcap b{font-size:clamp(22px,6.4vw,30px)}
@@ -8649,6 +8652,55 @@ function renderHome() {
     ${tile('c', 'pc', `<div class="pfan">${['Sa', 'Sk', 'Hq'].map((k, i) => `<div class="svgc" style="--i:${i - 1}">${Cards.frFace(k, S.fDeck)}</div>`).join('')}</div>`, gameName('c'))}
     ${tile('s', 'ps', `<div class="pfan">${[['H', 1], ['S', 13], ['D', 12]].map(([s_, r], i) => `<div class="svgc" style="--i:${i - 1}">${Solitaire.FACE({ s: s_, r })}</div>`).join('')}</div>`, t.sol.name)}
   </div>`;
+  // tile order: default (Tablić and Bridge swapped), then the player's own arrangement; long-press a tile and drag to move it
+  {
+    const wrapEl = $('#home .wrap'), DEF = ['B', 'T', 'U', 'H', 'P', 'R', 'C', 'F', 'A', 'S'];
+    const keyOf = el => el.querySelector('.go').id.slice(2);
+    const posters = [...wrapEl.querySelectorAll('.poster')], byKey = Object.fromEntries(posters.map(p => [keyOf(p), p]));
+    const saved = Array.isArray(S.homeOrder) ? S.homeOrder.filter(k => byKey[k]) : [];
+    const order = [...saved, ...DEF.filter(k => byKey[k] && !saved.includes(k)), ...Object.keys(byKey).filter(k => !saved.includes(k) && !DEF.includes(k))];
+    for (const k of order) wrapEl.append(byKey[k]);
+    let timer = 0, drag = null, sx = 0, sy = 0, pid = null, moved = false;
+    const clear = () => { clearTimeout(timer); timer = 0; };
+    const over = (x, y) => { const e = document.elementFromPoint(x, y); const p = e && e.closest('#home .poster'); return p && p !== drag.el ? p : null; };
+    const end = commit => {
+      clear();
+      if (!drag) return;
+      const { el, target } = drag;
+      el.classList.remove('dragging'); el.style.transform = ''; el.style.pointerEvents = ''; el.style.zIndex = '';
+      wrapEl.querySelectorAll('.droptarget').forEach(x => x.classList.remove('droptarget'));
+      if (commit && target) {
+        const kids = [...wrapEl.children], from = kids.indexOf(el), to = kids.indexOf(target);
+        if (from < to) target.after(el); else target.before(el);
+        S.homeOrder = [...wrapEl.querySelectorAll('.poster')].map(keyOf); save();
+      }
+      drag = null; moved = true; setTimeout(() => { moved = false; }, 350);
+    };
+    wrapEl.addEventListener('pointerdown', e => {
+      const el = e.target.closest('.poster');
+      if (!el || e.target.closest('.go') || (e.pointerType === 'mouse' && e.button !== 0)) return;
+      sx = e.clientX; sy = e.clientY; pid = e.pointerId;
+      clear();
+      timer = setTimeout(() => {
+        drag = { el, target: null }; el.classList.add('dragging'); el.style.pointerEvents = 'none'; el.style.zIndex = '5';
+        try { wrapEl.setPointerCapture(pid); } catch (_) { }
+        if (navigator.vibrate) navigator.vibrate(15);
+      }, 450);
+    });
+    wrapEl.addEventListener('pointermove', e => {
+      if (drag) {
+        e.preventDefault();
+        drag.el.style.transform = `translate(${e.clientX - sx}px,${e.clientY - sy}px) scale(1.04)`;
+        const t = over(e.clientX, e.clientY);
+        if (t !== drag.target) { wrapEl.querySelectorAll('.droptarget').forEach(x => x.classList.remove('droptarget')); if (t) t.classList.add('droptarget'); drag.target = t; }
+      } else if (timer && Math.hypot(e.clientX - sx, e.clientY - sy) > 10) clear();
+    });
+    wrapEl.addEventListener('pointerup', () => end(true));
+    wrapEl.addEventListener('pointercancel', () => end(false));
+    wrapEl.addEventListener('contextmenu', e => { if (e.target.closest('.poster')) e.preventDefault(); });
+    wrapEl.addEventListener('click', e => { if (moved) { e.stopPropagation(); e.preventDefault(); } }, true);
+    wrapEl.addEventListener('touchmove', e => { if (drag) e.preventDefault(); }, { passive: false });
+  }
   fitTitle(); if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitTitle);
   $('#goSet').onclick = showSettings;
   { const r = $('#goRejoin'); if (r) r.onclick = () => { joinTable(S.netTable.id, false, true); status(L().reconnecting, true); $('#home').hidden = true; $('#table').hidden = false; }; }

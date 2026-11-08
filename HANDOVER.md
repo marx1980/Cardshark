@@ -117,3 +117,6 @@ Check at 375×667 and 390×780/844. The only expected console error is Google Fo
 ## v103 — Rummy table layout + card backs
 - Opponent tiles (`.ropp`) now sit in one row at a fixed `top:78px` (offline `SPOTS` in the Remi module, online `REMI_SPOTS` used by `renderNetRemi`; `NET_SPOTS` is still shared by poker). 5 opponents get `--w:72px`. `.rtable` padding-top is 132px so melds start below the tiles; the score chip no longer collides.
 - All card backs (bots' `.rback`, `netFaceNode` fallbacks) use `Cards.frBack(S.fDeck, S.fBack)`, so they match the draw pile and the setting. The `.net-card-back` green stripe CSS is now unused.
+
+## v104 — Home tile order
+- Default home order swaps Bridge and Tablić (B,T,U,H,P,R,C,F,A,S, keys = `.go` id minus "go"). Players can long-press (450ms) a tile and drag it onto another to move it; order saved per device in `S.homeOrder`. Implemented right after the home innerHTML in the home render (pointer events, click suppressed after a drag).
