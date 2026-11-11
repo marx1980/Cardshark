@@ -163,10 +163,7 @@ table.stats td b{display:inline-block;min-width:1.4em;font-size:15px}
 .sig[aria-pressed="true"]{background:var(--brass);color:var(--brass-ink);border-color:var(--brass)}
 .mini-card{display:inline-block;width:34px;vertical-align:middle;margin-left:4px}
 .hbar{display:flex;align-items:center;gap:10px;flex:none}
-.hbar .logo{width:46px;height:46px;border-radius:12px}
-.hbar h1{flex:1;min-width:0;margin:0;font:800 clamp(18px,6.2vw,34px)/1 var(--display);letter-spacing:.025em;color:var(--ink);white-space:nowrap;overflow:hidden}
-.hbar h1 span{color:var(--brass)}
-.hbar .fin-a{display:inline-block;width:.94em;height:.96em;vertical-align:-.08em;overflow:visible}
+.hbar .wordmark{display:block;width:min(320px,calc(100% - 112px));height:auto;flex:none}
 .hbar .ib{width:42px;height:42px;flex:none}
 .hbar .logo{flex:none}
 .hbar{gap:8px}
@@ -8653,6 +8650,13 @@ function renderHome() {
     ${tile('c', 'pc', `<div class="pfan">${['Sa', 'Sk', 'Hq'].map((k, i) => `<div class="svgc" style="--i:${i - 1}">${Cards.frFace(k, S.fDeck)}</div>`).join('')}</div>`, gameName('c'))}
     ${tile('s', 'ps', `<div class="pfan">${[['H', 1], ['S', 13], ['D', 12]].map(([s_, r], i) => `<div class="svgc" style="--i:${i - 1}">${Solitaire.FACE({ s: s_, r })}</div>`).join('')}</div>`, t.sol.name)}
   </div>`;
+  const wordmark = new Image();
+  wordmark.className = 'wordmark';
+  wordmark.src = 'https://github.com/user-attachments/assets/ce57435a-84ca-4f28-89fc-0f1521e58dab';
+  wordmark.alt = 'Cardshark';
+  const brand = $('#home .hbar');
+  brand.replaceChild(wordmark, brand.querySelector('.logo'));
+  brand.querySelector('h1').remove();
   // tile order: default (Tablić and Bridge swapped), then the player's own arrangement; long-press a tile and drag to move it
   {
     const wrapEl = $('#home .wrap'), DEF = ['B', 'T', 'U', 'H', 'P', 'R', 'C', 'F', 'A', 'S'];
