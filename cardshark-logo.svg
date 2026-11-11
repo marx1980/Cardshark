@@ -1,30 +1,37 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="942" height="178" viewBox="0 0 942 178" role="img" aria-labelledby="title description">
   <title id="title">Cardshark</title>
-  <desc id="description">Cardshark wordmark with shark-fin A letters</desc>
+  <desc id="description">Cream and gold Cardshark wordmark with shark-fin A letters on a dark teal textured background.</desc>
   <defs>
-    <filter id="paper-grain" x="0" y="0" width="100%" height="100%">
-      <feTurbulence type="fractalNoise" baseFrequency=".7" numOctaves="2" seed="12"/>
+    <linearGradient id="background" x2="0" y2="1">
+      <stop stop-color="#173a3e"/>
+      <stop offset="1" stop-color="#103338"/>
+    </linearGradient>
+    <filter id="texture" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency=".035 .18" numOctaves="3" seed="8"/>
       <feColorMatrix type="saturate" values="0"/>
       <feComponentTransfer>
-        <feFuncA type="table" tableValues="0 .08"/>
+        <feFuncR type="linear" slope=".32" intercept=".32"/>
+        <feFuncG type="linear" slope=".32" intercept=".32"/>
+        <feFuncB type="linear" slope=".32" intercept=".32"/>
+        <feFuncA type="table" tableValues="0 .14"/>
       </feComponentTransfer>
     </filter>
   </defs>
-  <rect width="942" height="178" fill="#12383c"/>
-  <rect width="942" height="178" filter="url(#paper-grain)" opacity=".18"/>
-  <g font-family="Georgia, 'DejaVu Serif', serif" font-size="108" font-weight="900">
+  <rect width="942" height="178" fill="url(#background)"/>
+  <rect width="942" height="178" filter="url(#texture)" opacity=".34"/>
+  <g font-family="DejaVu Serif, Georgia, serif" font-size="108" font-weight="900">
     <g fill="#f3ecd9">
       <text x="25" y="128">C</text>
-      <text x="242" y="128">R</text>
-      <text x="336" y="128">D</text>
-      <path fill-rule="evenodd" d="M119 130 170 42C180 25 187 9 190 28 193 55 206 90 231 130H191L180 106H158L146 130ZM164 94H181L173 76Z"/>
+      <text x="244" y="128">R</text>
+      <text x="338" y="128">D</text>
+      <path fill-rule="evenodd" d="M143 130 174 76C183 61 186 45 189 28 193 45 196 63 205 79L234 130H190L182 111H171L160 130ZM170 96H188L180 78Z"/>
     </g>
     <g fill="#d6ab52">
-      <text x="434" y="128">S</text>
-      <text x="514" y="128">H</text>
-      <text x="733" y="128">R</text>
-      <text x="827" y="128">K</text>
-      <path fill-rule="evenodd" d="M624 130 675 42C685 25 692 9 695 28 698 55 711 90 736 130H696L685 106H663L651 130ZM669 94H686L678 76Z"/>
+      <text x="433" y="128">S</text>
+      <text x="516" y="128">H</text>
+      <text x="735" y="128">R</text>
+      <text x="828" y="128">K</text>
+      <path fill-rule="evenodd" d="M623 130 654 76C663 61 666 45 669 28 673 45 676 63 685 79L714 130H670L662 111H651L640 130ZM650 96H668L660 78Z"/>
     </g>
   </g>
 </svg>
