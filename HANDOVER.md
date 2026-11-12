@@ -138,3 +138,6 @@ Check at 375×667 and 390×780/844. The only expected console error is Google Fo
 
 ## v111 — Gradient bottom edges match the strip
 - Radial gradients of the game screens now use a vertical radius that reaches the outer colour exactly at the bottom of the screen (120% 90% → 120% 65%; Solitaire 30% → 70%), so the bottom edge equals the root colour set in v109. Measured in a desktop browser: within 2–3 RGB levels for all games; Uno was already solid.
+
+## v112 — Home header: icon + transparent wordmark
+- `icons/wordmark.png` is the shark-fin wordmark with its dark background keyed out (transparent), self-hosted instead of the GitHub attachment URL; it replaces the `h1` in `.hbar`. The shark icon (`.logo`) is back to its left with a transparent background (no felt box), 46px; wordmark shrinks (`flex:0 1 300px`) to fit beside the two buttons. `cardshark-logo.svg` (other agent's file) still has the dark background and is unused. App/home-screen icons (`icons/icon-*.png`) are unchanged.
