@@ -179,6 +179,9 @@ table.stats td b{display:inline-block;min-width:1.4em;font-size:15px}
 .sbar .sstat{flex:1;justify-content:center;gap:5px;padding:5px 6px}
 .sbar .sstat b{font-size:15px}
 .sboard{position:relative;flex:1;max-width:620px;width:100%;margin:0 auto;overflow:hidden}
+.sinner{position:absolute;left:0;top:0;width:100%;height:100%;transform-origin:0 0;will-change:transform}
+.sinner.ease{transition:transform .25s cubic-bezier(.2,.8,.3,1)}
+.sbtn[aria-pressed="true"]{color:var(--brass)}
 .slot{position:absolute;width:var(--scw);height:var(--sch);border-radius:calc(var(--scw)*0.08);border:1.5px solid rgba(255,255,255,.18);box-sizing:border-box}
 .slot.found::after{content:"A";position:absolute;inset:0;display:grid;place-items:center;color:rgba(255,255,255,.2);font:700 calc(var(--scw)*0.4) var(--display)}
 .slot[data-slot="stock"].recycle::after{content:"↻";position:absolute;inset:0;display:grid;place-items:center;color:rgba(255,255,255,.45);font-size:calc(var(--scw)*0.55)}
@@ -2273,7 +2276,8 @@ const Solitaire = (() => {
     else {
       st = newDeal(opts()); hist = []; api.S.solSave = null; api.save();
     }
-    pick = null; build(); layout(); render(true);
+    pick = null; zoom = 1; build(); layout(); render(true);
+    if (api.S.solZoom) setZoom(true, false);
     clearInterval(timer); timer = setInterval(tick, 1000);
   }
   function restart() {
@@ -2312,6 +2316,7 @@ const Solitaire = (() => {
         <button class="sbtn" id="sNew"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="6" y="3" width="12" height="18" rx="2"/><path d="M12 9v6M9 12h6"/></svg><span>${t.newGame}</span></button>
         <button class="sbtn" id="sHint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/></svg><span>${t.hint}</span></button>
         <button class="sbtn" id="sAuto" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg><span>${t.auto}</span></button>
+        <button class="sbtn" id="sZoom" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21M10.5 7.5v6M7.5 10.5h6"/></svg><span>${t.zoom}</span></button>
         <button class="sbtn" id="sUndo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg><span>${t.undo}</span></button>
       </footer>`;
     const board = $('#sBoard');
@@ -2321,8 +2326,9 @@ const Solitaire = (() => {
     for (let i = 0; i < 7; i++) html += `<div class="slot" data-slot="t${i}"></div>`;
     // one element per card
     for (const s of SUITS) for (let r = 1; r <= 13; r++) html += `<div class="scard" data-id="${cid({ s, r })}"><div class="sf">${faceSVG({ s, r })}</div><div class="sb">${BACK()}</div></div>`;
-    board.innerHTML = html;
+    board.innerHTML = `<div class="sinner" id="sInner">${html}</div>`;
     $('#sHome').onclick = leave;
+    $('#sZoom').onclick = () => setZoom(zoom === 1);
     $('#sOpts').onclick = () => api.showOpts('s');
     $('#sHelp').onclick = () => api.showRules('s');
     $('#sUndo').onclick = undo;
@@ -2332,6 +2338,42 @@ const Solitaire = (() => {
     board.addEventListener('pointerdown', onDown);
     addEventListener('resize', () => { if (root && !root.hidden) { layout(); render(true); } });
   }
+  // ---- zoom: 2x with pan (drag the felt; dragging a card near an edge scrolls the view)
+  let zoom = 1, panX = 0, panY = 0, lastFelt = 0;
+  const ZOOM = 2;
+  function applyZoom(ease) {
+    const inner = $('#sInner'); if (!inner) return;
+    const mx = Math.max(0, G.W - G.W / zoom), my = Math.max(0, G.H - G.H / zoom);
+    panX = Math.min(mx, Math.max(0, panX)); panY = Math.min(my, Math.max(0, panY));
+    inner.classList.toggle('ease', !!ease);
+    inner.style.transform = zoom === 1 ? '' : `scale(${zoom}) translate(${-panX}px,${-panY}px)`;
+    const b = $('#sZoom'); if (b) b.setAttribute('aria-pressed', zoom > 1 ? 'true' : 'false');
+  }
+  function setZoom(on, persistIt = true) {
+    zoom = on ? ZOOM : 1;
+    if (on) { panX = (G.W - G.W / zoom) / 2; panY = 0; } else { panX = 0; panY = 0; }
+    applyZoom(true);
+    if (persistIt) { api.S.solZoom = !!on; api.save(); }
+  }
+  let panDrag = null;
+  function startPan(e) {
+    panDrag = { x0: e.clientX, y0: e.clientY, px: panX, py: panY, pid: e.pointerId, moved: false };
+    addEventListener('pointermove', onPan); addEventListener('pointerup', endPan); addEventListener('pointercancel', endPan);
+  }
+  function onPan(e) {
+    if (!panDrag || e.pointerId !== panDrag.pid) return;
+    const dx = e.clientX - panDrag.x0, dy = e.clientY - panDrag.y0;
+    if (Math.hypot(dx, dy) > 6) panDrag.moved = true;
+    panX = panDrag.px - dx / zoom; panY = panDrag.py - dy / zoom; applyZoom(false);
+  }
+  function endPan(e) {
+    if (!panDrag || e.pointerId !== panDrag.pid) return;
+    removeEventListener('pointermove', onPan); removeEventListener('pointerup', endPan); removeEventListener('pointercancel', endPan);
+    const moved = panDrag.moved; panDrag = null;
+    if (!moved) { // double-tap on the felt zooms back out
+      const now = Date.now(); if (now - lastFelt < 320) { lastFelt = 0; setZoom(false); } else lastFelt = now;
+    }
+  }
   let G = {};   // geometry
   function layout() {
     const board = $('#sBoard'), W = board.clientWidth, H = board.clientHeight;
@@ -2339,6 +2381,7 @@ const Solitaire = (() => {
     const cw = Math.min(96, (W - pad * 2 - gap * 6) / 7), ch = cw * Cards.frRatio(api.S.fDeck);
     G = { W, H, pad, gap, cw, ch, top: 4, tabY: 4 + ch + Math.max(10, ch * 0.18) };
     root.style.setProperty('--scw', cw + 'px'); root.style.setProperty('--sch', ch + 'px');
+    setTimeout(() => applyZoom(false), 0);
     const left = st && st.opts.left;
     const colX = i => pad + i * (cw + gap);
     G.x = { stock: left ? colX(6) : colX(0), waste: left ? colX(4) : colX(1), f: i => left ? colX(i) : colX(3 + i), t: i => colX(i) };
@@ -2428,12 +2471,12 @@ const Solitaire = (() => {
       if (same) { e.preventDefault(); clearPick(); return; }
       if (dst && !(el && srcOf(el))) { e.preventDefault(); shake(pick.els); clearPick(); return; }
     }
-    if (!el) return;
+    if (!el) { if (e.target.closest('#sBoard')) { e.preventDefault(); if (zoom > 1) startPan(e); else { const now = Date.now(); if (now - lastFelt < 320) { lastFelt = 0; setZoom(true); } else lastFelt = now; } } return; }
     const src = srcOf(el); if (!src) return;
     e.preventDefault();
     const ids = cardsAt(st, src).map(cid);
     const els = ids.map(id => root.querySelector(`.scard[data-id="${id}"]`));
-    drag = { src, ids, els, x0: e.clientX, y0: e.clientY, moved: false, pid: e.pointerId };
+    drag = { src, ids, els, x0: e.clientX, y0: e.clientY, moved: false, pid: e.pointerId, px0: panX, py0: panY, lx: e.clientX, ly: e.clientY, vx: 0, vy: 0, raf: 0 };
     root.setPointerCapture ? null : null;
     addEventListener('pointermove', onMove); addEventListener('pointerup', onUp); addEventListener('pointercancel', onUp);
   }
@@ -2441,12 +2484,32 @@ const Solitaire = (() => {
     if (!drag || e.pointerId !== drag.pid) return;
     const dx = e.clientX - drag.x0, dy = e.clientY - drag.y0;
     if (!drag.moved && Math.hypot(dx, dy) < 7) return;
-    drag.moved = true;
-    drag.els.forEach((el, k) => { const p = POS[drag.ids[k]]; el.classList.add('drag'); el.style.zIndex = 1000 + k; el.style.transform = `translate(${p.x + dx}px,${p.y + dy}px) scale(1.04)`; });
+    drag.moved = true; drag.lx = e.clientX; drag.ly = e.clientY;
+    drag.els.forEach((el, k) => { el.classList.add('drag'); el.style.zIndex = 1000 + k; });
+    dragRender();
+    if (zoom > 1) {   // near an edge of the board: scroll the view
+      const r = $('#sBoard').getBoundingClientRect(), m = 44, sp = 9;
+      drag.vx = e.clientX < r.left + m ? -sp : e.clientX > r.right - m ? sp : 0;
+      drag.vy = e.clientY < r.top + m ? -sp : e.clientY > r.bottom - m ? sp : 0;
+      if ((drag.vx || drag.vy) && !drag.raf) drag.raf = requestAnimationFrame(edgeLoop);
+    }
+  }
+  const dragXY = () => ({ x: (drag.lx - drag.x0) / zoom + (panX - drag.px0), y: (drag.ly - drag.y0) / zoom + (panY - drag.py0) });
+  function dragRender() {
+    const { x, y } = dragXY();
+    drag.els.forEach((el, k) => { const p = POS[drag.ids[k]]; el.style.transform = `translate(${p.x + x}px,${p.y + y}px) scale(1.04)`; });
+  }
+  function edgeLoop() {
+    if (!drag) return; drag.raf = 0;
+    if (!drag.vx && !drag.vy) return;
+    panX += drag.vx / zoom; panY += drag.vy / zoom; applyZoom(false); dragRender();
+    drag.raf = requestAnimationFrame(edgeLoop);
   }
   function onUp(e) {
     if (!drag || e.pointerId !== drag.pid) return;
     removeEventListener('pointermove', onMove); removeEventListener('pointerup', onUp); removeEventListener('pointercancel', onUp);
+    drag.lx = e.clientX; drag.ly = e.clientY;
+    const fin = dragXY();
     const d = drag; drag = null;
     d.els.forEach(el => el.classList.remove('drag'));
     if (!d.moved && api.S.solTap === false) {
@@ -2462,7 +2525,7 @@ const Solitaire = (() => {
       return;
     }
     // drop on the pile whose spot is closest to the dragged card's centre
-    const p0 = POS[d.ids[0]], cx = p0.x + (e.clientX - d.x0) + G.cw / 2, cy = p0.y + (e.clientY - d.y0) + G.ch / 2;
+    const p0 = POS[d.ids[0]], cx = p0.x + fin.x + G.cw / 2, cy = p0.y + fin.y + G.ch / 2;
     let best = null, bd = Infinity;
     const cands = [];
     for (let i = 0; i < 4; i++) cands.push({ dst: { pile: 'found', i }, x: G.x.f(i), y: G.top });
@@ -8250,7 +8313,7 @@ const STR = {
       you: 'Ti', round: 'runda', draw: 'Vuci', pass: 'Dalje', last: 'Zadnja!', catch: 'Uhvati!', color: 'Boja', swap: 'Zamijeni ruke s', take: 'Uzmi', challenge: 'Izazovi', left: 'Karte', total: 'Ukupno', next: 'Sljedeća runda', again: 'Nova partija',
       roundWon: n => `${n} · runda`, matchWon: n => `${n} · pobjeda`, won: 'Pobjede', lost: 'Porazi',
       cols: { r: 'Crvena', y: 'Žuta', g: 'Zelena', b: 'Plava', p: 'Ružičasta', t: 'Tirkizna', o: 'Narančasta', v: 'Ljubičasta' } },
-    sol: { name: 'Pasijans', score: 'Bodovi', time: 'Vrijeme', moves: 'Potezi', newGame: 'Nova igra', restart: 'Ista podjela', hint: 'Savjet', undo: 'Natrag', auto: 'Završi', won: 'Pasijans je složen!', noMoves: 'Nema više poteza', home: 'Izbornik',
+    sol: { name: 'Pasijans', zoom: 'Zoom', score: 'Bodovi', time: 'Vrijeme', moves: 'Potezi', newGame: 'Nova igra', restart: 'Ista podjela', hint: 'Savjet', undo: 'Natrag', auto: 'Završi', won: 'Pasijans je složen!', noMoves: 'Nema više poteza', home: 'Izbornik',
       draw: 'Vučenje', draw1: '1 karta', draw3: '3 karte', passes: 'Prolazi kroz špil', inf: 'Bez ograničenja', scoring: 'Bodovanje', standard: 'Standardno', vegas: 'Vegas', none: 'Bez bodova', timed: 'Bodovi ovise o vremenu', tapMove: 'Dodir sam premješta kartu', left: 'Špil na desnoj strani', cont: 'Nastavi', played: 'Odigrano', wonN: 'Riješeno', best: 'Najbolje vrijeme', bestScore: 'Najviše bodova', streak: 'Niz pobjeda' },
     online: 'Online', join: 'Pridruži se', rejoin: 'Nastavi online igru', gameGone: 'Ta igra više ne postoji', playAgain: 'Igraj opet', waitOthers: (n, m) => `Čeka se ostale · ${n}/${m}`, tables: 'Otvoreni stolovi', newTable: 'Novi stol', noTables: 'Nema otvorenih stolova', host: 'Domaćin', yourName: 'Tvoje ime', sit: 'Sjedni', free: 'Slobodno', startT: 'Započni', waitHost: 'Čeka se domaćin', invite: 'Pozovi', leaveT: 'Izađi', leaveConfirm: 'Izaći sa stola?', botPlays: 'Bot igra za tebe', takeOver: 'Pritisni ovdje za nastavak igre', rating: 'Rejting', offline: 'Nema veze sa serverom', reconnecting: 'Ponovno spajanje…', copied: 'Poveznica kopirana', bots: 'Prazna mjesta igraju botovi', create: 'Otvori stol',
     auto: 'Auto', level: 'Protivnici', partner: 'Partner', stats: 'Statistika', lvShort: { novice: 'Poč.', average: 'Pros.', pro: 'Pro', cardshark: 'Shark' }, lv: { novice: 'Početnik', average: 'Prosječan', pro: 'Pro', cardshark: 'Cardshark' },
@@ -8328,7 +8391,7 @@ const STR = {
       you: 'You', round: 'Round', draw: 'Draw', pass: 'Pass', last: 'Last card!', catch: 'Catch!', color: 'Colour', swap: 'Swap hands with', take: 'Take', challenge: 'Challenge', left: 'Cards', total: 'Total', next: 'Next round', again: 'New match',
       roundWon: n => `${n} · round`, matchWon: n => `${n} · winner`, won: 'Won', lost: 'Lost',
       cols: { r: 'Red', y: 'Yellow', g: 'Green', b: 'Blue', p: 'Pink', t: 'Teal', o: 'Orange', v: 'Purple' } },
-    sol: { name: 'Solitaire', score: 'Score', time: 'Time', moves: 'Moves', newGame: 'New game', restart: 'Same deal', hint: 'Hint', undo: 'Undo', auto: 'Finish', won: 'Solved!', noMoves: 'No more moves', home: 'Menu',
+    sol: { name: 'Solitaire', zoom: 'Zoom', score: 'Score', time: 'Time', moves: 'Moves', newGame: 'New game', restart: 'Same deal', hint: 'Hint', undo: 'Undo', auto: 'Finish', won: 'Solved!', noMoves: 'No more moves', home: 'Menu',
       draw: 'Draw', draw1: '1 card', draw3: '3 cards', passes: 'Passes through the stock', inf: 'Unlimited', scoring: 'Scoring', standard: 'Standard', vegas: 'Vegas', none: 'None', timed: 'Timed scoring', tapMove: 'Tap moves the card for you', left: 'Stock on the right', cont: 'Continue', played: 'Played', wonN: 'Solved', best: 'Best time', bestScore: 'Best score', streak: 'Win streak' },
     online: 'Online', join: 'Join', rejoin: 'Rejoin online game', gameGone: 'That game no longer exists', playAgain: 'Play again', waitOthers: (n, m) => `Waiting for others · ${n}/${m}`, tables: 'Open tables', newTable: 'New table', noTables: 'No open tables', host: 'Host', yourName: 'Your name', sit: 'Sit', free: 'Free', startT: 'Start', waitHost: 'Waiting for the host', invite: 'Invite', leaveT: 'Leave', leaveConfirm: 'Leave the table?', botPlays: 'A bot is playing for you', takeOver: 'Press here to resume the game', rating: 'Rating', offline: 'Can’t reach the server', reconnecting: 'Reconnecting…', copied: 'Link copied', bots: 'Empty seats are played by bots', create: 'Open table',
     auto: 'Auto', level: 'Opponents', partner: 'Partner', stats: 'Stats', lvShort: { novice: 'Nov.', average: 'Avg.', pro: 'Pro', cardshark: 'Shark' }, lv: { novice: 'Novice', average: 'Average', pro: 'Pro', cardshark: 'Cardshark' },
