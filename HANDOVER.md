@@ -159,3 +159,6 @@ Check at 375×667 and 390×780/844. The only expected console error is Google Fo
 
 ## v118 — Solitaire double-tap zoom centres on the tap
 - Double-tapping the felt at 1x zooms in centred on the tapped spot (`zoomAt`: pan = tap × (1 − 1/zoom), clamped). The Zoom button still keeps the last view position; double-tap at zoom keeps zooming out as before.
+
+## v119 — Solitaire zoom starts at the top
+- `zoomAt` (double-tap zoom) sets `panY = 0`, so the top row (stock, waste, foundations) and the top of the tapped column stay visible; horizontal position still centres on the tap, clamped to the board edges.

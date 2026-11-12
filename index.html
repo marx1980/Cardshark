@@ -2362,7 +2362,7 @@ const Solitaire = (() => {
   function zoomAt(e) {
     const r = $('#sBoard').getBoundingClientRect();
     zoom = ZOOM;
-    panX = (e.clientX - r.left) * (1 - 1 / ZOOM); panY = (e.clientY - r.top) * (1 - 1 / ZOOM);
+    panX = (e.clientX - r.left) * (1 - 1 / ZOOM); panY = 0;   // always start at the top so the top row (and the top of the tapped column) is visible
     applyZoom(true); api.S.solZoom = true; api.save();
   }
   let panDrag = null;
