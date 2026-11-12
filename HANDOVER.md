@@ -141,3 +141,6 @@ Check at 375×667 and 390×780/844. The only expected console error is Google Fo
 
 ## v112 — Home header: icon + transparent wordmark
 - `icons/wordmark.png` is the shark-fin wordmark with its dark background keyed out (transparent), self-hosted instead of the GitHub attachment URL; it replaces the `h1` in `.hbar`. The shark icon (`.logo`) is back to its left with a transparent background (no felt box), 46px; wordmark shrinks (`flex:0 1 300px`) to fit beside the two buttons. `cardshark-logo.svg` (other agent's file) still has the dark background and is unused. App/home-screen icons (`icons/icon-*.png`) are unchanged.
+
+## v113 — Header icon vertical alignment
+- Shark icon offset `top:-4.5px` so its visual middle matches the wordmark's middle (measured in a desktop browser at 390px, within 0.5px).
