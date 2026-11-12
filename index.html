@@ -2358,6 +2358,13 @@ const Solitaire = (() => {
     applyZoom(true);
     if (persistIt) { api.S.solZoom = !!on; api.save(); }
   }
+  // double-tap at 1x: zoom in centred on the tapped spot (clamped to the board edges)
+  function zoomAt(e) {
+    const r = $('#sBoard').getBoundingClientRect();
+    zoom = ZOOM;
+    panX = (e.clientX - r.left) * (1 - 1 / ZOOM); panY = (e.clientY - r.top) * (1 - 1 / ZOOM);
+    applyZoom(true); api.S.solZoom = true; api.save();
+  }
   let panDrag = null;
   function startPan(e) {
     panDrag = { x0: e.clientX, y0: e.clientY, px: panX, py: panY, pid: e.pointerId, moved: false };
@@ -2474,7 +2481,7 @@ const Solitaire = (() => {
       if (same) { e.preventDefault(); clearPick(); return; }
       if (dst && !(el && srcOf(el))) { e.preventDefault(); shake(pick.els); clearPick(); return; }
     }
-    if (!el) { if (e.target.closest('#sBoard')) { e.preventDefault(); if (zoom > 1) startPan(e); else { const now = Date.now(); if (now - lastFelt < 320) { lastFelt = 0; setZoom(true); } else lastFelt = now; } } return; }
+    if (!el) { if (e.target.closest('#sBoard')) { e.preventDefault(); if (zoom > 1) startPan(e); else { const now = Date.now(); if (now - lastFelt < 320) { lastFelt = 0; zoomAt(e); } else lastFelt = now; } } return; }
     const src = srcOf(el); if (!src) return;
     e.preventDefault();
     const ids = cardsAt(st, src).map(cid);

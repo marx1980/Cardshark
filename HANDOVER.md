@@ -156,3 +156,6 @@ Check at 375×667 and 390×780/844. The only expected console error is Google Fo
 
 ## v117 — Solitaire zoom keeps its view position
 - `panX`/`panY` are no longer reset when zoom goes off (button, auto-move, finish); they're only placed (centred) on the first zoom-in of a session (`panX` null) and reset on `start()`. Zooming back in returns to the same left/right area, clamped to the board edges. `applyZoom` leaves the position untouched at 1x.
+
+## v118 — Solitaire double-tap zoom centres on the tap
+- Double-tapping the felt at 1x zooms in centred on the tapped spot (`zoomAt`: pan = tap × (1 − 1/zoom), clamped). The Zoom button still keeps the last view position; double-tap at zoom keeps zooming out as before.
