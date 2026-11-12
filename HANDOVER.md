@@ -162,3 +162,6 @@ Check at 375×667 and 390×780/844. The only expected console error is Google Fo
 
 ## v119 — Solitaire zoom starts at the top
 - `zoomAt` (double-tap zoom) sets `panY = 0`, so the top row (stock, waste, foundations) and the top of the tapped column stay visible; horizontal position still centres on the tap, clamped to the board edges.
+
+## v120 — Solitaire zoom: four columns, snapped windows
+- `ZOOM` is computed in `layout()` so four columns fit (`W / (4·cw + 3·gap + 2·pad)`, ≈1.73 on a 390px phone). Double-tap zoom (`zoomAt`) snaps to a window of four whole columns around the tapped column (start = clamp(round(col−1.5), 0, 3)): left tap → columns 1–4, right → 4–7, middle → the four around it; always from the top. The Zoom button still keeps the last view.
