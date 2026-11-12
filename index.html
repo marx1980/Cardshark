@@ -2276,7 +2276,7 @@ const Solitaire = (() => {
     else {
       st = newDeal(opts()); hist = []; api.S.solSave = null; api.save();
     }
-    pick = null; zoom = 1; build(); layout(); render(true);
+    pick = null; zoom = 1; panX = null; panY = 0; build(); layout(); render(true);
     if (api.S.solZoomKeep && api.S.solZoom) setZoom(true, false);
     clearInterval(timer); timer = setInterval(tick, 1000);
   }
@@ -2339,19 +2339,22 @@ const Solitaire = (() => {
     addEventListener('resize', () => { if (root && !root.hidden) { layout(); render(true); } });
   }
   // ---- zoom: 2x with pan (drag the felt; dragging a card near an edge scrolls the view)
-  let zoom = 1, panX = 0, panY = 0, lastFelt = 0;
+  let zoom = 1, panX = null, panY = 0, lastFelt = 0;   // panX null = not yet placed (centre on first zoom-in)
   const ZOOM = 2;
   function applyZoom(ease) {
     const inner = $('#sInner'); if (!inner) return;
-    const mx = Math.max(0, G.W - G.W / zoom), my = Math.max(0, G.H - G.H / zoom);
-    panX = Math.min(mx, Math.max(0, panX)); panY = Math.min(my, Math.max(0, panY));
     inner.classList.toggle('ease', !!ease);
-    inner.style.transform = zoom === 1 ? '' : `scale(${zoom}) translate(${-panX}px,${-panY}px)`;
+    if (zoom === 1) inner.style.transform = '';   // position is kept for the next zoom-in
+    else {
+      if (panX == null) panX = (G.W - G.W / zoom) / 2;
+      const mx = Math.max(0, G.W - G.W / zoom), my = Math.max(0, G.H - G.H / zoom);
+      panX = Math.min(mx, Math.max(0, panX)); panY = Math.min(my, Math.max(0, panY));
+      inner.style.transform = `scale(${zoom}) translate(${-panX}px,${-panY}px)`;
+    }
     const b = $('#sZoom'); if (b) b.setAttribute('aria-pressed', zoom > 1 ? 'true' : 'false');
   }
   function setZoom(on, persistIt = true) {
-    zoom = on ? ZOOM : 1;
-    if (on) { panX = (G.W - G.W / zoom) / 2; panY = 0; } else { panX = 0; panY = 0; }
+    zoom = on ? ZOOM : 1;   // keeps the last view position, so zooming back in lands on the same left/right area
     applyZoom(true);
     if (persistIt) { api.S.solZoom = !!on; api.save(); }
   }

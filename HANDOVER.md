@@ -153,3 +153,6 @@ Check at 375×667 and 390×780/844. The only expected console error is Google Fo
 
 ## v116 — Solitaire zoom tweaks
 - Tap auto-moves and "Finish" (auto-finish) zoom back out to 1x (`setZoom(false,false)`, not persisted). Zoom is no longer remembered by default: new "Remember zoom" toggle (`S.solZoomKeep`, hr "Zapamti zoom") in the Solitaire settings sheet; `start()` only restores zoom when it's on.
+
+## v117 — Solitaire zoom keeps its view position
+- `panX`/`panY` are no longer reset when zoom goes off (button, auto-move, finish); they're only placed (centred) on the first zoom-in of a session (`panX` null) and reset on `start()`. Zooming back in returns to the same left/right area, clamped to the board edges. `applyZoom` leaves the position untouched at 1x.
