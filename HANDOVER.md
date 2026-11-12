@@ -144,3 +144,6 @@ Check at 375×667 and 390×780/844. The only expected console error is Google Fo
 
 ## v113 — Header icon vertical alignment
 - Shark icon offset `top:-4.5px` so its visual middle matches the wordmark's middle (measured in a desktop browser at 390px, within 0.5px).
+
+## v114 — Header spacing
+- Icon raised further (`top:-7px`, its visual weight sits low). Wordmark nudged with `margin:0 3.2px 0 -3.2px` so the visible gaps icon→wordmark and wordmark→settings/stats buttons are equal (~12.6px at 390px, measured in a desktop browser). Removed the `#goStats{margin-left:auto}` rule.
