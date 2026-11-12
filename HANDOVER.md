@@ -150,3 +150,6 @@ Check at 375×667 and 390×780/844. The only expected console error is Google Fo
 
 ## v115 — Solitaire zoom
 - Footer "Zoom" button (`#sZoom`) toggles 2x (`ZOOM`); the board content lives in `#sInner` (`scale(z) translate(-pan)`), layout/geometry stays unscaled. Pan: drag the empty felt; while dragging a card near a board edge the view auto-scrolls (`edgeLoop`); double-tap felt toggles zoom. Drag math uses `dragXY()` (screen delta / zoom + pan delta). Setting persisted in `S.solZoom`. After an auto-move the view is not re-centred.
+
+## v116 — Solitaire zoom tweaks
+- Tap auto-moves and "Finish" (auto-finish) zoom back out to 1x (`setZoom(false,false)`, not persisted). Zoom is no longer remembered by default: new "Remember zoom" toggle (`S.solZoomKeep`, hr "Zapamti zoom") in the Solitaire settings sheet; `start()` only restores zoom when it's on.

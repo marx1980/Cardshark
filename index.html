@@ -2277,7 +2277,7 @@ const Solitaire = (() => {
       st = newDeal(opts()); hist = []; api.S.solSave = null; api.save();
     }
     pick = null; zoom = 1; build(); layout(); render(true);
-    if (api.S.solZoom) setZoom(true, false);
+    if (api.S.solZoomKeep && api.S.solZoom) setZoom(true, false);
     clearInterval(timer); timer = setInterval(tick, 1000);
   }
   function restart() {
@@ -2522,6 +2522,7 @@ const Solitaire = (() => {
     if (!d.moved) {
       const dst = autoTarget(st, d.src);
       if (!dst || !act(() => move(st, d.src, dst))) { shake(d.els); render(); }
+      else if (zoom > 1) setZoom(false, false);
       return;
     }
     // drop on the pile whose spot is closest to the dragged card's centre
@@ -2565,6 +2566,7 @@ const Solitaire = (() => {
   }
   async function autoFinish() {
     if (busy) return; busy = true;
+    if (zoom > 1) setZoom(false, false);
     while (!st.won) {
       let done = false;
       // lowest cards first
@@ -8314,7 +8316,7 @@ const STR = {
       roundWon: n => `${n} · runda`, matchWon: n => `${n} · pobjeda`, won: 'Pobjede', lost: 'Porazi',
       cols: { r: 'Crvena', y: 'Žuta', g: 'Zelena', b: 'Plava', p: 'Ružičasta', t: 'Tirkizna', o: 'Narančasta', v: 'Ljubičasta' } },
     sol: { name: 'Pasijans', zoom: 'Zoom', score: 'Bodovi', time: 'Vrijeme', moves: 'Potezi', newGame: 'Nova igra', restart: 'Ista podjela', hint: 'Savjet', undo: 'Natrag', auto: 'Završi', won: 'Pasijans je složen!', noMoves: 'Nema više poteza', home: 'Izbornik',
-      draw: 'Vučenje', draw1: '1 karta', draw3: '3 karte', passes: 'Prolazi kroz špil', inf: 'Bez ograničenja', scoring: 'Bodovanje', standard: 'Standardno', vegas: 'Vegas', none: 'Bez bodova', timed: 'Bodovi ovise o vremenu', tapMove: 'Dodir sam premješta kartu', left: 'Špil na desnoj strani', cont: 'Nastavi', played: 'Odigrano', wonN: 'Riješeno', best: 'Najbolje vrijeme', bestScore: 'Najviše bodova', streak: 'Niz pobjeda' },
+      draw: 'Vučenje', draw1: '1 karta', draw3: '3 karte', passes: 'Prolazi kroz špil', inf: 'Bez ograničenja', scoring: 'Bodovanje', standard: 'Standardno', vegas: 'Vegas', none: 'Bez bodova', timed: 'Bodovi ovise o vremenu', tapMove: 'Dodir sam premješta kartu', zoomKeep: 'Zapamti zoom', left: 'Špil na desnoj strani', cont: 'Nastavi', played: 'Odigrano', wonN: 'Riješeno', best: 'Najbolje vrijeme', bestScore: 'Najviše bodova', streak: 'Niz pobjeda' },
     online: 'Online', join: 'Pridruži se', rejoin: 'Nastavi online igru', gameGone: 'Ta igra više ne postoji', playAgain: 'Igraj opet', waitOthers: (n, m) => `Čeka se ostale · ${n}/${m}`, tables: 'Otvoreni stolovi', newTable: 'Novi stol', noTables: 'Nema otvorenih stolova', host: 'Domaćin', yourName: 'Tvoje ime', sit: 'Sjedni', free: 'Slobodno', startT: 'Započni', waitHost: 'Čeka se domaćin', invite: 'Pozovi', leaveT: 'Izađi', leaveConfirm: 'Izaći sa stola?', botPlays: 'Bot igra za tebe', takeOver: 'Pritisni ovdje za nastavak igre', rating: 'Rejting', offline: 'Nema veze sa serverom', reconnecting: 'Ponovno spajanje…', copied: 'Poveznica kopirana', bots: 'Prazna mjesta igraju botovi', create: 'Otvori stol',
     auto: 'Auto', level: 'Protivnici', partner: 'Partner', stats: 'Statistika', lvShort: { novice: 'Poč.', average: 'Pros.', pro: 'Pro', cardshark: 'Shark' }, lv: { novice: 'Početnik', average: 'Prosječan', pro: 'Pro', cardshark: 'Cardshark' },
     speed: 'Brzina', takeover: 'Preuzimanje bota (u sek)', never: 'Nikad', slow: 'Sporo', normal: 'Normalno', fast: 'Brzo', tap: 'Igranje karte', tap1: 'Jedan dodir', tap2: 'Dva dodira',
@@ -8392,7 +8394,7 @@ const STR = {
       roundWon: n => `${n} · round`, matchWon: n => `${n} · winner`, won: 'Won', lost: 'Lost',
       cols: { r: 'Red', y: 'Yellow', g: 'Green', b: 'Blue', p: 'Pink', t: 'Teal', o: 'Orange', v: 'Purple' } },
     sol: { name: 'Solitaire', zoom: 'Zoom', score: 'Score', time: 'Time', moves: 'Moves', newGame: 'New game', restart: 'Same deal', hint: 'Hint', undo: 'Undo', auto: 'Finish', won: 'Solved!', noMoves: 'No more moves', home: 'Menu',
-      draw: 'Draw', draw1: '1 card', draw3: '3 cards', passes: 'Passes through the stock', inf: 'Unlimited', scoring: 'Scoring', standard: 'Standard', vegas: 'Vegas', none: 'None', timed: 'Timed scoring', tapMove: 'Tap moves the card for you', left: 'Stock on the right', cont: 'Continue', played: 'Played', wonN: 'Solved', best: 'Best time', bestScore: 'Best score', streak: 'Win streak' },
+      draw: 'Draw', draw1: '1 card', draw3: '3 cards', passes: 'Passes through the stock', inf: 'Unlimited', scoring: 'Scoring', standard: 'Standard', vegas: 'Vegas', none: 'None', timed: 'Timed scoring', tapMove: 'Tap moves the card for you', zoomKeep: 'Remember zoom', left: 'Stock on the right', cont: 'Continue', played: 'Played', wonN: 'Solved', best: 'Best time', bestScore: 'Best score', streak: 'Win streak' },
     online: 'Online', join: 'Join', rejoin: 'Rejoin online game', gameGone: 'That game no longer exists', playAgain: 'Play again', waitOthers: (n, m) => `Waiting for others · ${n}/${m}`, tables: 'Open tables', newTable: 'New table', noTables: 'No open tables', host: 'Host', yourName: 'Your name', sit: 'Sit', free: 'Free', startT: 'Start', waitHost: 'Waiting for the host', invite: 'Invite', leaveT: 'Leave', leaveConfirm: 'Leave the table?', botPlays: 'A bot is playing for you', takeOver: 'Press here to resume the game', rating: 'Rating', offline: 'Can’t reach the server', reconnecting: 'Reconnecting…', copied: 'Link copied', bots: 'Empty seats are played by bots', create: 'Open table',
     auto: 'Auto', level: 'Opponents', partner: 'Partner', stats: 'Stats', lvShort: { novice: 'Nov.', average: 'Avg.', pro: 'Pro', cardshark: 'Shark' }, lv: { novice: 'Novice', average: 'Average', pro: 'Pro', cardshark: 'Cardshark' },
     speed: 'Speed', takeover: 'Bot takeover (in sec)', never: 'Never', slow: 'Slow', normal: 'Normal', fast: 'Fast', tap: 'Playing a card', tap1: 'One tap', tap2: 'Two taps',
@@ -8849,7 +8851,7 @@ function showSolSheet() {
     <div class="gsegs"><div class="glab">${u.draw}</div>${seg('solDraw', [[1, u.draw1], [3, u.draw3]])}
     <div class="gsep"></div><div class="glab">${u.passes}</div>${seg('solPasses', [['inf', u.inf], ['3', '3'], ['1', '1']])}
     <div class="gsep"></div><div class="glab">${u.scoring}</div>${seg('solScoring', [['standard', u.standard], ['vegas', u.vegas], ['none', u.none]])}
-    <div class="gsep"></div><div class="rules-list">${[['solTap', u.tapMove, S.solTap !== false], ['solTimed', u.timed, S.solTimed !== false], ['solLeft', u.left, !!S.solLeft]].map(([k, lab, on]) => `<label class="tog"><span><b>${lab}</b></span><input type="checkbox" data-opt="${k}" ${on ? 'checked' : ''}></label>`).join('')}</div></div>
+    <div class="gsep"></div><div class="rules-list">${[['solTap', u.tapMove, S.solTap !== false], ['solTimed', u.timed, S.solTimed !== false], ['solLeft', u.left, !!S.solLeft], ['solZoomKeep', u.zoomKeep, !!S.solZoomKeep]].map(([k, lab, on]) => `<label class="tog"><span><b>${lab}</b></span><input type="checkbox" data-opt="${k}" ${on ? 'checked' : ''}></label>`).join('')}</div></div>
     <div class="btns"><button class="sec" id="gClose">${L().close}</button><button class="play wide" id="gPlay">${L().sol.newGame}</button></div>`, v => {
     v.onclick = e => { if (e.target === v) closeSheet(); };
     v.querySelector('#gClose').onclick = closeSheet;
