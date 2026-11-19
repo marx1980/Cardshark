@@ -11,7 +11,8 @@ const Tablic = require('./tablic.js');
 const Bridge = require('./bridge.js');
 const Gin = require('./gin.js');
 const Pref = require('./pref.js');
-const MODS = { a: Tablic, c: Bridge, f: Pref };   // games that bring their own rules, views and match loop
+const Ulti = require('./ulti.js');
+const MODS = { a: Tablic, c: Bridge, f: Pref, i: Ulti };   // games that bring their own rules, views and match loop
 
 const PACE = { bot: 800, trick: 1800, deal: 700, decl: 3200, akuza: 1600, called: 1100 };
 const relSeat = (seat, viewer, n) => ((seat - viewer) % n + n) % n;

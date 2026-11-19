@@ -9,6 +9,7 @@ Live: GitHub Pages from `marx1980/Cardshark` `main` (the repo was renamed from `
 | v45 | **Hint button** (lightbulb, bottom-right of the felt, only on your turn, local games only, not online/rated). Asks the Cardshark player which card to play for seat 0 and outlines that card [...] |
 | v46 | **Uno table**: opponents seated around the table in play order (next player on your left, then top, then right). Played cards fly from the thrower's seat and land on the discard tilted [...] |
 | v47 | **Hint explains itself (hybrid)**: line 1 = a play rule, only when it truly applies to the chosen card; line 2 = what actually decided it (simulation result: deals simulated + margin over [...] |
+| v121 | **Ulti** (Hungarian 3-player game, code `i`): rules/bots in `server/src/ulti.js`, UI in `_src/ulti-ui.js` (both embedded via `tools/embed.py`). Offline + online. Option toggles: deals, kontra (off/one/full), Piros double, four aces, silent bonuses, open betli/durchmars, must-overtake, hold-7. Half-hand bidding not implemented. |
 
 Shipped in parallel by another session (only their commit messages are summarised here; see the git log):
 - **v48**: continue an offline game after leaving it (all card games, Uno, Poker); merged with v45–v47.
